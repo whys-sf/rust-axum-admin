@@ -2,9 +2,7 @@ use chrono::Utc;
 use common::jwt::{Claims, TOKEN_TYPE_REFRESH};
 use common::{redis, AppError, AppResult};
 use entity::prelude::*;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
 
 use crate::dto::{CurrentUser, LoginReq, LoginResp, MenuNode, UserInfoResp};
 use crate::{menu, Services, PLATFORM_TENANT_ID};
@@ -61,7 +59,9 @@ impl Services {
             .await
             .unwrap_or(0);
             if count >= MAX_LOGIN_FAILS {
-                return Err(AppError::bad_request("密码错误次数过多，账号已锁定 15 分钟"));
+                return Err(AppError::bad_request(
+                    "密码错误次数过多，账号已锁定 15 分钟",
+                ));
             }
             return Err(AppError::Unauthorized);
         }
@@ -90,18 +90,29 @@ impl Services {
     }
 
     pub async fn refresh(&self, refresh_token: &str) -> AppResult<LoginResp> {
-        let claims = self.jwt.verify(refresh_token).map_err(|_| AppError::Unauthorized)?;
+        let claims = self
+            .jwt
+            .verify(refresh_token)
+            .map_err(|_| AppError::Unauthorized)?;
         if claims.typ != TOKEN_TYPE_REFRESH {
             return Err(AppError::Unauthorized);
         }
-        if redis::is_blacklisted(&self.redis, &claims.jti).await.unwrap_or(false) {
+        if redis::is_blacklisted(&self.redis, &claims.jti)
+            .await
+            .unwrap_or(false)
+        {
             return Err(AppError::Unauthorized);
         }
 
         let user_id: i64 = claims.sub.parse().map_err(|_| AppError::Unauthorized)?;
         let pair = self
             .jwt
-            .issue_pair(user_id, &claims.username, claims.tenant_id, claims.is_platform)
+            .issue_pair(
+                user_id,
+                &claims.username,
+                claims.tenant_id,
+                claims.is_platform,
+            )
             .map_err(AppError::Other)?;
 
         // rotate: blacklist the used refresh token for its remaining lifetime
@@ -188,7 +199,10 @@ impl Services {
 
     /// Menus the caller can see: platform admins get every menu in the
     /// `(0, tenant)` pool; tenant users get only menus granted to their roles.
-    pub async fn accessible_menus(&self, current: &CurrentUser) -> AppResult<Vec<entity::menu::Model>> {
+    pub async fn accessible_menus(
+        &self,
+        current: &CurrentUser,
+    ) -> AppResult<Vec<entity::menu::Model>> {
         let tenant_id = current.acting_tenant();
         let pool = Menu::find()
             .filter(
@@ -226,7 +240,10 @@ impl Services {
             .map(|rm| rm.menu_id)
             .collect();
 
-        Ok(pool.into_iter().filter(|m| granted.contains(&m.id)).collect())
+        Ok(pool
+            .into_iter()
+            .filter(|m| granted.contains(&m.id))
+            .collect())
     }
 
     /// Build the menu tree for the front-end dynamic router (directories + menus).

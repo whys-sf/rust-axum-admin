@@ -128,7 +128,8 @@ impl Services {
         }
         txn.commit().await?;
 
-        self.sync_user_casbin(tenant_id, user_id, &req.role_ids).await?;
+        self.sync_user_casbin(tenant_id, user_id, &req.role_ids)
+            .await?;
         Ok(user)
     }
 

@@ -1,9 +1,7 @@
 use chrono::Utc;
 use common::{AppError, AppResult};
 use entity::prelude::*;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
 
 use crate::dto::{CreateMenuReq, CurrentUser, MenuNode, UpdateMenuReq};
 use crate::{Services, PLATFORM_TENANT_ID};
