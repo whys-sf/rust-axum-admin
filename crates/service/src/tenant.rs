@@ -54,6 +54,7 @@ impl Services {
         let tenant_id = self.next_id();
         let role_id = self.next_id();
         let user_id = self.next_id();
+        let dept_id = self.next_id();
         let hashed = password::hash(&req.admin_password).map_err(AppError::Other)?;
 
         // platform menus this tenant's admin will inherit
@@ -76,6 +77,23 @@ impl Services {
             status: Set(1),
             expire_at: Set(req.expire_at),
             remark: Set(None),
+            created_at: Set(now),
+            updated_at: Set(now),
+        }
+        .insert(&txn)
+        .await?;
+
+        entity::dept::ActiveModel {
+            id: Set(dept_id),
+            tenant_id: Set(tenant_id),
+            parent_id: Set(0),
+            ancestors: Set("0".to_string()),
+            name: Set(tenant.name.clone()),
+            sort: Set(0),
+            leader: Set(None),
+            phone: Set(None),
+            email: Set(None),
+            status: Set(1),
             created_at: Set(now),
             updated_at: Set(now),
         }
@@ -108,7 +126,7 @@ impl Services {
             avatar: Set(None),
             gender: Set(0),
             status: Set(1),
-            dept_id: Set(None),
+            dept_id: Set(Some(dept_id)),
             remark: Set(None),
             last_login_at: Set(None),
             last_login_ip: Set(None),
@@ -226,6 +244,10 @@ impl Services {
             .await?;
         Menu::delete_many()
             .filter(entity::menu::Column::TenantId.eq(id))
+            .exec(&txn)
+            .await?;
+        Dept::delete_many()
+            .filter(entity::dept::Column::TenantId.eq(id))
             .exec(&txn)
             .await?;
         Tenant::delete_by_id(id).exec(&txn).await?;

@@ -227,6 +227,65 @@ fn create_tenant_then_login_as_its_admin() {
 
 #[test]
 #[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn dept_tree_and_crud() {
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+
+        // seeded org tree is visible to the tenant admin
+        let (status, body) = send("GET", "/api/v1/depts", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let roots = body["data"].as_array().expect("dept tree");
+        assert!(!roots.is_empty(), "expected seeded departments");
+        let root_id = roots[0]["id"].as_i64().expect("root dept id");
+
+        // create a child under the root; ancestors must chain from the parent
+        let name = format!("分部-{}", uniq());
+        let (status, body) = send(
+            "POST",
+            "/api/v1/depts",
+            Some(&token),
+            Some(json!({"parent_id": root_id, "name": name, "sort": 9})),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "create dept: {body}");
+        let child_id = body["data"]["id"].as_i64().expect("child id");
+        assert_eq!(body["data"]["ancestors"], format!("0,{root_id}"));
+
+        // update the child
+        let (status, body) = send(
+            "PUT",
+            &format!("/api/v1/depts/{child_id}"),
+            Some(&token),
+            Some(json!({"leader": "张三", "sort": 3})),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["leader"], "张三");
+
+        // a department with children cannot be deleted
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/depts/{root_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+
+        // leaf delete succeeds
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/depts/{child_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+    });
+}
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
 fn invalid_login_rejected() {
     rt().block_on(async {
         // Use a throwaway tenant+admin so the per-account lockout counter is
