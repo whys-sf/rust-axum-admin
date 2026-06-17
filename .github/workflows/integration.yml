@@ -40,6 +40,9 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/admin
       REDIS_URL: redis://localhost:6379
+      # sqlx-adapter uses compile-time-checked queries; build against its bundled
+      # offline data instead of the (empty) live DB. Runtime still uses DATABASE_URL.
+      SQLX_OFFLINE: "true"
 
     steps:
       - uses: actions/checkout@v4
