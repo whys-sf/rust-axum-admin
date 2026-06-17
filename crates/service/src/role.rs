@@ -94,7 +94,8 @@ impl Services {
         .await?;
 
         if !req.menu_ids.is_empty() {
-            self.assign_role_menus_inner(current, &role, req.menu_ids).await?;
+            self.assign_role_menus_inner(current, &role, req.menu_ids)
+                .await?;
         }
         Ok(role)
     }
@@ -159,7 +160,8 @@ impl Services {
         req: AssignMenusReq,
     ) -> AppResult<()> {
         let role = self.find_role_scoped(current, id).await?;
-        self.assign_role_menus_inner(current, &role, req.menu_ids).await
+        self.assign_role_menus_inner(current, &role, req.menu_ids)
+            .await
     }
 
     async fn assign_role_menus_inner(

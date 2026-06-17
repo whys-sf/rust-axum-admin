@@ -62,7 +62,10 @@ pub async fn set_status(
     Path(id): Path<i64>,
     axum::Json(req): axum::Json<StatusReq>,
 ) -> AppResult<ApiResponse<()>> {
-    state.services.set_user_status(&current, id, req.status).await?;
+    state
+        .services
+        .set_user_status(&current, id, req.status)
+        .await?;
     Ok(ApiResponse::ok_empty())
 }
 

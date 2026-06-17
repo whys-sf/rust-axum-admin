@@ -2797,6 +2797,7 @@ dependencies = [
  "deadpool-redis",
  "dotenvy",
  "entity",
+ "http-body-util",
  "migration",
  "sea-orm",
  "serde",

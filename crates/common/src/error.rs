@@ -50,21 +50,37 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, code, message) = match &self {
             AppError::BadRequest(m) => (StatusCode::BAD_REQUEST, 400, m.clone()),
-            AppError::Unauthorized => (StatusCode::UNAUTHORIZED, 401, "未认证或登录已过期".to_string()),
+            AppError::Unauthorized => (
+                StatusCode::UNAUTHORIZED,
+                401,
+                "未认证或登录已过期".to_string(),
+            ),
             AppError::Forbidden => (StatusCode::FORBIDDEN, 403, "无权限访问".to_string()),
             AppError::NotFound(m) => (StatusCode::NOT_FOUND, 404, m.clone()),
             AppError::Conflict(m) => (StatusCode::CONFLICT, 409, m.clone()),
             AppError::Db(e) => {
                 tracing::error!(error = %e, "database error");
-                (StatusCode::INTERNAL_SERVER_ERROR, 500, "服务器内部错误".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    500,
+                    "服务器内部错误".to_string(),
+                )
             }
             AppError::Casbin(e) => {
                 tracing::error!(error = %e, "casbin error");
-                (StatusCode::INTERNAL_SERVER_ERROR, 500, "权限引擎错误".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    500,
+                    "权限引擎错误".to_string(),
+                )
             }
             AppError::Other(e) => {
                 tracing::error!(error = %e, "internal error");
-                (StatusCode::INTERNAL_SERVER_ERROR, 500, "服务器内部错误".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    500,
+                    "服务器内部错误".to_string(),
+                )
             }
         };
 

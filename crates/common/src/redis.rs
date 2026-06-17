@@ -49,7 +49,11 @@ pub async fn incr_login_fail(
     Ok(count)
 }
 
-pub async fn reset_login_fail(pool: &RedisPool, tenant_id: i64, username: &str) -> anyhow::Result<()> {
+pub async fn reset_login_fail(
+    pool: &RedisPool,
+    tenant_id: i64,
+    username: &str,
+) -> anyhow::Result<()> {
     let mut conn = pool.get().await?;
     let key = format!("{LOGIN_FAIL_PREFIX}{tenant_id}:{username}");
     conn.del::<_, ()>(key).await?;

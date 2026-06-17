@@ -25,7 +25,11 @@ pub async fn resolve(
 
     // platform admin acting on behalf of another tenant
     if current.is_platform {
-        if let Some(raw) = req.headers().get(TENANT_HEADER).and_then(|v| v.to_str().ok()) {
+        if let Some(raw) = req
+            .headers()
+            .get(TENANT_HEADER)
+            .and_then(|v| v.to_str().ok())
+        {
             if let Ok(tid) = raw.trim().parse::<i64>() {
                 current.tenant_id = tid;
             }
