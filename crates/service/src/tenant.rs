@@ -230,6 +230,10 @@ impl Services {
             .filter(entity::role_menu::Column::TenantId.eq(id))
             .exec(&txn)
             .await?;
+        RoleDept::delete_many()
+            .filter(entity::role_dept::Column::TenantId.eq(id))
+            .exec(&txn)
+            .await?;
         UserRole::delete_many()
             .filter(entity::user_role::Column::TenantId.eq(id))
             .exec(&txn)

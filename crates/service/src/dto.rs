@@ -264,6 +264,11 @@ pub struct AssignMenusReq {
     pub menu_ids: Vec<i64>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct AssignDeptsReq {
+    pub dept_ids: Vec<i64>,
+}
+
 // ------------------------------ menu ------------------------------
 
 #[derive(Debug, Deserialize, Validate)]

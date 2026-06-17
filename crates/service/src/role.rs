@@ -7,7 +7,9 @@ use sea_orm::{
     TransactionTrait,
 };
 
-use crate::dto::{AssignMenusReq, CreateRoleReq, CurrentUser, RoleQuery, UpdateRoleReq};
+use crate::dto::{
+    AssignDeptsReq, AssignMenusReq, CreateRoleReq, CurrentUser, RoleQuery, UpdateRoleReq,
+};
 use crate::{permission, Services, PLATFORM_TENANT_ID};
 
 impl Services {
@@ -146,10 +148,67 @@ impl Services {
             .filter(entity::role_menu::Column::RoleId.eq(id))
             .exec(&txn)
             .await?;
+        RoleDept::delete_many()
+            .filter(entity::role_dept::Column::RoleId.eq(id))
+            .exec(&txn)
+            .await?;
         Role::delete_by_id(id).exec(&txn).await?;
         txn.commit().await?;
 
         permission::remove_role_policies(&self.enforcer, role.tenant_id, &role.code).await?;
+        Ok(())
+    }
+
+    pub async fn role_dept_ids(&self, current: &CurrentUser, id: i64) -> AppResult<Vec<i64>> {
+        self.find_role_scoped(current, id).await?;
+        let ids = RoleDept::find()
+            .filter(entity::role_dept::Column::RoleId.eq(id))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|rd| rd.dept_id)
+            .collect();
+        Ok(ids)
+    }
+
+    /// Set the custom departments backing a role's `data_scope = custom`.
+    pub async fn assign_role_depts(
+        &self,
+        current: &CurrentUser,
+        id: i64,
+        req: AssignDeptsReq,
+    ) -> AppResult<()> {
+        let role = self.find_role_scoped(current, id).await?;
+
+        if !req.dept_ids.is_empty() {
+            let valid = Dept::find()
+                .filter(entity::dept::Column::Id.is_in(req.dept_ids.clone()))
+                .filter(entity::dept::Column::TenantId.eq(role.tenant_id))
+                .count(&self.db)
+                .await?;
+            if valid as usize != req.dept_ids.len() {
+                return Err(AppError::bad_request("包含无效的部门 id"));
+            }
+        }
+
+        let txn = self.db.begin().await?;
+        RoleDept::delete_many()
+            .filter(entity::role_dept::Column::RoleId.eq(id))
+            .exec(&txn)
+            .await?;
+        if !req.dept_ids.is_empty() {
+            let rows: Vec<entity::role_dept::ActiveModel> = req
+                .dept_ids
+                .iter()
+                .map(|did| entity::role_dept::ActiveModel {
+                    tenant_id: Set(role.tenant_id),
+                    role_id: Set(id),
+                    dept_id: Set(*did),
+                })
+                .collect();
+            RoleDept::insert_many(rows).exec(&txn).await?;
+        }
+        txn.commit().await?;
         Ok(())
     }
 

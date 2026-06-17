@@ -42,6 +42,10 @@ fn role_routes() -> Router<AppState> {
             "/roles/{id}/menus",
             get(handlers::role::menu_ids).put(handlers::role::assign_menus),
         )
+        .route(
+            "/roles/{id}/depts",
+            get(handlers::role::dept_ids).put(handlers::role::assign_depts),
+        )
         .route("/roles/{id}/status", put(handlers::role::set_status))
 }
 

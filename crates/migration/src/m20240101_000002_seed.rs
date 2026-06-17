@@ -151,6 +151,17 @@ fn platform_menus() -> Vec<MenuSeed> {
             "PUT",
         ),
         (
+            15,
+            10,
+            "分配数据范围",
+            3,
+            "",
+            "",
+            "system:role:datascope",
+            "/api/v1/roles/:id/depts",
+            "PUT",
+        ),
+        (
             20,
             1,
             "菜单管理",

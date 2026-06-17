@@ -3,7 +3,7 @@ use axum::Extension;
 use common::response::{ApiResponse, PageResult};
 use common::AppResult;
 use service::dto::{
-    AssignMenusReq, CreateRoleReq, CurrentUser, RoleQuery, StatusReq, UpdateRoleReq,
+    AssignDeptsReq, AssignMenusReq, CreateRoleReq, CurrentUser, RoleQuery, StatusReq, UpdateRoleReq,
 };
 
 use crate::extract::ValidatedJson;
@@ -71,6 +71,25 @@ pub async fn assign_menus(
     axum::Json(req): axum::Json<AssignMenusReq>,
 ) -> AppResult<ApiResponse<()>> {
     state.services.assign_role_menus(&current, id, req).await?;
+    Ok(ApiResponse::ok_empty())
+}
+
+pub async fn dept_ids(
+    State(state): State<AppState>,
+    Extension(current): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+) -> AppResult<ApiResponse<Vec<i64>>> {
+    let ids = state.services.role_dept_ids(&current, id).await?;
+    Ok(ApiResponse::ok(ids))
+}
+
+pub async fn assign_depts(
+    State(state): State<AppState>,
+    Extension(current): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+    axum::Json(req): axum::Json<AssignDeptsReq>,
+) -> AppResult<ApiResponse<()>> {
+    state.services.assign_role_depts(&current, id, req).await?;
     Ok(ApiResponse::ok_empty())
 }
 
