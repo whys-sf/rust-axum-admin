@@ -1,0 +1,23 @@
+[server]
+addr = "0.0.0.0:8080"
+
+[database]
+# overridden by DATABASE_URL env var
+url = "postgres://postgres:postgres@localhost:5432/admin"
+max_connections = 10
+
+[redis]
+# overridden by REDIS_URL env var
+url = "redis://127.0.0.1:6379"
+
+[jwt]
+secret = "change_me_to_a_long_random_secret_string_at_least_32_chars"
+access_ttl = 900
+refresh_ttl = 604800
+
+[snowflake]
+worker_id = 1
+datacenter_id = 1
+
+[casbin]
+model_path = "rbac_model.conf"
