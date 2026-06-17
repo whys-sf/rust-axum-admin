@@ -1,0 +1,21 @@
+[package]
+name = "migration"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+name = "migration"
+path = "src/lib.rs"
+
+[[bin]]
+name = "migration"
+path = "src/main.rs"
+
+[dependencies]
+sea-orm-migration.workspace = true
+tokio = { workspace = true }
+argon2.workspace = true
+chrono.workspace = true
+async-trait = "0.1"
