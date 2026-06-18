@@ -10,6 +10,14 @@ use service::dto::{
 use crate::extract::ValidatedJson;
 use crate::state::AppState;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/users",
+    tag = "user",
+    params(UserQuery),
+    security(("bearer" = [])),
+    responses((status = 200, description = "用户分页列表（应用数据权限）", body = PageResult<entity::user::Model>))
+)]
 pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -19,6 +27,14 @@ pub async fn list(
     Ok(ApiResponse::ok(page))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/users/{id}",
+    tag = "user",
+    params(("id" = i64, Path, description = "用户 ID")),
+    security(("bearer" = [])),
+    responses((status = 200, description = "用户详情（含角色 ID）", body = UserDetail))
+)]
 pub async fn detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -28,6 +44,14 @@ pub async fn detail(
     Ok(ApiResponse::ok(user))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/users",
+    tag = "user",
+    request_body = CreateUserReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "创建用户", body = entity::user::Model))
+)]
 pub async fn create(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -37,6 +61,15 @@ pub async fn create(
     Ok(ApiResponse::ok(user))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/users/{id}",
+    tag = "user",
+    params(("id" = i64, Path, description = "用户 ID")),
+    request_body = UpdateUserReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "更新用户", body = entity::user::Model))
+)]
 pub async fn update(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -47,6 +80,14 @@ pub async fn update(
     Ok(ApiResponse::ok(user))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/users/{id}",
+    tag = "user",
+    params(("id" = i64, Path, description = "用户 ID")),
+    security(("bearer" = [])),
+    responses((status = 200, description = "删除用户"))
+)]
 pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -56,6 +97,15 @@ pub async fn remove(
     Ok(ApiResponse::ok_empty())
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/users/{id}/status",
+    tag = "user",
+    params(("id" = i64, Path, description = "用户 ID")),
+    request_body = StatusReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "启用/禁用用户"))
+)]
 pub async fn set_status(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -69,6 +119,15 @@ pub async fn set_status(
     Ok(ApiResponse::ok_empty())
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/users/{id}/password",
+    tag = "user",
+    params(("id" = i64, Path, description = "用户 ID")),
+    request_body = ResetPasswordReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "重置用户密码"))
+)]
 pub async fn reset_password(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -79,6 +138,15 @@ pub async fn reset_password(
     Ok(ApiResponse::ok_empty())
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/users/{id}/roles",
+    tag = "user",
+    params(("id" = i64, Path, description = "用户 ID")),
+    request_body = AssignRolesReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "分配用户角色"))
+)]
 pub async fn assign_roles(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -89,6 +157,14 @@ pub async fn assign_roles(
     Ok(ApiResponse::ok_empty())
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/profile/password",
+    tag = "user",
+    request_body = ChangePasswordReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "修改本人密码"))
+)]
 pub async fn change_own_password(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,

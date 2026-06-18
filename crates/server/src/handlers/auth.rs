@@ -20,6 +20,13 @@ fn client_ip(headers: &HeaderMap) -> Option<String> {
     None
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/login",
+    tag = "auth",
+    request_body = LoginReq,
+    responses((status = 200, description = "登录成功，返回访问/刷新令牌", body = LoginResp))
+)]
 pub async fn login(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -30,6 +37,13 @@ pub async fn login(
     Ok(ApiResponse::ok(resp))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/refresh",
+    tag = "auth",
+    request_body = RefreshReq,
+    responses((status = 200, description = "刷新成功", body = LoginResp))
+)]
 pub async fn refresh(
     State(state): State<AppState>,
     Json(req): Json<RefreshReq>,
@@ -38,6 +52,13 @@ pub async fn refresh(
     Ok(ApiResponse::ok(resp))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/logout",
+    tag = "auth",
+    security(("bearer" = [])),
+    responses((status = 200, description = "退出登录"))
+)]
 pub async fn logout(
     State(state): State<AppState>,
     Extension(claims): Extension<Claims>,
@@ -46,6 +67,13 @@ pub async fn logout(
     Ok(ApiResponse::ok_empty())
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/auth/userinfo",
+    tag = "auth",
+    security(("bearer" = [])),
+    responses((status = 200, description = "当前登录用户信息", body = UserInfoResp))
+)]
 pub async fn userinfo(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -54,6 +82,13 @@ pub async fn userinfo(
     Ok(ApiResponse::ok(info))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/auth/menus",
+    tag = "auth",
+    security(("bearer" = [])),
+    responses((status = 200, description = "当前用户的菜单树", body = Vec<MenuNode>))
+)]
 pub async fn user_menus(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,

@@ -7,13 +7,22 @@ use service::dto::{CurrentUser, PageQuery};
 
 use crate::state::AppState;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct LogQuery {
     pub page: Option<u64>,
     pub page_size: Option<u64>,
     pub username: Option<String>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/logs",
+    tag = "log",
+    params(LogQuery),
+    security(("bearer" = [])),
+    responses((status = 200, description = "操作日志分页列表", body = PageResult<entity::operation_log::Model>))
+)]
 pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,

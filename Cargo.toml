@@ -38,6 +38,10 @@ deadpool-redis = "0.18"
 jsonwebtoken = "9"
 argon2 = "0.5"
 
+# openapi / docs
+utoipa = { version = "5", features = ["axum_extras", "chrono"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
+
 # utils
 validator = { version = "0.19", features = ["derive"] }
 config = "0.15"

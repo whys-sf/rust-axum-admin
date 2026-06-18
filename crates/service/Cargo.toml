@@ -12,6 +12,7 @@ casbin.workspace = true
 deadpool-redis.workspace = true
 validator.workspace = true
 chrono.workspace = true
+utoipa.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true

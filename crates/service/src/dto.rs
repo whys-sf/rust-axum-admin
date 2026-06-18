@@ -53,7 +53,8 @@ where
     d.deserialize_any(V)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct PageQuery {
     #[serde(default = "default_page", deserialize_with = "de_u64")]
     pub page: u64,
@@ -75,7 +76,7 @@ impl PageQuery {
 
 // ------------------------------ auth ------------------------------
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct LoginReq {
     #[validate(length(min = 2, max = 64))]
     pub tenant_code: String,
@@ -85,7 +86,7 @@ pub struct LoginReq {
     pub password: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct LoginResp {
     pub access_token: String,
     pub refresh_token: String,
@@ -93,12 +94,12 @@ pub struct LoginResp {
     pub token_type: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RefreshReq {
     pub refresh_token: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct UserInfoResp {
     pub id: i64,
     pub username: String,
@@ -113,7 +114,7 @@ pub struct UserInfoResp {
 
 // ------------------------------ tenant ------------------------------
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct CreateTenantReq {
     #[validate(length(min = 2, max = 128))]
     pub name: String,
@@ -129,7 +130,7 @@ pub struct CreateTenantReq {
     pub admin_password: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct UpdateTenantReq {
     #[validate(length(min = 2, max = 128))]
     pub name: Option<String>,
@@ -140,14 +141,14 @@ pub struct UpdateTenantReq {
     pub remark: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct StatusReq {
     pub status: i16,
 }
 
 // ------------------------------ user ------------------------------
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct CreateUserReq {
     #[validate(length(min = 3, max = 64))]
     pub username: String,
@@ -164,7 +165,7 @@ pub struct CreateUserReq {
     pub remark: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct UpdateUserReq {
     pub nickname: Option<String>,
     #[validate(email)]
@@ -175,7 +176,8 @@ pub struct UpdateUserReq {
     pub remark: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct UserQuery {
     #[serde(default = "default_page", deserialize_with = "de_u64")]
     pub page: u64,
@@ -192,25 +194,25 @@ impl UserQuery {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AssignRolesReq {
     pub role_ids: Vec<i64>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct ResetPasswordReq {
     #[validate(length(min = 6, max = 64))]
     pub password: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct ChangePasswordReq {
     pub old_password: String,
     #[validate(length(min = 6, max = 64))]
     pub new_password: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct UserDetail {
     #[serde(flatten)]
     pub user: entity::user::Model,
@@ -219,7 +221,7 @@ pub struct UserDetail {
 
 // ------------------------------ role ------------------------------
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct CreateRoleReq {
     #[validate(length(min = 1, max = 64))]
     pub name: String,
@@ -233,7 +235,7 @@ pub struct CreateRoleReq {
     pub menu_ids: Vec<i64>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct UpdateRoleReq {
     #[validate(length(min = 1, max = 64))]
     pub name: Option<String>,
@@ -243,7 +245,8 @@ pub struct UpdateRoleReq {
     pub remark: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct RoleQuery {
     #[serde(default = "default_page", deserialize_with = "de_u64")]
     pub page: u64,
@@ -259,19 +262,19 @@ impl RoleQuery {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AssignMenusReq {
     pub menu_ids: Vec<i64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AssignDeptsReq {
     pub dept_ids: Vec<i64>,
 }
 
 // ------------------------------ menu ------------------------------
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct CreateMenuReq {
     #[serde(default)]
     pub parent_id: i64,
@@ -289,7 +292,7 @@ pub struct CreateMenuReq {
     pub status: Option<i16>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct UpdateMenuReq {
     pub parent_id: Option<i64>,
     #[validate(length(min = 1, max = 64))]
@@ -306,16 +309,17 @@ pub struct UpdateMenuReq {
     pub status: Option<i16>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct MenuNode {
     #[serde(flatten)]
     pub menu: entity::menu::Model,
+    #[schema(no_recursion)]
     pub children: Vec<MenuNode>,
 }
 
 // ------------------------------ dept ------------------------------
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct CreateDeptReq {
     #[serde(default)]
     pub parent_id: i64,
@@ -329,7 +333,7 @@ pub struct CreateDeptReq {
     pub status: Option<i16>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct UpdateDeptReq {
     pub parent_id: Option<i64>,
     #[validate(length(min = 1, max = 64))]
@@ -342,9 +346,10 @@ pub struct UpdateDeptReq {
     pub status: Option<i16>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct DeptNode {
     #[serde(flatten)]
     pub dept: entity::dept::Model,
+    #[schema(no_recursion)]
     pub children: Vec<DeptNode>,
 }

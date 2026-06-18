@@ -7,6 +7,13 @@ use service::dto::{CreateMenuReq, CurrentUser, MenuNode, UpdateMenuReq};
 use crate::extract::ValidatedJson;
 use crate::state::AppState;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/menus",
+    tag = "menu",
+    security(("bearer" = [])),
+    responses((status = 200, description = "菜单树", body = Vec<MenuNode>))
+)]
 pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -15,6 +22,14 @@ pub async fn list(
     Ok(ApiResponse::ok(tree))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/menus/{id}",
+    tag = "menu",
+    params(("id" = i64, Path, description = "菜单 ID")),
+    security(("bearer" = [])),
+    responses((status = 200, description = "菜单详情", body = entity::menu::Model))
+)]
 pub async fn detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -24,6 +39,14 @@ pub async fn detail(
     Ok(ApiResponse::ok(menu))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/menus",
+    tag = "menu",
+    request_body = CreateMenuReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "创建菜单", body = entity::menu::Model))
+)]
 pub async fn create(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -33,6 +56,15 @@ pub async fn create(
     Ok(ApiResponse::ok(menu))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/menus/{id}",
+    tag = "menu",
+    params(("id" = i64, Path, description = "菜单 ID")),
+    request_body = UpdateMenuReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "更新菜单", body = entity::menu::Model))
+)]
 pub async fn update(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
@@ -43,6 +75,14 @@ pub async fn update(
     Ok(ApiResponse::ok(menu))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/menus/{id}",
+    tag = "menu",
+    params(("id" = i64, Path, description = "菜单 ID")),
+    security(("bearer" = [])),
+    responses((status = 200, description = "删除菜单"))
+)]
 pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
