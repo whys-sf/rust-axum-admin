@@ -155,6 +155,21 @@ fn job_routes() -> Router<AppState> {
         .route("/job-logs", get(handlers::job::logs))
 }
 
+fn gen_routes() -> Router<AppState> {
+    Router::new()
+        .route("/gen/db-tables", get(handlers::gen::db_tables))
+        .route("/gen/import", post(handlers::gen::import))
+        .route("/gen/tables", get(handlers::gen::list))
+        .route(
+            "/gen/tables/{id}",
+            get(handlers::gen::detail)
+                .put(handlers::gen::update)
+                .delete(handlers::gen::remove),
+        )
+        .route("/gen/tables/{id}/preview", get(handlers::gen::preview))
+        .route("/gen/tables/{id}/download", get(handlers::gen::download))
+}
+
 /// Admin-facing message routes (permission-gated, RBAC layer).
 fn message_admin_routes() -> Router<AppState> {
     Router::new()
@@ -222,6 +237,7 @@ pub fn api_router(state: AppState) -> Router {
         .merge(crud_routes())
         .merge(message_admin_routes())
         .merge(job_routes())
+        .merge(gen_routes())
         .route("/logs", get(handlers::log::list))
         .route(
             "/settings",

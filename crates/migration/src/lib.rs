@@ -10,6 +10,7 @@ mod m20240101_000007_dict;
 mod m20240101_000008_post_param_notice;
 mod m20240101_000009_message;
 mod m20240101_000010_job;
+mod m20240101_000011_gen;
 
 pub struct Migrator;
 
@@ -27,6 +28,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240101_000008_post_param_notice::Migration),
             Box::new(m20240101_000009_message::Migration),
             Box::new(m20240101_000010_job::Migration),
+            Box::new(m20240101_000011_gen::Migration),
         ]
     }
 }

@@ -2,6 +2,8 @@ pub mod config;
 pub mod dept;
 pub mod dict_item;
 pub mod dict_type;
+pub mod gen_column;
+pub mod gen_table;
 pub mod id;
 pub mod job;
 pub mod job_log;
@@ -24,6 +26,8 @@ pub mod prelude {
     pub use super::dept::Entity as Dept;
     pub use super::dict_item::Entity as DictItem;
     pub use super::dict_type::Entity as DictType;
+    pub use super::gen_column::Entity as GenColumn;
+    pub use super::gen_table::Entity as GenTable;
     pub use super::job::Entity as Job;
     pub use super::job_log::Entity as JobLog;
     pub use super::menu::Entity as Menu;

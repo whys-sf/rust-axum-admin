@@ -43,6 +43,10 @@ async function request<T>(config: AxiosRequestConfig): Promise<T> {
   return resp.data.data as T
 }
 
+/** Raw axios instance (auth + tenant headers attached). Use for non-JSON
+ *  responses such as binary downloads. */
+export const httpClient = instance
+
 export const http = {
   get: <T>(url: string, params?: object) =>
     request<T>({ method: 'get', url, params }),
