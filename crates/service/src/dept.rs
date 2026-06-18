@@ -117,17 +117,14 @@ impl Services {
                 .into_iter()
                 .filter(|d| is_descendant(&d.ancestors, &self_path))
                 .collect();
-            if new_parent != ROOT_DEPT_ID
-                && descendants.iter().any(|d| d.id == new_parent)
-            {
+            if new_parent != ROOT_DEPT_ID && descendants.iter().any(|d| d.id == new_parent) {
                 return Err(AppError::bad_request("上级部门不能是其下级部门"));
             }
 
             let new_ancestors = self.ancestors_for_parent(current, new_parent).await?;
             let new_self_path = format!("{new_ancestors},{}", dept.id);
             for d in descendants {
-                let child_ancestors =
-                    format!("{new_self_path}{}", &d.ancestors[self_path.len()..]);
+                let child_ancestors = format!("{new_self_path}{}", &d.ancestors[self_path.len()..]);
                 let mut active: entity::dept::ActiveModel = d.into();
                 active.ancestors = Set(child_ancestors);
                 active.updated_at = Set(Utc::now());
@@ -173,11 +170,7 @@ impl Services {
 
     /// Ids of `dept_id` plus every department beneath it, scoped to the tenant.
     /// Used by data-scope filtering (dept + sub-dept).
-    pub async fn descendant_dept_ids(
-        &self,
-        tenant_id: i64,
-        dept_id: i64,
-    ) -> AppResult<Vec<i64>> {
+    pub async fn descendant_dept_ids(&self, tenant_id: i64, dept_id: i64) -> AppResult<Vec<i64>> {
         let all = Dept::find()
             .filter(entity::dept::Column::TenantId.eq(tenant_id))
             .all(&self.db)
