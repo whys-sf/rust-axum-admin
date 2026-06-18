@@ -216,3 +216,27 @@ export interface Notice {
   created_at: string
   updated_at: string
 }
+
+export interface InboxItem {
+  message_id: string
+  title: string
+  content: string
+  msg_type: number
+  sender_id?: string | null
+  sender_name?: string | null
+  is_read: boolean
+  read_at?: string | null
+  created_at: string
+}
+
+export interface SentMessage {
+  id: string
+  title: string
+  content: string
+  msg_type: number
+  sender_id?: string | null
+  sender_name?: string | null
+  total: number
+  read: number
+  created_at: string
+}

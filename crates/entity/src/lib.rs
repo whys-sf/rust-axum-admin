@@ -4,6 +4,8 @@ pub mod dict_item;
 pub mod dict_type;
 pub mod id;
 pub mod menu;
+pub mod message;
+pub mod message_receiver;
 pub mod notice;
 pub mod operation_log;
 pub mod param;
@@ -21,6 +23,8 @@ pub mod prelude {
     pub use super::dict_item::Entity as DictItem;
     pub use super::dict_type::Entity as DictType;
     pub use super::menu::Entity as Menu;
+    pub use super::message::Entity as Message;
+    pub use super::message_receiver::Entity as MessageReceiver;
     pub use super::notice::Entity as Notice;
     pub use super::operation_log::Entity as OperationLog;
     pub use super::param::Entity as Param;

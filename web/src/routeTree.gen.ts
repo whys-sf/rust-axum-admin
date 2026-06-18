@@ -20,6 +20,7 @@ import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppPostsRouteImport } from './routes/_app/posts'
 import { Route as AppParamsRouteImport } from './routes/_app/params'
 import { Route as AppNoticesRouteImport } from './routes/_app/notices'
+import { Route as AppMessagesRouteImport } from './routes/_app/messages'
 import { Route as AppMenusRouteImport } from './routes/_app/menus'
 import { Route as AppLogsRouteImport } from './routes/_app/logs'
 import { Route as AppDictRouteImport } from './routes/_app/dict'
@@ -79,6 +80,11 @@ const AppNoticesRoute = AppNoticesRouteImport.update({
   path: '/notices',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMessagesRoute = AppMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMenusRoute = AppMenusRouteImport.update({
   id: '/menus',
   path: '/menus',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/dict': typeof AppDictRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
+  '/messages': typeof AppMessagesRoute
   '/notices': typeof AppNoticesRoute
   '/params': typeof AppParamsRoute
   '/posts': typeof AppPostsRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/dict': typeof AppDictRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
+  '/messages': typeof AppMessagesRoute
   '/notices': typeof AppNoticesRoute
   '/params': typeof AppParamsRoute
   '/posts': typeof AppPostsRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/_app/dict': typeof AppDictRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/menus': typeof AppMenusRoute
+  '/_app/messages': typeof AppMessagesRoute
   '/_app/notices': typeof AppNoticesRoute
   '/_app/params': typeof AppParamsRoute
   '/_app/posts': typeof AppPostsRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/dict'
     | '/logs'
     | '/menus'
+    | '/messages'
     | '/notices'
     | '/params'
     | '/posts'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/dict'
     | '/logs'
     | '/menus'
+    | '/messages'
     | '/notices'
     | '/params'
     | '/posts'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/_app/dict'
     | '/_app/logs'
     | '/_app/menus'
+    | '/_app/messages'
     | '/_app/notices'
     | '/_app/params'
     | '/_app/posts'
@@ -286,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNoticesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/messages': {
+      id: '/_app/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AppMessagesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/menus': {
       id: '/_app/menus'
       path: '/menus'
@@ -322,6 +341,7 @@ interface AppRouteChildren {
   AppDictRoute: typeof AppDictRoute
   AppLogsRoute: typeof AppLogsRoute
   AppMenusRoute: typeof AppMenusRoute
+  AppMessagesRoute: typeof AppMessagesRoute
   AppNoticesRoute: typeof AppNoticesRoute
   AppParamsRoute: typeof AppParamsRoute
   AppPostsRoute: typeof AppPostsRoute
@@ -338,6 +358,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDictRoute: AppDictRoute,
   AppLogsRoute: AppLogsRoute,
   AppMenusRoute: AppMenusRoute,
+  AppMessagesRoute: AppMessagesRoute,
   AppNoticesRoute: AppNoticesRoute,
   AppParamsRoute: AppParamsRoute,
   AppPostsRoute: AppPostsRoute,

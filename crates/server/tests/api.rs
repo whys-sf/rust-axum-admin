@@ -793,3 +793,103 @@ fn post_param_notice_crud() {
         assert_eq!(status, StatusCode::OK);
     });
 }
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn message_send_inbox_and_read() {
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+
+        // baseline unread count for the demo admin
+        let (status, body) = send(
+            "GET",
+            "/api/v1/my/messages/unread-count",
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let baseline = body["data"]["count"].as_u64().expect("count");
+
+        // admin sends a message to itself (admin user id = 1002)
+        let title = format!("测试消息 {}", uniq());
+        let (status, body) = send(
+            "POST",
+            "/api/v1/messages",
+            Some(&token),
+            Some(json!({
+                "title": title,
+                "content": "正文内容",
+                "msg_type": 2,
+                "receiver_ids": ["1002"]
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let message_id = as_id(&body["data"]["id"]).expect("message id");
+
+        // admin list shows recipient aggregates
+        let (status, body) = send("GET", "/api/v1/messages", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(body["data"]["total"].as_u64().unwrap() >= 1);
+
+        // unread count increased by one
+        let (status, body) = send(
+            "GET",
+            "/api/v1/my/messages/unread-count",
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["count"].as_u64().unwrap(), baseline + 1);
+
+        // inbox lists the new message as unread
+        let (status, body) = send("GET", "/api/v1/my/messages", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let found = body["data"]["list"]
+            .as_array()
+            .expect("array")
+            .iter()
+            .find(|m| as_id(&m["message_id"]) == Some(message_id))
+            .expect("message in inbox");
+        assert_eq!(found["is_read"], false);
+
+        // viewing the message marks it read and returns the content
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/my/messages/{message_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["is_read"], true);
+        assert_eq!(body["data"]["content"], "正文内容");
+
+        // unread count is back to baseline
+        let (status, body) = send(
+            "GET",
+            "/api/v1/my/messages/unread-count",
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["count"].as_u64().unwrap(), baseline);
+
+        // mark-all-read is idempotent
+        let (status, _) = send("PUT", "/api/v1/my/messages/read-all", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK);
+
+        // admin deletes the message
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/messages/{message_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+    });
+}
