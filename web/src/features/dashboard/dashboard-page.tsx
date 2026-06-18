@@ -11,6 +11,7 @@ import { userApi } from '@/lib/api/user'
 import { roleApi } from '@/lib/api/role'
 import { deptApi } from '@/lib/api/dept'
 import { useAuthStore } from '@/stores/auth'
+import { PERM, usePermission } from '@/lib/permissions'
 import type { DeptNode } from '@/lib/api/types'
 
 function countDepts(nodes: DeptNode[]): number {
@@ -19,16 +20,25 @@ function countDepts(nodes: DeptNode[]): number {
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user)
+  const canUsers = usePermission(PERM.userList)
+  const canRoles = usePermission(PERM.roleList)
+  const canDepts = usePermission(PERM.deptList)
 
   const users = useQuery({
     queryKey: ['users', { page: 1, page_size: 1 }],
     queryFn: () => userApi.list({ page: 1, page_size: 1 }),
+    enabled: canUsers,
   })
   const roles = useQuery({
     queryKey: ['roles', { page: 1, page_size: 1 }],
     queryFn: () => roleApi.list({ page: 1, page_size: 1 }),
+    enabled: canRoles,
   })
-  const depts = useQuery({ queryKey: ['depts'], queryFn: deptApi.list })
+  const depts = useQuery({
+    queryKey: ['depts'],
+    queryFn: deptApi.list,
+    enabled: canDepts,
+  })
 
   const stats = [
     {

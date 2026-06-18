@@ -40,22 +40,24 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/auth'
+import { PERM, hasPermission } from '@/lib/permissions'
 
 interface NavItem {
   to: string
   label: string
   icon: typeof LayoutDashboard
-  platformOnly?: boolean
+  /** Required permission to see this item; undefined means always visible. */
+  perm?: string
 }
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: '仪表盘', icon: LayoutDashboard },
-  { to: '/users', label: '用户管理', icon: Users },
-  { to: '/roles', label: '角色管理', icon: ShieldCheck },
-  { to: '/menus', label: '菜单管理', icon: MenuIcon },
-  { to: '/depts', label: '部门管理', icon: Network },
-  { to: '/tenants', label: '租户管理', icon: Building2, platformOnly: true },
-  { to: '/logs', label: '操作日志', icon: ScrollText },
+  { to: '/users', label: '用户管理', icon: Users, perm: PERM.userList },
+  { to: '/roles', label: '角色管理', icon: ShieldCheck, perm: PERM.roleList },
+  { to: '/menus', label: '菜单管理', icon: MenuIcon, perm: PERM.menuList },
+  { to: '/depts', label: '部门管理', icon: Network, perm: PERM.deptList },
+  { to: '/tenants', label: '租户管理', icon: Building2, perm: PERM.tenantList },
+  { to: '/logs', label: '操作日志', icon: ScrollText, perm: PERM.logList },
 ]
 
 export function AppLayout() {
@@ -75,8 +77,9 @@ export function AppLayout() {
   }, [info, setUser])
 
   const current = info ?? user
-  const isPlatform = current?.is_platform ?? false
-  const items = NAV_ITEMS.filter((i) => !i.platformOnly || isPlatform)
+  const items = NAV_ITEMS.filter(
+    (i) => !i.perm || hasPermission(current, i.perm),
+  )
   const displayName = current?.nickname || current?.username || '用户'
 
   async function handleLogout() {

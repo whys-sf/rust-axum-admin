@@ -4,6 +4,7 @@ mod m20240101_000001_init;
 mod m20240101_000002_seed;
 mod m20240101_000003_dept;
 mod m20240101_000004_role_dept;
+mod m20240101_000005_backfill_menus;
 
 pub struct Migrator;
 
@@ -15,6 +16,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240101_000002_seed::Migration),
             Box::new(m20240101_000003_dept::Migration),
             Box::new(m20240101_000004_role_dept::Migration),
+            Box::new(m20240101_000005_backfill_menus::Migration),
         ]
     }
 }

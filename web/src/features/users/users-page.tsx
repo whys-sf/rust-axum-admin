@@ -24,6 +24,7 @@ import {
 import { roleApi } from '@/lib/api/role'
 import { deptApi } from '@/lib/api/dept'
 import { flattenTree } from '@/lib/tree'
+import { PERM, usePermission } from '@/lib/permissions'
 import type { User } from '@/lib/api/types'
 import { UserDialog } from '@/features/users/user-dialog'
 import { AssignRolesDialog } from '@/features/users/assign-roles-dialog'
@@ -44,6 +45,8 @@ export function UsersPage() {
   const [keyword, setKeyword] = useState('')
   const [search, setSearch] = useState('')
   const [dialog, setDialog] = useState<DialogState>({ kind: 'none' })
+  const canRoles = usePermission(PERM.roleList)
+  const canDepts = usePermission(PERM.deptList)
 
   const usersQuery = useQuery({
     queryKey: ['users', { page, username: search }],
@@ -53,8 +56,13 @@ export function UsersPage() {
   const rolesQuery = useQuery({
     queryKey: ['roles', 'all'],
     queryFn: () => roleApi.list({ page: 1, page_size: 200 }),
+    enabled: canRoles,
   })
-  const deptsQuery = useQuery({ queryKey: ['depts'], queryFn: deptApi.list })
+  const deptsQuery = useQuery({
+    queryKey: ['depts'],
+    queryFn: deptApi.list,
+    enabled: canDepts,
+  })
 
   const deptOptions = useMemo(
     () => flattenTree(deptsQuery.data ?? []),
