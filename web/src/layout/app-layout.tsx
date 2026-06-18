@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import type { LucideIcon } from 'lucide-react'
 import {
   Building2,
   ChevronsUpDown,
@@ -40,27 +41,57 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/auth'
-import { PERM, hasPermission } from '@/lib/permissions'
+import type { MenuNode } from '@/lib/api/types'
 
-interface NavItem {
+interface NavLink {
   to: string
   label: string
-  icon: typeof LayoutDashboard
-  /** Required permission to see this item; undefined means always visible. */
-  perm?: string
-  /** Only visible to platform super admins (cross-tenant). */
-  platformOnly?: boolean
+  icon: LucideIcon
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: '仪表盘', icon: LayoutDashboard },
-  { to: '/users', label: '用户管理', icon: Users, perm: PERM.userList },
-  { to: '/roles', label: '角色管理', icon: ShieldCheck, perm: PERM.roleList },
-  { to: '/menus', label: '菜单管理', icon: MenuIcon, perm: PERM.menuList },
-  { to: '/depts', label: '部门管理', icon: Network, perm: PERM.deptList },
-  { to: '/tenants', label: '租户管理', icon: Building2, platformOnly: true },
-  { to: '/logs', label: '操作日志', icon: ScrollText, perm: PERM.logList },
-]
+interface NavGroup {
+  label: string
+  links: NavLink[]
+}
+
+const DASHBOARD: NavLink = { to: '/', label: '仪表盘', icon: LayoutDashboard }
+
+/** Maps a backend menu (keyed by its perm) to the SPA route + icon to render.
+ *  Backend menu `path` (e.g. `/system/user`) differs from the file-based route
+ *  (`/users`), so we resolve by the stable permission string. */
+const ROUTE_BY_PERM: Record<string, { to: string; icon: LucideIcon }> = {
+  'system:user:list': { to: '/users', icon: Users },
+  'system:role:list': { to: '/roles', icon: ShieldCheck },
+  'system:menu:list': { to: '/menus', icon: MenuIcon },
+  'system:dept:list': { to: '/depts', icon: Network },
+  'system:log:list': { to: '/logs', icon: ScrollText },
+  'platform:tenant:list': { to: '/tenants', icon: Building2 },
+}
+
+function resolveLink(node: MenuNode): NavLink | null {
+  const route = node.perm ? ROUTE_BY_PERM[node.perm] : undefined
+  if (!route) return null
+  return { to: route.to, label: node.name, icon: route.icon }
+}
+
+/** Build the sidebar nav from the backend menu tree. Directories (type 1)
+ *  become groups; top-level menus (type 2) join the dashboard under 导航. */
+function buildNav(tree: MenuNode[]): NavGroup[] {
+  const topLinks: NavLink[] = []
+  const groups: NavGroup[] = []
+  for (const node of tree) {
+    if (node.type === 1) {
+      const links = node.children
+        .map(resolveLink)
+        .filter((l): l is NavLink => l !== null)
+      if (links.length) groups.push({ label: node.name, links })
+    } else {
+      const link = resolveLink(node)
+      if (link) topLinks.push(link)
+    }
+  }
+  return [{ label: '导航', links: [DASHBOARD, ...topLinks] }, ...groups]
+}
 
 export function AppLayout() {
   const navigate = useNavigate()
@@ -74,15 +105,18 @@ export function AppLayout() {
     queryFn: authApi.userinfo,
   })
 
+  const { data: menuTree } = useQuery({
+    queryKey: ['nav-menus'],
+    queryFn: authApi.menus,
+  })
+
   useEffect(() => {
     if (info) setUser(info)
   }, [info, setUser])
 
   const current = info ?? user
-  const items = NAV_ITEMS.filter((i) => {
-    if (i.platformOnly) return current?.is_platform ?? false
-    return !i.perm || hasPermission(current, i.perm)
-  })
+  const groups = buildNav(menuTree ?? [])
+  const allLinks = groups.flatMap((g) => g.links)
   const displayName = current?.nickname || current?.username || '用户'
 
   async function handleLogout() {
@@ -112,33 +146,35 @@ export function AppLayout() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>导航</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {items.map((item) => {
-                  const active =
-                    item.to === '/'
-                      ? location.pathname === '/'
-                      : location.pathname.startsWith(item.to)
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={active}
-                        tooltip={item.label}
-                      >
-                        <Link to={item.to}>
-                          <item.icon />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {groups.map((group) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.links.map((item) => {
+                    const active =
+                      item.to === '/'
+                        ? location.pathname === '/'
+                        : location.pathname.startsWith(item.to)
+                    return (
+                      <SidebarMenuItem key={item.to}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={active}
+                          tooltip={item.label}
+                        >
+                          <Link to={item.to}>
+                            <item.icon />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
@@ -192,7 +228,7 @@ export function AppLayout() {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <h1 className="text-base font-medium">
-            {items.find((i) =>
+            {allLinks.find((i) =>
               i.to === '/'
                 ? location.pathname === '/'
                 : location.pathname.startsWith(i.to),

@@ -298,6 +298,23 @@ impl Services {
         let mut menus = self.accessible_menus(current).await?;
         // only directories(1) and menus(2) appear in the route tree
         menus.retain(|m| m.r#type == 1 || m.r#type == 2);
+        // platform-only entries must never surface for tenant users, even if a
+        // tenant role happens to be granted them.
+        if !current.is_platform {
+            menus.retain(|m| !is_platform_menu(m));
+        }
         Ok(menu::build_tree(menus, 0))
     }
+}
+
+/// Platform-only menus live under the `/platform` route space (perm prefix
+/// `platform:`); tenant users must never see them in their menu tree.
+fn is_platform_menu(menu: &entity::menu::Model) -> bool {
+    menu.path
+        .as_deref()
+        .is_some_and(|p| p.starts_with("/platform"))
+        || menu
+            .perm
+            .as_deref()
+            .is_some_and(|p| p.starts_with("platform:"))
 }
