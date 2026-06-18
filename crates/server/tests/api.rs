@@ -695,3 +695,101 @@ fn dict_type_and_items_tree_and_flat() {
         assert_eq!(body["data"].as_array().expect("array").len(), 0);
     });
 }
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn post_param_notice_crud() {
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+
+        // ---- post: create, duplicate code conflict, list, delete ----
+        let code = format!("post_{}", uniq());
+        let (status, body) = send(
+            "POST",
+            "/api/v1/posts",
+            Some(&token),
+            Some(json!({ "code": code, "name": "测试岗位" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let post_id = as_id(&body["data"]["id"]).expect("post id");
+
+        let (status, _) = send(
+            "POST",
+            "/api/v1/posts",
+            Some(&token),
+            Some(json!({ "code": code, "name": "dup" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::CONFLICT);
+
+        let (status, body) = send("GET", "/api/v1/posts", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(body["data"]["total"].as_u64().unwrap() >= 1);
+
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/posts/{post_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+
+        // ---- param: built-in (seeded) cannot be deleted, custom can ----
+        let key = format!("test.key.{}", uniq());
+        let (status, body) = send(
+            "POST",
+            "/api/v1/params",
+            Some(&token),
+            Some(json!({ "name": "测试参数", "param_key": key, "param_value": "1" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let param_id = as_id(&body["data"]["id"]).expect("param id");
+        assert_eq!(body["data"]["param_type"], 2);
+
+        // seeded built-in param id=1410 is protected
+        let (status, _) = send("DELETE", "/api/v1/params/1410", Some(&token), None).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/params/{param_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+
+        // ---- notice: create, update, delete ----
+        let (status, body) = send(
+            "POST",
+            "/api/v1/notices",
+            Some(&token),
+            Some(json!({ "title": "测试公告", "notice_type": 2, "content": "hello" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let notice_id = as_id(&body["data"]["id"]).expect("notice id");
+
+        let (status, body) = send(
+            "PUT",
+            &format!("/api/v1/notices/{notice_id}"),
+            Some(&token),
+            Some(json!({ "title": "已更新公告" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["title"], "已更新公告");
+
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/notices/{notice_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+    });
+}

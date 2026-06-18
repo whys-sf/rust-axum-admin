@@ -4,8 +4,10 @@ import { useQuery } from '@tanstack/react-query'
 import type { LucideIcon } from 'lucide-react'
 import {
   BookA,
+  Briefcase,
   Building2,
   ChevronsUpDown,
+  Megaphone,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -13,6 +15,7 @@ import {
   ScrollText,
   Network,
   Settings,
+  SlidersHorizontal,
   ShieldCheck,
   Users,
 } from 'lucide-react'
@@ -69,6 +72,9 @@ const ROUTE_BY_PERM: Record<string, { to: string; icon: LucideIcon }> = {
   'system:menu:list': { to: '/menus', icon: MenuIcon },
   'system:dept:list': { to: '/depts', icon: Network },
   'system:dict:list': { to: '/dict', icon: BookA },
+  'system:post:list': { to: '/posts', icon: Briefcase },
+  'system:param:list': { to: '/params', icon: SlidersHorizontal },
+  'system:notice:list': { to: '/notices', icon: Megaphone },
   'system:log:list': { to: '/logs', icon: ScrollText },
   'system:config:list': { to: '/settings', icon: Settings },
   'platform:tenant:list': { to: '/tenants', icon: Building2 },
