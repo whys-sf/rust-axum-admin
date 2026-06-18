@@ -7,7 +7,10 @@ use crate::state::AppState;
 
 fn user_routes() -> Router<AppState> {
     Router::new()
-        .route("/users", get(handlers::user::list).post(handlers::user::create))
+        .route(
+            "/users",
+            get(handlers::user::list).post(handlers::user::create),
+        )
         .route(
             "/users/{id}",
             get(handlers::user::detail)
@@ -17,12 +20,18 @@ fn user_routes() -> Router<AppState> {
         .route("/users/{id}/status", put(handlers::user::set_status))
         .route("/users/{id}/password", put(handlers::user::reset_password))
         .route("/users/{id}/roles", put(handlers::user::assign_roles))
-        .route("/profile/password", put(handlers::user::change_own_password))
+        .route(
+            "/profile/password",
+            put(handlers::user::change_own_password),
+        )
 }
 
 fn role_routes() -> Router<AppState> {
     Router::new()
-        .route("/roles", get(handlers::role::list).post(handlers::role::create))
+        .route(
+            "/roles",
+            get(handlers::role::list).post(handlers::role::create),
+        )
         .route(
             "/roles/{id}",
             get(handlers::role::detail)
@@ -38,7 +47,10 @@ fn role_routes() -> Router<AppState> {
 
 fn menu_routes() -> Router<AppState> {
     Router::new()
-        .route("/menus", get(handlers::menu::list).post(handlers::menu::create))
+        .route(
+            "/menus",
+            get(handlers::menu::list).post(handlers::menu::create),
+        )
         .route(
             "/menus/{id}",
             get(handlers::menu::detail)
@@ -59,7 +71,10 @@ fn tenant_routes() -> Router<AppState> {
                 .put(handlers::tenant::update)
                 .delete(handlers::tenant::remove),
         )
-        .route("/platform/tenants/{id}/status", put(handlers::tenant::set_status))
+        .route(
+            "/platform/tenants/{id}/status",
+            put(handlers::tenant::set_status),
+        )
 }
 
 pub fn api_router(state: AppState) -> Router {

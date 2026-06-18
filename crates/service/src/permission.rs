@@ -42,7 +42,8 @@ pub async fn remove_role_policies(
 ) -> AppResult<()> {
     let d = dom(tenant_id);
     let mut e = enforcer.write().await;
-    e.remove_filtered_policy(0, vec![role_code.to_string(), d]).await?;
+    e.remove_filtered_policy(0, vec![role_code.to_string(), d])
+        .await?;
     Ok(())
 }
 
@@ -76,7 +77,8 @@ pub async fn remove_user(enforcer: &SharedEnforcer, tenant_id: i64, user_id: i64
     let d = dom(tenant_id);
     let sub = user_id.to_string();
     let mut e = enforcer.write().await;
-    e.remove_filtered_grouping_policy(0, vec![sub, String::new(), d]).await?;
+    e.remove_filtered_grouping_policy(0, vec![sub, String::new(), d])
+        .await?;
     Ok(())
 }
 
@@ -163,11 +165,31 @@ mod tests {
 
     #[tokio::test]
     async fn enforce_rbac_with_domains() {
-        let model = DefaultModel::from_file("../../rbac_model.conf").await.unwrap();
-        let mut e = Enforcer::new(model, MemoryAdapter::default()).await.unwrap();
-        e.add_policy(vec!["admin".into(), "1000".into(), "/api/v1/users".into(), "GET".into()]).await.unwrap();
-        e.add_grouping_policy(vec!["1002".into(), "admin".into(), "1000".into()]).await.unwrap();
-        let allowed = e.enforce(("1002".to_string(), "1000".to_string(), "/api/v1/users".to_string(), "GET".to_string())).unwrap();
+        let model = DefaultModel::from_file("../../rbac_model.conf")
+            .await
+            .unwrap();
+        let mut e = Enforcer::new(model, MemoryAdapter::default())
+            .await
+            .unwrap();
+        e.add_policy(vec![
+            "admin".into(),
+            "1000".into(),
+            "/api/v1/users".into(),
+            "GET".into(),
+        ])
+        .await
+        .unwrap();
+        e.add_grouping_policy(vec!["1002".into(), "admin".into(), "1000".into()])
+            .await
+            .unwrap();
+        let allowed = e
+            .enforce((
+                "1002".to_string(),
+                "1000".to_string(),
+                "/api/v1/users".to_string(),
+                "GET".to_string(),
+            ))
+            .unwrap();
         assert!(allowed, "tenant admin should be allowed");
     }
 }

@@ -33,7 +33,8 @@ async fn main() -> anyhow::Result<()> {
     Migrator::up(&db, None).await?;
 
     let redis = common::redis::create_pool(&settings.redis.url)?;
-    let enforcer = infra::casbin::init_enforcer(&settings.casbin.model_path, &settings.database.url).await?;
+    let enforcer =
+        infra::casbin::init_enforcer(&settings.casbin.model_path, &settings.database.url).await?;
 
     // load all policies from the database into the enforcer
     permission::rebuild_all(&db, &enforcer).await?;
