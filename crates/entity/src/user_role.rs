@@ -6,10 +6,16 @@ use serde::{Deserialize, Serialize};
 )]
 #[sea_orm(table_name = "sys_user_role")]
 pub struct Model {
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub tenant_id: i64,
     #[sea_orm(primary_key, auto_increment = false)]
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub user_id: i64,
     #[sea_orm(primary_key, auto_increment = false)]
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub role_id: i64,
 }
 

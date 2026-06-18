@@ -73,6 +73,14 @@ async fn app() -> &'static Router {
     .await
 }
 
+/// Extract an i64 id from a JSON value. Ids travel as strings on the wire (so
+/// JavaScript clients keep full precision), but the helper also accepts a bare
+/// number for resilience.
+fn as_id(v: &Value) -> Option<i64> {
+    v.as_i64()
+        .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
+}
+
 /// Unique suffix so repeated test runs against a persistent DB don't collide.
 fn uniq() -> String {
     let nanos = SystemTime::now()
@@ -135,7 +143,7 @@ async fn create_dept(token: &str, name: &str) -> i64 {
     )
     .await;
     assert_eq!(status, StatusCode::OK, "create dept: {body}");
-    body["data"]["id"].as_i64().expect("dept id")
+    as_id(&body["data"]["id"]).expect("dept id")
 }
 
 async fn create_role(token: &str, code: &str, data_scope: i16, menu_ids: &[i64]) -> i64 {
@@ -152,7 +160,7 @@ async fn create_role(token: &str, code: &str, data_scope: i16, menu_ids: &[i64])
     )
     .await;
     assert_eq!(status, StatusCode::OK, "create role: {body}");
-    body["data"]["id"].as_i64().expect("role id")
+    as_id(&body["data"]["id"]).expect("role id")
 }
 
 async fn create_user(token: &str, username: &str, password: &str, dept_id: i64, role_ids: &[i64]) {
@@ -281,7 +289,7 @@ fn dept_tree_and_crud() {
         assert_eq!(status, StatusCode::OK, "{body}");
         let roots = body["data"].as_array().expect("dept tree");
         assert!(!roots.is_empty(), "expected seeded departments");
-        let root_id = roots[0]["id"].as_i64().expect("root dept id");
+        let root_id = as_id(&roots[0]["id"]).expect("root dept id");
 
         // create a child under the root; ancestors must chain from the parent
         let name = format!("分部-{}", uniq());
@@ -293,7 +301,7 @@ fn dept_tree_and_crud() {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "create dept: {body}");
-        let child_id = body["data"]["id"].as_i64().expect("child id");
+        let child_id = as_id(&body["data"]["id"]).expect("child id");
         assert_eq!(body["data"]["ancestors"], format!("0,{root_id}"));
 
         // update the child
@@ -375,7 +383,7 @@ fn data_scope_dept_and_custom() {
         assert_eq!(status, StatusCode::OK, "{body}");
         let list = body["data"]["list"].as_array().expect("user list");
         assert!(
-            list.iter().all(|u| u["dept_id"].as_i64() == Some(alpha)),
+            list.iter().all(|u| as_id(&u["dept_id"]) == Some(alpha)),
             "dept scope must only return own-department users: {body}"
         );
         assert!(list.iter().any(|u| u["username"] == u_alpha));
@@ -397,7 +405,7 @@ fn data_scope_dept_and_custom() {
         assert_eq!(status, StatusCode::OK, "{body}");
         let list = body["data"]["list"].as_array().expect("user list");
         assert!(
-            list.iter().all(|u| u["dept_id"].as_i64() == Some(beta)),
+            list.iter().all(|u| as_id(&u["dept_id"]) == Some(beta)),
             "custom scope must only return the configured department: {body}"
         );
         assert!(list.iter().any(|u| u["username"] == u_beta));
@@ -409,7 +417,7 @@ fn data_scope_dept_and_custom() {
 fn collect_dept_ids(nodes: &[Value]) -> Vec<i64> {
     let mut ids = Vec::new();
     for n in nodes {
-        if let Some(id) = n["id"].as_i64() {
+        if let Some(id) = as_id(&n["id"]) {
             ids.push(id);
         }
         if let Some(children) = n["children"].as_array() {
@@ -437,7 +445,7 @@ fn data_scope_dept_tree_and_logs() {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "create child dept: {body}");
-        let alpha_child = body["data"]["id"].as_i64().expect("child dept id");
+        let alpha_child = as_id(&body["data"]["id"]).expect("child dept id");
 
         // dept-and-child scope (4); grant dept list+create (50/51) and log list (30).
         let role = create_role(&admin, &format!("scope_tree_{s}"), 4, &[30, 50, 51]).await;
@@ -458,7 +466,7 @@ fn data_scope_dept_tree_and_logs() {
 
         // u's own id, to verify log ownership.
         let (_, info) = send("GET", "/api/v1/auth/userinfo", Some(&token), None).await;
-        let uid = info["data"]["id"].as_i64().expect("uid");
+        let uid = as_id(&info["data"]["id"]).expect("uid");
 
         // a mutating request (creating a department) writes an operation log
         // attributed to u.
@@ -485,10 +493,10 @@ fn data_scope_dept_tree_and_logs() {
             assert_eq!(status, StatusCode::OK, "{body}");
             let list = body["data"]["list"].as_array().expect("log list");
             assert!(
-                list.iter().all(|l| l["user_id"].as_i64() == Some(uid)),
+                list.iter().all(|l| as_id(&l["user_id"]) == Some(uid)),
                 "restricted log list must only contain reachable users: {body}"
             );
-            if list.iter().any(|l| l["user_id"].as_i64() == Some(uid)) {
+            if list.iter().any(|l| as_id(&l["user_id"]) == Some(uid)) {
                 seen_self = true;
                 break;
             }
@@ -507,9 +515,7 @@ fn data_scope_dept_tree_and_logs() {
         assert_eq!(status, StatusCode::OK, "{body}");
         let admin_list = body["data"]["list"].as_array().expect("log list");
         assert!(
-            admin_list
-                .iter()
-                .any(|l| l["user_id"].as_i64() != Some(uid)),
+            admin_list.iter().any(|l| as_id(&l["user_id"]) != Some(uid)),
             "admin should see logs beyond the restricted user's"
         );
     });

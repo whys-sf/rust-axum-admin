@@ -1,41 +1,17 @@
 import axios from 'axios'
-import JSONbig from 'json-bigint'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { clearToken, getToken } from '@/utils/auth'
 
-// Snowflake BIGINT ids overflow JS Number.MAX_SAFE_INTEGER, so plain JSON.parse
-// silently corrupts them. Parse responses keeping oversized integers as strings
-// (small numbers stay numbers), and serialize requests so that BigInt values are
-// emitted as exact unquoted numbers the backend's i64 fields accept.
-const jsonBig = JSONbig({ storeAsString: true, useNativeBigInt: true })
-
+// Snowflake ids exceed JS Number.MAX_SAFE_INTEGER, so the backend serializes
+// every id as a JSON string. They stay exact through plain JSON.parse, so the
+// frontend just treats ids as opaque strings — no BigInt handling required.
+//
 // All backend endpoints live under /api/v1; the dev server proxies this to the
 // Axum app (see vite.config.js).
 const http = axios.create({
   baseURL: '/api/v1',
   timeout: 15000,
-  transformResponse: [
-    (data) => {
-      if (typeof data !== 'string' || data.length === 0) {
-        return data
-      }
-      try {
-        return jsonBig.parse(data)
-      } catch {
-        return data
-      }
-    },
-  ],
-  transformRequest: [
-    (data, headers) => {
-      if (data && typeof data === 'object' && !(data instanceof FormData)) {
-        headers['Content-Type'] = 'application/json'
-        return jsonBig.stringify(data)
-      }
-      return data
-    },
-  ],
 })
 
 http.interceptors.request.use((config) => {

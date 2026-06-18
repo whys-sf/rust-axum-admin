@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sys_tenant")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub id: i64,
     pub name: String,
     #[sea_orm(unique)]
@@ -16,6 +18,8 @@ pub struct Model {
     pub contact_name: Option<String>,
     pub contact_phone: Option<String>,
     pub domain: Option<String>,
+    #[serde(with = "crate::id::string_opt")]
+    #[schema(value_type = Option<String>)]
     pub package_id: Option<i64>,
     pub user_limit: i32,
     pub status: i16,

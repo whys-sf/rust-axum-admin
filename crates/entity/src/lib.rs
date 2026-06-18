@@ -1,4 +1,5 @@
 pub mod dept;
+pub mod id;
 pub mod menu;
 pub mod operation_log;
 pub mod role;
