@@ -8,3 +8,4 @@ license.workspace = true
 sea-orm.workspace = true
 serde.workspace = true
 chrono.workspace = true
+utoipa.workspace = true

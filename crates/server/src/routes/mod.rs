@@ -1,8 +1,11 @@
 use axum::routing::{get, post, put};
 use axum::Router;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::handlers;
 use crate::middleware as mw;
+use crate::openapi::ApiDoc;
 use crate::state::AppState;
 
 fn user_routes() -> Router<AppState> {
@@ -158,4 +161,5 @@ pub fn api_router(state: AppState) -> Router {
         .route("/health", get(|| async { "ok" }))
         .nest("/api/v1", api)
         .with_state(state)
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
 }
