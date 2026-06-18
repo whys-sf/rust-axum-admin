@@ -3,6 +3,8 @@ pub mod dept;
 pub mod dict_item;
 pub mod dict_type;
 pub mod id;
+pub mod job;
+pub mod job_log;
 pub mod menu;
 pub mod message;
 pub mod message_receiver;
@@ -22,6 +24,8 @@ pub mod prelude {
     pub use super::dept::Entity as Dept;
     pub use super::dict_item::Entity as DictItem;
     pub use super::dict_type::Entity as DictType;
+    pub use super::job::Entity as Job;
+    pub use super::job_log::Entity as JobLog;
     pub use super::menu::Entity as Menu;
     pub use super::message::Entity as Message;
     pub use super::message_receiver::Entity as MessageReceiver;

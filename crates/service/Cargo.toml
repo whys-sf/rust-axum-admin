@@ -18,3 +18,4 @@ serde_json.workspace = true
 tracing.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
+cron.workspace = true

@@ -23,6 +23,7 @@ import { Route as AppNoticesRouteImport } from './routes/_app/notices'
 import { Route as AppMessagesRouteImport } from './routes/_app/messages'
 import { Route as AppMenusRouteImport } from './routes/_app/menus'
 import { Route as AppLogsRouteImport } from './routes/_app/logs'
+import { Route as AppJobsRouteImport } from './routes/_app/jobs'
 import { Route as AppDictRouteImport } from './routes/_app/dict'
 import { Route as AppDeptsRouteImport } from './routes/_app/depts'
 
@@ -95,6 +96,11 @@ const AppLogsRoute = AppLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => AppRoute,
 } as any)
+const AppJobsRoute = AppJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDictRoute = AppDictRouteImport.update({
   id: '/dict',
   path: '/dict',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/depts': typeof AppDeptsRoute
   '/dict': typeof AppDictRoute
+  '/jobs': typeof AppJobsRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
   '/messages': typeof AppMessagesRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/depts': typeof AppDeptsRoute
   '/dict': typeof AppDictRoute
+  '/jobs': typeof AppJobsRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
   '/messages': typeof AppMessagesRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/depts': typeof AppDeptsRoute
   '/_app/dict': typeof AppDictRoute
+  '/_app/jobs': typeof AppJobsRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/menus': typeof AppMenusRoute
   '/_app/messages': typeof AppMessagesRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/depts'
     | '/dict'
+    | '/jobs'
     | '/logs'
     | '/menus'
     | '/messages'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/depts'
     | '/dict'
+    | '/jobs'
     | '/logs'
     | '/menus'
     | '/messages'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/depts'
     | '/_app/dict'
+    | '/_app/jobs'
     | '/_app/logs'
     | '/_app/menus'
     | '/_app/messages'
@@ -319,6 +331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLogsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/jobs': {
+      id: '/_app/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof AppJobsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dict': {
       id: '/_app/dict'
       path: '/dict'
@@ -339,6 +358,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppDeptsRoute: typeof AppDeptsRoute
   AppDictRoute: typeof AppDictRoute
+  AppJobsRoute: typeof AppJobsRoute
   AppLogsRoute: typeof AppLogsRoute
   AppMenusRoute: typeof AppMenusRoute
   AppMessagesRoute: typeof AppMessagesRoute
@@ -356,6 +376,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppDeptsRoute: AppDeptsRoute,
   AppDictRoute: AppDictRoute,
+  AppJobsRoute: AppJobsRoute,
   AppLogsRoute: AppLogsRoute,
   AppMenusRoute: AppMenusRoute,
   AppMessagesRoute: AppMessagesRoute,

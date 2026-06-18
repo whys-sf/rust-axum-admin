@@ -893,3 +893,88 @@ fn message_send_inbox_and_read() {
         assert_eq!(status, StatusCode::OK);
     });
 }
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn job_create_run_and_logs() {
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+
+        // create a paused job with a valid cron + known handler
+        let name = format!("测试任务 {}", uniq());
+        let (status, body) = send(
+            "POST",
+            "/api/v1/jobs",
+            Some(&token),
+            Some(json!({
+                "name": name,
+                "invoke_target": "demo:heartbeat",
+                "cron_expr": "0 0/1 * * * *",
+                "status": 0
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let job_id = as_id(&body["data"]["id"]).expect("job id");
+        assert_eq!(body["data"]["status"], 0);
+
+        // invalid cron expression is rejected
+        let (status, _) = send(
+            "POST",
+            "/api/v1/jobs",
+            Some(&token),
+            Some(json!({
+                "name": "坏任务",
+                "invoke_target": "demo:heartbeat",
+                "cron_expr": "not a cron"
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+
+        // enabling computes a next_run_at
+        let (status, body) = send(
+            "PUT",
+            &format!("/api/v1/jobs/{job_id}/status"),
+            Some(&token),
+            Some(json!({ "status": 1 })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["status"], 1);
+        assert!(body["data"]["next_run_at"].is_string());
+
+        // manual run-once produces a successful log
+        let (status, body) = send(
+            "POST",
+            &format!("/api/v1/jobs/{job_id}/run"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["status"], 1);
+        assert_eq!(as_id(&body["data"]["job_id"]), Some(job_id));
+
+        // the log is listed when filtered by job_id
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/job-logs?job_id={job_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(body["data"]["total"].as_u64().unwrap() >= 1);
+
+        // cleanup
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/jobs/{job_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+    });
+}

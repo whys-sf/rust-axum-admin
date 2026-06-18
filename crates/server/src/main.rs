@@ -17,6 +17,10 @@ async fn main() -> anyhow::Result<()> {
     let addr = settings.server.addr.clone();
 
     let state = init_state(settings).await?;
+
+    // background cron scheduler for sys_job.
+    tokio::spawn(service::job::run_scheduler(state.services.clone()));
+
     let app = build_app(state);
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
