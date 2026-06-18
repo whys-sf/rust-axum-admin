@@ -9,6 +9,8 @@ use crate::{menu, Services, PLATFORM_TENANT_ID};
 
 const MAX_LOGIN_FAILS: i64 = 5;
 const LOGIN_LOCK_WINDOW_SECS: i64 = 900;
+/// Max login attempts (success or failure) per source IP within the window.
+const MAX_LOGIN_PER_IP: i64 = 30;
 
 impl Services {
     /// Resolve a tenant by login code, validating status and expiry.
@@ -19,6 +21,16 @@ impl Services {
             .await?
             .ok_or(AppError::Unauthorized)?;
 
+        self.assert_tenant_active(&tenant)?;
+        Ok(tenant)
+    }
+
+    /// Validate a tenant is enabled and not expired (the platform tenant is
+    /// always considered active).
+    fn assert_tenant_active(&self, tenant: &entity::tenant::Model) -> AppResult<()> {
+        if tenant.id == PLATFORM_TENANT_ID {
+            return Ok(());
+        }
         if tenant.status != 1 {
             return Err(AppError::bad_request("租户已被禁用"));
         }
@@ -27,10 +39,20 @@ impl Services {
                 return Err(AppError::bad_request("租户已过期"));
             }
         }
-        Ok(tenant)
+        Ok(())
     }
 
     pub async fn login(&self, req: LoginReq, ip: Option<String>) -> AppResult<LoginResp> {
+        // throttle by source IP to slow credential stuffing across usernames
+        if let Some(ip) = ip.as_deref().filter(|s| !s.is_empty()) {
+            let attempts = redis::incr_login_attempt_ip(&self.redis, ip, LOGIN_LOCK_WINDOW_SECS)
+                .await
+                .unwrap_or(0);
+            if attempts > MAX_LOGIN_PER_IP {
+                return Err(AppError::bad_request("登录尝试过于频繁，请稍后再试"));
+            }
+        }
+
         let tenant = self.resolve_active_tenant(&req.tenant_code).await?;
 
         let user = User::find()
@@ -105,6 +127,31 @@ impl Services {
         }
 
         let user_id: i64 = claims.sub.parse().map_err(|_| AppError::Unauthorized)?;
+
+        // reject tokens issued before the user's last password change
+        if let Ok(Some(epoch)) = redis::password_epoch(&self.redis, user_id).await {
+            if (claims.iat as i64) < epoch {
+                return Err(AppError::Unauthorized);
+            }
+        }
+
+        // re-validate the account and tenant are still active; a token alone
+        // must not let a disabled user/tenant keep minting fresh credentials.
+        let user = User::find_by_id(user_id)
+            .filter(entity::user::Column::DeletedAt.is_null())
+            .one(&self.db)
+            .await?
+            .ok_or(AppError::Unauthorized)?;
+        if user.status != 1 {
+            return Err(AppError::Unauthorized);
+        }
+        let tenant = Tenant::find_by_id(claims.tenant_id)
+            .one(&self.db)
+            .await?
+            .ok_or(AppError::Unauthorized)?;
+        self.assert_tenant_active(&tenant)
+            .map_err(|_| AppError::Unauthorized)?;
+
         let pair = self
             .jwt
             .issue_pair(

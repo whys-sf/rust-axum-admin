@@ -9,7 +9,11 @@ use service::dto::{CurrentUser, LoginReq, LoginResp, MenuNode, RefreshReq, UserI
 use crate::extract::ValidatedJson;
 use crate::state::AppState;
 
-fn client_ip(headers: &HeaderMap) -> Option<String> {
+fn client_ip(headers: &HeaderMap, trust_forwarded: bool) -> Option<String> {
+    // Only trust client-supplied forwarding headers behind a known proxy.
+    if !trust_forwarded {
+        return None;
+    }
     for h in ["x-forwarded-for", "x-real-ip"] {
         if let Some(v) = headers.get(h).and_then(|v| v.to_str().ok()) {
             if let Some(first) = v.split(',').next() {
@@ -32,7 +36,7 @@ pub async fn login(
     headers: HeaderMap,
     ValidatedJson(req): ValidatedJson<LoginReq>,
 ) -> AppResult<ApiResponse<LoginResp>> {
-    let ip = client_ip(&headers);
+    let ip = client_ip(&headers, state.services.settings.server.trust_forwarded_for);
     let resp = state.services.login(req, ip).await?;
     Ok(ApiResponse::ok(resp))
 }

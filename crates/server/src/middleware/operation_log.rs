@@ -8,7 +8,12 @@ use std::time::Instant;
 
 use crate::state::AppState;
 
-fn client_ip(req: &Request) -> Option<String> {
+fn client_ip(req: &Request, trust_forwarded: bool) -> Option<String> {
+    // X-Forwarded-For / X-Real-Ip are client-controlled; only trust them when
+    // running behind a reverse proxy that sets them (config-gated).
+    if !trust_forwarded {
+        return None;
+    }
     for header in ["x-forwarded-for", "x-real-ip"] {
         if let Some(v) = req.headers().get(header).and_then(|v| v.to_str().ok()) {
             if let Some(first) = v.split(',').next() {
@@ -27,7 +32,7 @@ pub async fn record(State(state): State<AppState>, req: Request, next: Next) -> 
         .get::<axum::extract::OriginalUri>()
         .map(|o| o.0.path().to_string())
         .unwrap_or_else(|| req.uri().path().to_string());
-    let ip = client_ip(&req);
+    let ip = client_ip(&req, state.services.settings.server.trust_forwarded_for);
     let user_agent = req
         .headers()
         .get(axum::http::header::USER_AGENT)

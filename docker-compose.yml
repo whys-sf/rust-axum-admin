@@ -33,10 +33,12 @@ services:
       redis:
         condition: service_healthy
     environment:
-      RUN_MODE: production
+      # development mode: permissive CORS + swagger + a dev JWT secret (see
+      # config/development.toml). For a real deployment set RUN_MODE=production
+      # and provide your own JWT__SECRET.
+      RUN_MODE: development
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/admin
       REDIS_URL: redis://redis:6379
-      JWT__SECRET: change_me_to_a_long_random_secret_string_at_least_32_chars
       SERVER__ADDR: 0.0.0.0:8080
       RUST_LOG: info,sqlx=warn,sea_orm=warn
     ports:
