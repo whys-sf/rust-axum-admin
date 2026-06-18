@@ -1,5 +1,36 @@
+# Rust / Cargo
 /target
+**/target/
 **/*.rs.bk
+*.pdb
+
+# Environment / secrets
 .env
+.env.*
+!.env.example
+config/local.toml
+
+# Logs
 *.log
+logs/
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Test / coverage artifacts
+*.profraw
+/coverage/
+tarpaulin-report.html
+
+# Project-local scratch (plans, reports, reviews)
+REVIEW.md
+TEST_PLAN.md
+test-report.md
