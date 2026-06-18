@@ -1215,3 +1215,57 @@ fn file_upload_list_download_delete() {
         assert_eq!(status, StatusCode::NOT_FOUND);
     });
 }
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn online_users_kick_and_monitor() {
+    rt().block_on(async {
+        let admin = login("demo", "admin", "Admin@123456").await;
+
+        // a disposable victim with its own login session
+        let suffix = uniq();
+        let dept = create_dept(&admin, &format!("kick-dept-{suffix}")).await;
+        let role = create_role(&admin, &format!("kickrole{suffix}"), 5, &[]).await;
+        let victim_name = format!("kickme{suffix}");
+        create_user(&admin, &victim_name, "Admin@123456", dept, &[role]).await;
+        let victim = login("demo", &victim_name, "Admin@123456").await;
+
+        // the victim's session appears in the online list
+        let (status, body) = send("GET", "/api/v1/online", Some(&admin), None).await;
+        assert_eq!(status, StatusCode::OK, "online list: {body}");
+        let sessions = body["data"].as_array().expect("online list");
+        let token = sessions
+            .iter()
+            .find(|s| s["username"] == json!(victim_name))
+            .map(|s| s["token"].as_str().expect("token").to_string())
+            .expect("victim session present");
+
+        // monitoring endpoints respond with sane data
+        let (status, body) = send("GET", "/api/v1/monitor/server", Some(&admin), None).await;
+        assert_eq!(status, StatusCode::OK, "server stat: {body}");
+        assert!(body["data"]["cpu_cores"].as_u64().unwrap_or(0) >= 1);
+        let (status, body) = send("GET", "/api/v1/monitor/cache", Some(&admin), None).await;
+        assert_eq!(status, StatusCode::OK, "cache stat: {body}");
+        assert!(!body["data"]["version"].as_str().unwrap_or("").is_empty());
+
+        // the victim is still authenticated before the kick
+        let (status, _) = send("GET", "/api/v1/auth/userinfo", Some(&victim), None).await;
+        assert_eq!(status, StatusCode::OK);
+
+        // force the victim offline; their access token is rejected afterwards
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/online/{token}"),
+            Some(&admin),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        let (status, _) = send("GET", "/api/v1/auth/userinfo", Some(&victim), None).await;
+        assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+        // the admin's own session is unaffected
+        let (status, _) = send("GET", "/api/v1/auth/userinfo", Some(&admin), None).await;
+        assert_eq!(status, StatusCode::OK);
+    });
+}

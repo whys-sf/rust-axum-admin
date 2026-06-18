@@ -156,6 +156,18 @@ fn job_routes() -> Router<AppState> {
         .route("/job-logs", get(handlers::job::logs))
 }
 
+/// Online-users + service/cache monitoring routes (permission-gated).
+fn monitor_routes() -> Router<AppState> {
+    Router::new()
+        .route("/online", get(handlers::monitor::online_list))
+        .route(
+            "/online/{token}",
+            axum::routing::delete(handlers::monitor::kick),
+        )
+        .route("/monitor/server", get(handlers::monitor::server))
+        .route("/monitor/cache", get(handlers::monitor::cache))
+}
+
 fn gen_routes() -> Router<AppState> {
     Router::new()
         .route("/gen/db-tables", get(handlers::gen::db_tables))
@@ -278,6 +290,7 @@ pub fn api_router(state: AppState) -> Router {
             .merge(message_admin_routes())
             .merge(job_routes())
             .merge(gen_routes())
+            .merge(monitor_routes())
             .route("/logs", get(handlers::log::list))
             .route(
                 "/settings",

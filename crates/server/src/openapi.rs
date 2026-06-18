@@ -47,6 +47,7 @@ impl Modify for SecurityAddon {
         (name = "job", description = "定时任务调度"),
         (name = "gen", description = "代码生成器（按表生成 CRUD 前后端）"),
         (name = "file", description = "文件 / 附件管理（MinIO 对象存储）"),
+        (name = "monitor", description = "在线用户 / 强制下线 + 服务/缓存监控"),
         (name = "tenant", description = "租户管理（仅平台超管）"),
         (name = "log", description = "操作日志"),
         (name = "config", description = "系统设置（站点名 / Logo / 登录背景图等）")
@@ -141,6 +142,10 @@ impl Modify for SecurityAddon {
         crate::handlers::file::remove,
         crate::handlers::file::download,
         crate::handlers::file::public_download,
+        crate::handlers::monitor::online_list,
+        crate::handlers::monitor::kick,
+        crate::handlers::monitor::server,
+        crate::handlers::monitor::cache,
         crate::handlers::tenant::list,
         crate::handlers::tenant::detail,
         crate::handlers::tenant::create,
