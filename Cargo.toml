@@ -21,7 +21,7 @@ migration = { path = "crates/migration" }
 service = { path = "crates/service" }
 
 # web / runtime
-axum = { version = "0.8", features = ["macros"] }
+axum = { version = "0.8", features = ["macros", "multipart"] }
 axum-extra = { version = "0.10", features = ["typed-header"] }
 tokio = { version = "1", features = ["full"] }
 tower = "0.5"
@@ -56,6 +56,8 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }
 cron = "0.17"
 zip = { version = "2", default-features = false, features = ["deflate"] }
+rust-s3 = { version = "0.35", default-features = false, features = ["tokio-rustls-tls"] }
+bytes = "1"
 
 [profile.dev]
 # faster incremental builds

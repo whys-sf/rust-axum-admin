@@ -51,6 +51,7 @@ pub async fn init_state(settings: Arc<Settings>) -> anyhow::Result<AppState> {
     permission::rebuild_all(&db, &enforcer).await?;
 
     let services = Services::new(db, redis, enforcer, settings.clone());
+    services.ensure_storage_bucket().await;
     Ok(AppState { services })
 }
 
@@ -59,7 +60,9 @@ pub async fn init_state(settings: Arc<Settings>) -> anyhow::Result<AppState> {
 pub fn build_app(state: AppState) -> axum::Router {
     let server = &state.services.settings.server;
     let cors = cors_layer(&server.cors_allowed_origins);
-    let body_limit = server.request_body_limit;
+    // Outer ceiling: large enough for multipart uploads. JSON routes are
+    // further restricted to `request_body_limit` inside `api_router`.
+    let upload_limit = server.upload_body_limit.max(server.request_body_limit);
     let timeout = Duration::from_secs(server.request_timeout_secs);
 
     routes::api_router(state.clone())
@@ -69,5 +72,5 @@ pub fn build_app(state: AppState) -> axum::Router {
             axum::http::StatusCode::REQUEST_TIMEOUT,
             timeout,
         ))
-        .layer(RequestBodyLimitLayer::new(body_limit))
+        .layer(RequestBodyLimitLayer::new(upload_limit))
 }

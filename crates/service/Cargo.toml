@@ -19,3 +19,5 @@ tracing.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
 cron.workspace = true
+rust-s3.workspace = true
+bytes.workspace = true

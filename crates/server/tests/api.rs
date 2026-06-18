@@ -16,6 +16,7 @@ use axum::http::{Request, StatusCode};
 use axum::Router;
 use common::config::{
     CasbinConfig, DatabaseConfig, JwtConfig, RedisConfig, ServerConfig, Settings, SnowflakeConfig,
+    StorageConfig,
 };
 use http_body_util::BodyExt;
 use serde_json::{json, Value};
@@ -46,6 +47,7 @@ fn test_settings() -> Settings {
             trust_forwarded_for: true,
             request_body_limit: 1024 * 1024,
             request_timeout_secs: 30,
+            upload_body_limit: 20 * 1024 * 1024,
         },
         database: DatabaseConfig {
             url: std::env::var("DATABASE_URL")
@@ -65,6 +67,17 @@ fn test_settings() -> Settings {
             datacenter_id: 1,
         },
         casbin: CasbinConfig { model_path },
+        storage: StorageConfig {
+            endpoint: std::env::var("STORAGE__ENDPOINT")
+                .unwrap_or_else(|_| "http://localhost:9000".into()),
+            region: "us-east-1".into(),
+            bucket: std::env::var("STORAGE__BUCKET").unwrap_or_else(|_| "admin".into()),
+            access_key: std::env::var("STORAGE__ACCESS_KEY")
+                .unwrap_or_else(|_| "minioadmin".into()),
+            secret_key: std::env::var("STORAGE__SECRET_KEY")
+                .unwrap_or_else(|_| "minioadmin".into()),
+            path_style: true,
+        },
     }
 }
 
@@ -1074,5 +1087,131 @@ fn gen_import_and_preview() {
         )
         .await;
         assert_eq!(status, StatusCode::OK);
+    });
+}
+
+/// POST a single-field (`file`) multipart/form-data request and parse the JSON
+/// envelope.
+async fn upload_multipart(
+    uri: &str,
+    token: &str,
+    filename: &str,
+    content_type: &str,
+    data: &[u8],
+) -> (StatusCode, Value) {
+    let boundary = "----testboundary7MA4YWxkTrZu0gW";
+    let mut body = Vec::new();
+    body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+    body.extend_from_slice(
+        format!("Content-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\n")
+            .as_bytes(),
+    );
+    body.extend_from_slice(format!("Content-Type: {content_type}\r\n\r\n").as_bytes());
+    body.extend_from_slice(data);
+    body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+
+    let req = Request::builder()
+        .method("POST")
+        .uri(uri)
+        .header("Authorization", format!("Bearer {token}"))
+        .header(
+            "Content-Type",
+            format!("multipart/form-data; boundary={boundary}"),
+        )
+        .body(Body::from(body))
+        .unwrap();
+    let resp = app().await.clone().oneshot(req).await.unwrap();
+    let status = resp.status();
+    let bytes = resp.into_body().collect().await.unwrap().to_bytes();
+    let value: Value = if bytes.is_empty() {
+        Value::Null
+    } else {
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null)
+    };
+    (status, value)
+}
+
+/// Fetch raw (non-JSON) bytes, returning the status and body.
+async fn fetch_bytes(uri: &str, token: Option<&str>) -> (StatusCode, Vec<u8>) {
+    let mut builder = Request::builder().method("GET").uri(uri);
+    if let Some(t) = token {
+        builder = builder.header("Authorization", format!("Bearer {t}"));
+    }
+    let req = builder.body(Body::empty()).unwrap();
+    let resp = app().await.clone().oneshot(req).await.unwrap();
+    let status = resp.status();
+    let bytes = resp
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes()
+        .to_vec();
+    (status, bytes)
+}
+
+#[test]
+#[ignore = "requires postgres + redis + minio; run via the integration workflow with `--ignored`"]
+fn file_upload_list_download_delete() {
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+        let payload = format!("integration-test-content-{}", uniq());
+
+        // upload a public file
+        let (status, body) = upload_multipart(
+            "/api/v1/files?is_public=true",
+            &token,
+            "hello.txt",
+            "text/plain",
+            payload.as_bytes(),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "upload: {body}");
+        assert_eq!(body["data"]["original_name"], "hello.txt");
+        assert_eq!(body["data"]["is_public"], true);
+        assert_eq!(body["data"]["size"], payload.len() as i64);
+        let id = as_id(&body["data"]["id"]).expect("file id");
+        let url = body["data"]["url"].as_str().expect("url").to_string();
+        assert_eq!(url, format!("/api/v1/public/files/{id}"));
+
+        // it shows up in the tenant's list
+        let (status, body) = send(
+            "GET",
+            "/api/v1/files?page=1&page_size=200",
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let list = body["data"]["list"].as_array().expect("list");
+        assert!(list.iter().any(|f| as_id(&f["id"]) == Some(id)));
+
+        // public download works without a token and returns the bytes
+        let (status, bytes) = fetch_bytes(&url, None).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(bytes, payload.as_bytes());
+
+        // authenticated download returns the same bytes
+        let (status, bytes) =
+            fetch_bytes(&format!("/api/v1/files/{id}/download"), Some(&token)).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(bytes, payload.as_bytes());
+
+        // an empty file is rejected
+        let (status, _) = upload_multipart(
+            "/api/v1/files",
+            &token,
+            "x.bin",
+            "application/octet-stream",
+            b"",
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+
+        // delete it; subsequent download 404s
+        let (status, _) = send("DELETE", &format!("/api/v1/files/{id}"), Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK);
+        let (status, _) = fetch_bytes(&url, None).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
     });
 }

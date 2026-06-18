@@ -4,6 +4,7 @@ pub mod data_scope;
 pub mod dept;
 pub mod dict;
 pub mod dto;
+pub mod file;
 pub mod gen;
 pub mod job;
 pub mod log;

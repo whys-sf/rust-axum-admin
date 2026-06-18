@@ -21,3 +21,14 @@ datacenter_id = 1
 
 [casbin]
 model_path = "rbac_model.conf"
+
+[storage]
+# S3-compatible object storage (MinIO by default) for file attachments.
+# Override via STORAGE__ENDPOINT / STORAGE__BUCKET / STORAGE__ACCESS_KEY /
+# STORAGE__SECRET_KEY. The bucket is auto-created on startup if missing.
+endpoint = "http://localhost:9000"
+region = "us-east-1"
+bucket = "admin"
+access_key = "minioadmin"
+secret_key = "minioadmin"
+path_style = true

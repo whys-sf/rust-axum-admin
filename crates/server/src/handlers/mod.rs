@@ -2,6 +2,7 @@ pub mod auth;
 pub mod config;
 pub mod dept;
 pub mod dict;
+pub mod file;
 pub mod gen;
 pub mod job;
 pub mod log;

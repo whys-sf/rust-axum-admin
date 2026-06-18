@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { fileApi } from '@/lib/api/files'
 import {
   Card,
   CardContent,
@@ -89,14 +91,14 @@ export function SettingsPage() {
               disabled={!canEdit}
               onChange={(v) => set('login_subtitle', v)}
             />
-            <FormField
+            <ImageUploadField
               label="Logo 图片地址"
               value={value('logo_url')}
               placeholder="https://… (留空使用默认图标)"
               disabled={!canEdit}
               onChange={(v) => set('logo_url', v)}
             />
-            <FormField
+            <ImageUploadField
               label="登录页背景图地址"
               value={value('login_background')}
               placeholder="https://… (留空使用默认背景)"
@@ -185,6 +187,62 @@ function FormField({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
       />
+    </div>
+  )
+}
+
+/** A URL field that also accepts a direct file upload. Uploaded files are
+ *  stored publicly (so the login page can read them without auth) and the
+ *  resulting URL is written back into the field. */
+function ImageUploadField({
+  label,
+  value,
+  placeholder,
+  disabled,
+  onChange,
+}: FormFieldProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const upload = useMutation({
+    mutationFn: (file: File) => fileApi.upload(file, true),
+    onSuccess: (item) => {
+      onChange(`${window.location.origin}${item.url}`)
+      toast.success('上传成功')
+    },
+    onSettled: () => {
+      if (inputRef.current) inputRef.current.value = ''
+    },
+  })
+
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          placeholder={placeholder}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) upload.mutate(file)
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled || upload.isPending}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload className="mr-1 size-4" />
+          {upload.isPending ? '上传中' : '上传'}
+        </Button>
+      </div>
     </div>
   )
 }
