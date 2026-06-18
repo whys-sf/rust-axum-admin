@@ -2,6 +2,7 @@ pub mod auth;
 pub mod config;
 pub mod data_scope;
 pub mod dept;
+pub mod dict;
 pub mod dto;
 pub mod log;
 pub mod menu;

@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import type { LucideIcon } from 'lucide-react'
 import {
+  BookA,
   Building2,
   ChevronsUpDown,
   KeyRound,
@@ -67,6 +68,7 @@ const ROUTE_BY_PERM: Record<string, { to: string; icon: LucideIcon }> = {
   'system:role:list': { to: '/roles', icon: ShieldCheck },
   'system:menu:list': { to: '/menus', icon: MenuIcon },
   'system:dept:list': { to: '/depts', icon: Network },
+  'system:dict:list': { to: '/dict', icon: BookA },
   'system:log:list': { to: '/logs', icon: ScrollText },
   'system:config:list': { to: '/settings', icon: Settings },
   'platform:tenant:list': { to: '/tenants', icon: Building2 },

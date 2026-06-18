@@ -19,6 +19,7 @@ import { Route as AppRolesRouteImport } from './routes/_app/roles'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppMenusRouteImport } from './routes/_app/menus'
 import { Route as AppLogsRouteImport } from './routes/_app/logs'
+import { Route as AppDictRouteImport } from './routes/_app/dict'
 import { Route as AppDeptsRouteImport } from './routes/_app/depts'
 
 const LoginRoute = LoginRouteImport.update({
@@ -70,6 +71,11 @@ const AppLogsRoute = AppLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDictRoute = AppDictRouteImport.update({
+  id: '/dict',
+  path: '/dict',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDeptsRoute = AppDeptsRouteImport.update({
   id: '/depts',
   path: '/depts',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/depts': typeof AppDeptsRoute
+  '/dict': typeof AppDictRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
   '/profile': typeof AppProfileRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/depts': typeof AppDeptsRoute
+  '/dict': typeof AppDictRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
   '/profile': typeof AppProfileRoute
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/depts': typeof AppDeptsRoute
+  '/_app/dict': typeof AppDictRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/menus': typeof AppMenusRoute
   '/_app/profile': typeof AppProfileRoute
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/depts'
+    | '/dict'
     | '/logs'
     | '/menus'
     | '/profile'
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/depts'
+    | '/dict'
     | '/logs'
     | '/menus'
     | '/profile'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/depts'
+    | '/_app/dict'
     | '/_app/logs'
     | '/_app/menus'
     | '/_app/profile'
@@ -231,6 +243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLogsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/dict': {
+      id: '/_app/dict'
+      path: '/dict'
+      fullPath: '/dict'
+      preLoaderRoute: typeof AppDictRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/depts': {
       id: '/_app/depts'
       path: '/depts'
@@ -243,6 +262,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppDeptsRoute: typeof AppDeptsRoute
+  AppDictRoute: typeof AppDictRoute
   AppLogsRoute: typeof AppLogsRoute
   AppMenusRoute: typeof AppMenusRoute
   AppProfileRoute: typeof AppProfileRoute
@@ -255,6 +275,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDeptsRoute: AppDeptsRoute,
+  AppDictRoute: AppDictRoute,
   AppLogsRoute: AppLogsRoute,
   AppMenusRoute: AppMenusRoute,
   AppProfileRoute: AppProfileRoute,

@@ -107,6 +107,38 @@ export interface DeptNode extends Dept {
   children: DeptNode[]
 }
 
+export interface DictType {
+  id: string
+  tenant_id: string
+  code: string
+  name: string
+  is_tree: boolean
+  status: number
+  remark?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DictItem {
+  id: string
+  tenant_id: string
+  dict_code: string
+  parent_id: string
+  label: string
+  value: string
+  sort: number
+  status: number
+  css_class?: string | null
+  list_class?: string | null
+  remark?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DictItemNode extends DictItem {
+  children: DictItemNode[]
+}
+
 export interface Tenant {
   id: string
   name: string

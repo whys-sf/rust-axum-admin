@@ -592,3 +592,106 @@ fn settings_public_and_admin_update() {
         assert_eq!(body["data"]["login_subtitle"], "欢迎");
     });
 }
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn dict_type_and_items_tree_and_flat() {
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+
+        // create a flat dictionary type with a unique code
+        let code = format!("test_dict_{}", uniq());
+        let (status, body) = send(
+            "POST",
+            "/api/v1/dicts/types",
+            Some(&token),
+            Some(json!({ "code": code, "name": "测试字典", "is_tree": true })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let type_id = as_id(&body["data"]["id"]).expect("type id");
+        assert_eq!(body["data"]["is_tree"], true);
+
+        // duplicate code is rejected
+        let (status, _) = send(
+            "POST",
+            "/api/v1/dicts/types",
+            Some(&token),
+            Some(json!({ "code": code, "name": "dup" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::CONFLICT);
+
+        // create a parent + child item (tree)
+        let (status, body) = send(
+            "POST",
+            "/api/v1/dicts/items",
+            Some(&token),
+            Some(json!({ "dict_code": code, "label": "省", "value": "P" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let parent_id = as_id(&body["data"]["id"]).expect("item id");
+
+        let (status, body) = send(
+            "POST",
+            "/api/v1/dicts/items",
+            Some(&token),
+            Some(json!({ "dict_code": code, "parent_id": parent_id.to_string(), "label": "市", "value": "C" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+
+        // tree listing nests the child under the parent
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/dicts/types/{type_id}/items"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"].as_array().expect("array").len(), 1);
+        assert_eq!(body["data"][0]["children"][0]["label"], "市");
+
+        // a parent with children cannot be deleted
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/dicts/items/{parent_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+
+        // code lookup returns the same items
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/dicts/code/{code}/items"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"].as_array().expect("array").len(), 1);
+
+        // deleting the type cascades the items away
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/dicts/types/{type_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/dicts/code/{code}/items"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"].as_array().expect("array").len(), 0);
+    });
+}
