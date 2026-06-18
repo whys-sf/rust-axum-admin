@@ -94,4 +94,40 @@ impl Services {
             self_user,
         })
     }
+
+    /// Department ids the caller may see. `None` means unrestricted (see all).
+    pub async fn scoped_dept_ids(&self, current: &CurrentUser) -> AppResult<Option<Vec<i64>>> {
+        match self.resolve_data_scope(current).await? {
+            DataScope::All => Ok(None),
+            DataScope::Restricted { dept_ids, .. } => Ok(Some(dept_ids)),
+        }
+    }
+
+    /// User ids the caller may see: everyone in a reachable department, plus the
+    /// caller themselves when a self scope applies. `None` means unrestricted.
+    pub async fn scoped_user_ids(&self, current: &CurrentUser) -> AppResult<Option<Vec<i64>>> {
+        match self.resolve_data_scope(current).await? {
+            DataScope::All => Ok(None),
+            DataScope::Restricted {
+                dept_ids,
+                self_user,
+            } => {
+                let mut ids: Vec<i64> = Vec::new();
+                if !dept_ids.is_empty() {
+                    let in_dept = User::find()
+                        .filter(entity::user::Column::TenantId.eq(current.acting_tenant()))
+                        .filter(entity::user::Column::DeptId.is_in(dept_ids))
+                        .all(&self.db)
+                        .await?;
+                    ids.extend(in_dept.into_iter().map(|u| u.id));
+                }
+                if let Some(uid) = self_user {
+                    ids.push(uid);
+                }
+                ids.sort_unstable();
+                ids.dedup();
+                Ok(Some(ids))
+            }
+        }
+    }
 }

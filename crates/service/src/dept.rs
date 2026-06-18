@@ -24,6 +24,23 @@ pub fn build_tree(all: &[entity::dept::Model], parent_id: i64) -> Vec<DeptNode> 
     nodes
 }
 
+/// Build a forest from a (possibly data-scope-filtered) department slice. A node
+/// becomes a root when its parent is absent from `all`, so a restricted caller
+/// sees their reachable departments as top-level subtrees.
+pub fn build_forest(all: &[entity::dept::Model]) -> Vec<DeptNode> {
+    let ids: std::collections::HashSet<i64> = all.iter().map(|d| d.id).collect();
+    let mut roots: Vec<DeptNode> = all
+        .iter()
+        .filter(|d| !ids.contains(&d.parent_id))
+        .map(|d| DeptNode {
+            dept: d.clone(),
+            children: build_tree(all, d.id),
+        })
+        .collect();
+    roots.sort_by_key(|n| n.dept.sort);
+    roots
+}
+
 impl Services {
     async fn all_depts(&self, tenant_id: i64) -> AppResult<Vec<entity::dept::Model>> {
         Ok(Dept::find()
@@ -34,8 +51,13 @@ impl Services {
     }
 
     pub async fn list_depts(&self, current: &CurrentUser) -> AppResult<Vec<DeptNode>> {
-        let depts = self.all_depts(current.acting_tenant()).await?;
-        Ok(build_tree(&depts, ROOT_DEPT_ID))
+        let mut depts = self.all_depts(current.acting_tenant()).await?;
+        // row-level data permission: restrict to reachable departments.
+        if let Some(allowed) = self.scoped_dept_ids(current).await? {
+            let allowed: std::collections::HashSet<i64> = allowed.into_iter().collect();
+            depts.retain(|d| allowed.contains(&d.id));
+        }
+        Ok(build_forest(&depts))
     }
 
     async fn find_dept_scoped(

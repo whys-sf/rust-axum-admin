@@ -405,6 +405,116 @@ fn data_scope_dept_and_custom() {
     });
 }
 
+/// Recursively collect every department id in a serialized dept forest.
+fn collect_dept_ids(nodes: &[Value]) -> Vec<i64> {
+    let mut ids = Vec::new();
+    for n in nodes {
+        if let Some(id) = n["id"].as_i64() {
+            ids.push(id);
+        }
+        if let Some(children) = n["children"].as_array() {
+            ids.extend(collect_dept_ids(children));
+        }
+    }
+    ids
+}
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn data_scope_dept_tree_and_logs() {
+    rt().block_on(async {
+        let admin = login("demo", "admin", "Admin@123456").await;
+        let s = uniq();
+
+        // Alpha (top) with a child; Beta (top, out of scope).
+        let alpha = create_dept(&admin, &format!("Alpha-{s}")).await;
+        let beta = create_dept(&admin, &format!("Beta-{s}")).await;
+        let (status, body) = send(
+            "POST",
+            "/api/v1/depts",
+            Some(&admin),
+            Some(json!({ "parent_id": alpha, "name": format!("AlphaChild-{s}") })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "create child dept: {body}");
+        let alpha_child = body["data"]["id"].as_i64().expect("child dept id");
+
+        // dept-and-child scope (4); grant dept list+create (50/51) and log list (30).
+        let role = create_role(&admin, &format!("scope_tree_{s}"), 4, &[30, 50, 51]).await;
+        let pw = "Scope@123456";
+        let u = format!("ut{s}");
+        create_user(&admin, &u, pw, alpha, &[role]).await;
+        let token = login("demo", &u, pw).await;
+
+        // department tree is scoped to Alpha + its child, never Beta.
+        let (status, body) = send("GET", "/api/v1/depts", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let ids = collect_dept_ids(body["data"].as_array().expect("dept forest"));
+        assert!(
+            ids.contains(&alpha) && ids.contains(&alpha_child),
+            "must see own subtree: {ids:?}"
+        );
+        assert!(!ids.contains(&beta), "Beta is out of scope: {ids:?}");
+
+        // u's own id, to verify log ownership.
+        let (_, info) = send("GET", "/api/v1/auth/userinfo", Some(&token), None).await;
+        let uid = info["data"]["id"].as_i64().expect("uid");
+
+        // a mutating request (creating a department) writes an operation log
+        // attributed to u.
+        let (status, _) = send(
+            "POST",
+            "/api/v1/depts",
+            Some(&token),
+            Some(json!({ "parent_id": alpha, "name": format!("UDept-{s}") })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+
+        // logs are written asynchronously; poll until u's entry lands. Every
+        // visible row must belong to a reachable user (only u here).
+        let mut seen_self = false;
+        for _ in 0..40 {
+            let (status, body) = send(
+                "GET",
+                "/api/v1/logs?page=1&page_size=200",
+                Some(&token),
+                None,
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK, "{body}");
+            let list = body["data"]["list"].as_array().expect("log list");
+            assert!(
+                list.iter().all(|l| l["user_id"].as_i64() == Some(uid)),
+                "restricted log list must only contain reachable users: {body}"
+            );
+            if list.iter().any(|l| l["user_id"].as_i64() == Some(uid)) {
+                seen_self = true;
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+        assert!(seen_self, "u must see its own operation log");
+
+        // control: the tenant admin (data_scope = all) sees other users' logs.
+        let (status, body) = send(
+            "GET",
+            "/api/v1/logs?page=1&page_size=200",
+            Some(&admin),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let admin_list = body["data"]["list"].as_array().expect("log list");
+        assert!(
+            admin_list
+                .iter()
+                .any(|l| l["user_id"].as_i64() != Some(uid)),
+            "admin should see logs beyond the restricted user's"
+        );
+    });
+}
+
 #[test]
 #[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
 fn invalid_login_rejected() {
