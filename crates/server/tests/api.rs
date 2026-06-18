@@ -126,6 +126,51 @@ async fn login(tenant: &str, username: &str, password: &str) -> String {
         .to_string()
 }
 
+async fn create_dept(token: &str, name: &str) -> i64 {
+    let (status, body) = send(
+        "POST",
+        "/api/v1/depts",
+        Some(token),
+        Some(json!({ "parent_id": 0, "name": name })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "create dept: {body}");
+    body["data"]["id"].as_i64().expect("dept id")
+}
+
+async fn create_role(token: &str, code: &str, data_scope: i16, menu_ids: &[i64]) -> i64 {
+    let (status, body) = send(
+        "POST",
+        "/api/v1/roles",
+        Some(token),
+        Some(json!({
+            "name": code,
+            "code": code,
+            "data_scope": data_scope,
+            "menu_ids": menu_ids,
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "create role: {body}");
+    body["data"]["id"].as_i64().expect("role id")
+}
+
+async fn create_user(token: &str, username: &str, password: &str, dept_id: i64, role_ids: &[i64]) {
+    let (status, body) = send(
+        "POST",
+        "/api/v1/users",
+        Some(token),
+        Some(json!({
+            "username": username,
+            "password": password,
+            "dept_id": dept_id,
+            "role_ids": role_ids,
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "create user: {body}");
+}
+
 #[test]
 #[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
 fn health_ok() {
@@ -222,6 +267,141 @@ fn create_tenant_then_login_as_its_admin() {
         assert_eq!(body["data"]["is_platform"], false);
         let roles = body["data"]["roles"].as_array().expect("roles");
         assert!(roles.iter().any(|r| r == "admin"), "expected admin role");
+    });
+}
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn dept_tree_and_crud() {
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+
+        // seeded org tree is visible to the tenant admin
+        let (status, body) = send("GET", "/api/v1/depts", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let roots = body["data"].as_array().expect("dept tree");
+        assert!(!roots.is_empty(), "expected seeded departments");
+        let root_id = roots[0]["id"].as_i64().expect("root dept id");
+
+        // create a child under the root; ancestors must chain from the parent
+        let name = format!("分部-{}", uniq());
+        let (status, body) = send(
+            "POST",
+            "/api/v1/depts",
+            Some(&token),
+            Some(json!({"parent_id": root_id, "name": name, "sort": 9})),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "create dept: {body}");
+        let child_id = body["data"]["id"].as_i64().expect("child id");
+        assert_eq!(body["data"]["ancestors"], format!("0,{root_id}"));
+
+        // update the child
+        let (status, body) = send(
+            "PUT",
+            &format!("/api/v1/depts/{child_id}"),
+            Some(&token),
+            Some(json!({"leader": "张三", "sort": 3})),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["leader"], "张三");
+
+        // a department with children cannot be deleted
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/depts/{root_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+
+        // leaf delete succeeds
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/depts/{child_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+    });
+}
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn data_scope_dept_and_custom() {
+    rt().block_on(async {
+        let admin = login("demo", "admin", "Admin@123456").await;
+        let s = uniq();
+
+        // two top-level departments in the demo tenant
+        let alpha = create_dept(&admin, &format!("Alpha-{s}")).await;
+        let beta = create_dept(&admin, &format!("Beta-{s}")).await;
+
+        // role: own-department scope (data_scope = 3), can list users
+        let role_dept = create_role(&admin, &format!("scope_dept_{s}"), 3, &[2]).await;
+        // role: custom scope (data_scope = 2) restricted to Beta, can list users
+        let role_custom = create_role(&admin, &format!("scope_custom_{s}"), 2, &[2]).await;
+        let (status, _) = send(
+            "PUT",
+            &format!("/api/v1/roles/{role_custom}/depts"),
+            Some(&admin),
+            Some(json!({ "dept_ids": [beta] })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+
+        // users: u_alpha (Alpha, dept scope), u_beta (Beta, target only),
+        // u_custom (Alpha, custom->Beta scope)
+        let pw = "Scope@123456";
+        let u_alpha = format!("ua{s}");
+        let u_beta = format!("ub{s}");
+        let u_custom = format!("uc{s}");
+        create_user(&admin, &u_alpha, pw, alpha, &[role_dept]).await;
+        create_user(&admin, &u_beta, pw, beta, &[]).await;
+        create_user(&admin, &u_custom, pw, alpha, &[role_custom]).await;
+
+        // u_alpha sees only its own department (Alpha)
+        let token = login("demo", &u_alpha, pw).await;
+        let (status, body) = send(
+            "GET",
+            "/api/v1/users?page=1&page_size=200",
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let list = body["data"]["list"].as_array().expect("user list");
+        assert!(
+            list.iter().all(|u| u["dept_id"].as_i64() == Some(alpha)),
+            "dept scope must only return own-department users: {body}"
+        );
+        assert!(list.iter().any(|u| u["username"] == u_alpha));
+        assert!(
+            !list.iter().any(|u| u["username"] == u_beta),
+            "u_beta is in Beta and must be filtered out"
+        );
+
+        // u_custom's role is scoped to Beta, so it sees Beta users (u_beta) and
+        // not its own department (Alpha)
+        let token = login("demo", &u_custom, pw).await;
+        let (status, body) = send(
+            "GET",
+            "/api/v1/users?page=1&page_size=200",
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let list = body["data"]["list"].as_array().expect("user list");
+        assert!(
+            list.iter().all(|u| u["dept_id"].as_i64() == Some(beta)),
+            "custom scope must only return the configured department: {body}"
+        );
+        assert!(list.iter().any(|u| u["username"] == u_beta));
+        assert!(!list.iter().any(|u| u["username"] == u_custom));
     });
 }
 

@@ -264,6 +264,11 @@ pub struct AssignMenusReq {
     pub menu_ids: Vec<i64>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct AssignDeptsReq {
+    pub dept_ids: Vec<i64>,
+}
+
 // ------------------------------ menu ------------------------------
 
 #[derive(Debug, Deserialize, Validate)]
@@ -306,4 +311,40 @@ pub struct MenuNode {
     #[serde(flatten)]
     pub menu: entity::menu::Model,
     pub children: Vec<MenuNode>,
+}
+
+// ------------------------------ dept ------------------------------
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct CreateDeptReq {
+    #[serde(default)]
+    pub parent_id: i64,
+    #[validate(length(min = 1, max = 64))]
+    pub name: String,
+    pub sort: Option<i32>,
+    pub leader: Option<String>,
+    pub phone: Option<String>,
+    #[validate(email)]
+    pub email: Option<String>,
+    pub status: Option<i16>,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateDeptReq {
+    pub parent_id: Option<i64>,
+    #[validate(length(min = 1, max = 64))]
+    pub name: Option<String>,
+    pub sort: Option<i32>,
+    pub leader: Option<String>,
+    pub phone: Option<String>,
+    #[validate(email)]
+    pub email: Option<String>,
+    pub status: Option<i16>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DeptNode {
+    #[serde(flatten)]
+    pub dept: entity::dept::Model,
+    pub children: Vec<DeptNode>,
 }

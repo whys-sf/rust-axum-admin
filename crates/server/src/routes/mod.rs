@@ -42,6 +42,10 @@ fn role_routes() -> Router<AppState> {
             "/roles/{id}/menus",
             get(handlers::role::menu_ids).put(handlers::role::assign_menus),
         )
+        .route(
+            "/roles/{id}/depts",
+            get(handlers::role::dept_ids).put(handlers::role::assign_depts),
+        )
         .route("/roles/{id}/status", put(handlers::role::set_status))
 }
 
@@ -56,6 +60,20 @@ fn menu_routes() -> Router<AppState> {
             get(handlers::menu::detail)
                 .put(handlers::menu::update)
                 .delete(handlers::menu::remove),
+        )
+}
+
+fn dept_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/depts",
+            get(handlers::dept::list).post(handlers::dept::create),
+        )
+        .route(
+            "/depts/{id}",
+            get(handlers::dept::detail)
+                .put(handlers::dept::update)
+                .delete(handlers::dept::remove),
         )
 }
 
@@ -88,6 +106,7 @@ pub fn api_router(state: AppState) -> Router {
         .merge(user_routes())
         .merge(role_routes())
         .merge(menu_routes())
+        .merge(dept_routes())
         .route("/logs", get(handlers::log::list))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),

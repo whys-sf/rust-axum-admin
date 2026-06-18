@@ -1,4 +1,6 @@
 pub mod auth;
+pub mod data_scope;
+pub mod dept;
 pub mod dto;
 pub mod log;
 pub mod menu;
