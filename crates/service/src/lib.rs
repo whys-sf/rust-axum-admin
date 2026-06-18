@@ -6,6 +6,7 @@ pub mod dict;
 pub mod dto;
 pub mod log;
 pub mod menu;
+pub mod message;
 pub mod notice;
 pub mod param;
 pub mod permission;

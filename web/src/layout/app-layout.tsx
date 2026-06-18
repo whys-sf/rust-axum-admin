@@ -11,6 +11,7 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu as MenuIcon,
   ScrollText,
   Network,
@@ -45,6 +46,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/common/theme-toggle'
+import { UnreadBell } from '@/features/messages/unread-bell'
 import { authApi } from '@/lib/api/auth'
 import { settingsApi } from '@/lib/api/settings'
 import { useAuthStore } from '@/stores/auth'
@@ -75,6 +77,7 @@ const ROUTE_BY_PERM: Record<string, { to: string; icon: LucideIcon }> = {
   'system:post:list': { to: '/posts', icon: Briefcase },
   'system:param:list': { to: '/params', icon: SlidersHorizontal },
   'system:notice:list': { to: '/notices', icon: Megaphone },
+  'system:message:list': { to: '/messages', icon: Mail },
   'system:log:list': { to: '/logs', icon: ScrollText },
   'system:config:list': { to: '/settings', icon: Settings },
   'platform:tenant:list': { to: '/tenants', icon: Building2 },
@@ -261,7 +264,8 @@ export function AppLayout() {
                 : location.pathname.startsWith(i.to),
             )?.label ?? '个人中心'}
           </h1>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <UnreadBell />
             <ThemeToggle />
           </div>
         </header>

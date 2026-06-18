@@ -4,6 +4,7 @@ pub mod dept;
 pub mod dict;
 pub mod log;
 pub mod menu;
+pub mod message;
 pub mod notice;
 pub mod param;
 pub mod post;

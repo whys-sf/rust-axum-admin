@@ -138,6 +138,38 @@ fn crud_routes() -> Router<AppState> {
         )
 }
 
+/// Admin-facing message routes (permission-gated, RBAC layer).
+fn message_admin_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/messages",
+            get(handlers::message::list).post(handlers::message::send),
+        )
+        .route(
+            "/messages/{id}",
+            axum::routing::delete(handlers::message::remove),
+        )
+}
+
+/// Personal inbox routes (any authenticated user, no permission gate).
+fn message_inbox_routes() -> Router<AppState> {
+    Router::new()
+        .route("/my/messages", get(handlers::message::inbox))
+        .route(
+            "/my/messages/unread-count",
+            get(handlers::message::unread_count),
+        )
+        .route(
+            "/my/messages/read-all",
+            put(handlers::message::mark_all_read),
+        )
+        .route(
+            "/my/messages/{id}",
+            get(handlers::message::view).delete(handlers::message::delete_inbox),
+        )
+        .route("/my/messages/{id}/read", put(handlers::message::mark_read))
+}
+
 fn tenant_routes() -> Router<AppState> {
     Router::new()
         .route(
@@ -171,6 +203,7 @@ pub fn api_router(state: AppState) -> Router {
         .merge(dept_routes())
         .merge(dict_routes())
         .merge(crud_routes())
+        .merge(message_admin_routes())
         .route("/logs", get(handlers::log::list))
         .route(
             "/settings",
@@ -199,6 +232,7 @@ pub fn api_router(state: AppState) -> Router {
         .route("/auth/logout", post(handlers::auth::logout))
         .route("/auth/userinfo", get(handlers::auth::userinfo))
         .route("/auth/menus", get(handlers::auth::user_menus))
+        .merge(message_inbox_routes())
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             mw::tenant::resolve,

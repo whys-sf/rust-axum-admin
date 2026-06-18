@@ -8,6 +8,7 @@ mod m20240101_000005_backfill_menus;
 mod m20240101_000006_config;
 mod m20240101_000007_dict;
 mod m20240101_000008_post_param_notice;
+mod m20240101_000009_message;
 
 pub struct Migrator;
 
@@ -23,6 +24,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240101_000006_config::Migration),
             Box::new(m20240101_000007_dict::Migration),
             Box::new(m20240101_000008_post_param_notice::Migration),
+            Box::new(m20240101_000009_message::Migration),
         ]
     }
 }
