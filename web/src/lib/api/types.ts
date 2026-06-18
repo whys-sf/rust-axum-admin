@@ -315,3 +315,17 @@ export interface SentMessage {
   read: number
   created_at: string
 }
+
+export interface FileItem {
+  id: string
+  tenant_id: string
+  original_name: string
+  object_key: string
+  content_type: string
+  size: number
+  is_public: boolean
+  created_by: string
+  created_at: string
+  /** Resolved access URL (public proxy or authenticated download endpoint). */
+  url: string
+}

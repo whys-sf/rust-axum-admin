@@ -40,6 +40,10 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/admin
       REDIS_URL: redis://localhost:6379
+      STORAGE__ENDPOINT: http://localhost:9000
+      STORAGE__BUCKET: admin
+      STORAGE__ACCESS_KEY: minioadmin
+      STORAGE__SECRET_KEY: minioadmin
       # sqlx-adapter uses compile-time-checked queries; build against its bundled
       # offline data instead of the (empty) live DB. Runtime still uses DATABASE_URL.
       SQLX_OFFLINE: "true"
@@ -52,6 +56,21 @@ jobs:
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
+
+      # MinIO can't run as a GitHub service container (it needs the `server`
+      # subcommand), so start it manually. The app auto-creates the bucket on boot.
+      - name: Start MinIO
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:latest server /data
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9000/minio/health/live > /dev/null; then
+              echo "MinIO ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "MinIO failed to start"; docker logs minio; exit 1
 
       - name: Run integration tests
         run: cargo test -p server --test api -- --ignored --test-threads=1

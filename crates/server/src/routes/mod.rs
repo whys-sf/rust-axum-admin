@@ -1,5 +1,6 @@
 use axum::routing::{get, post, put};
 use axum::Router;
+use tower_http::limit::RequestBodyLimitLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -170,6 +171,41 @@ fn gen_routes() -> Router<AppState> {
         .route("/gen/tables/{id}/download", get(handlers::gen::download))
 }
 
+/// File attachment routes (permission-gated, RBAC layer). Mounted as a separate
+/// group so the (larger) upload body limit applies instead of the strict JSON
+/// body limit used for the rest of the API.
+fn file_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/files",
+            get(handlers::file::list).post(handlers::file::upload),
+        )
+        .route("/files/{id}", axum::routing::delete(handlers::file::remove))
+        .route("/files/{id}/download", get(handlers::file::download))
+}
+
+/// Apply the RBAC middleware stack (outermost first: auth -> tenant ->
+/// operation_log -> casbin).
+fn rbac_layers(router: Router<AppState>, state: &AppState) -> Router<AppState> {
+    router
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            mw::casbin_auth::guard,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            mw::operation_log::record,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            mw::tenant::resolve,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            mw::auth::guard,
+        ))
+}
+
 /// Admin-facing message routes (permission-gated, RBAC layer).
 fn message_admin_routes() -> Router<AppState> {
     Router::new()
@@ -221,44 +257,34 @@ fn tenant_routes() -> Router<AppState> {
 }
 
 pub fn api_router(state: AppState) -> Router {
+    let body_limit = state.services.settings.server.request_body_limit;
+
     let public = Router::new()
         .route("/auth/login", post(handlers::auth::login))
         .route("/auth/refresh", post(handlers::auth::refresh))
-        .route("/public/settings", get(handlers::config::public_settings));
+        .route("/public/settings", get(handlers::config::public_settings))
+        .route("/public/files/{id}", get(handlers::file::public_download));
 
     // tenant-scoped, RBAC-enforced resource routes.
     // layer order (outermost first): auth -> tenant -> operation_log -> casbin
-    let rbac = Router::new()
-        .merge(user_routes())
-        .merge(role_routes())
-        .merge(menu_routes())
-        .merge(dept_routes())
-        .merge(dict_routes())
-        .merge(crud_routes())
-        .merge(message_admin_routes())
-        .merge(job_routes())
-        .merge(gen_routes())
-        .route("/logs", get(handlers::log::list))
-        .route(
-            "/settings",
-            get(handlers::config::get_settings).put(handlers::config::update_settings),
-        )
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            mw::casbin_auth::guard,
-        ))
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            mw::operation_log::record,
-        ))
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            mw::tenant::resolve,
-        ))
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            mw::auth::guard,
-        ));
+    let rbac = rbac_layers(
+        Router::new()
+            .merge(user_routes())
+            .merge(role_routes())
+            .merge(menu_routes())
+            .merge(dept_routes())
+            .merge(dict_routes())
+            .merge(crud_routes())
+            .merge(message_admin_routes())
+            .merge(job_routes())
+            .merge(gen_routes())
+            .route("/logs", get(handlers::log::list))
+            .route(
+                "/settings",
+                get(handlers::config::get_settings).put(handlers::config::update_settings),
+            ),
+        &state,
+    );
 
     // identity endpoints: authenticated but not permission-gated, since every
     // logged-in user needs them.
@@ -284,11 +310,19 @@ pub fn api_router(state: AppState) -> Router {
             mw::auth::guard,
         ));
 
-    let api = Router::new()
+    // All non-upload routes share a strict request-body limit; multipart file
+    // uploads need a larger ceiling, so the file group is merged separately
+    // (it inherits the larger global limit applied in `build_app`).
+    let standard = Router::new()
         .merge(public)
         .merge(identity)
         .merge(rbac)
-        .merge(platform);
+        .merge(platform)
+        .layer(RequestBodyLimitLayer::new(body_limit));
+
+    let files = rbac_layers(file_routes(), &state);
+
+    let api = standard.merge(files);
 
     let enable_swagger = state.services.settings.server.enable_swagger;
 

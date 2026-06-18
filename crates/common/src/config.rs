@@ -8,6 +8,8 @@ pub struct Settings {
     pub jwt: JwtConfig,
     pub snowflake: SnowflakeConfig,
     pub casbin: CasbinConfig,
+    #[serde(default)]
+    pub storage: StorageConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -31,6 +33,61 @@ pub struct ServerConfig {
     /// Per-request timeout in seconds.
     #[serde(default = "default_request_timeout")]
     pub request_timeout_secs: u64,
+    /// Maximum accepted upload (multipart) body size in bytes. Larger than
+    /// `request_body_limit` since attachments can be sizeable.
+    #[serde(default = "default_upload_limit")]
+    pub upload_body_limit: usize,
+}
+
+fn default_upload_limit() -> usize {
+    20 * 1024 * 1024
+}
+
+/// S3-compatible object storage (MinIO by default) used for file attachments.
+#[derive(Debug, Clone, Deserialize)]
+pub struct StorageConfig {
+    #[serde(default = "default_s3_endpoint")]
+    pub endpoint: String,
+    #[serde(default = "default_s3_region")]
+    pub region: String,
+    #[serde(default = "default_s3_bucket")]
+    pub bucket: String,
+    #[serde(default = "default_s3_key")]
+    pub access_key: String,
+    #[serde(default = "default_s3_secret")]
+    pub secret_key: String,
+    /// Use path-style addressing (`endpoint/bucket/key`). Required for MinIO.
+    #[serde(default = "default_true")]
+    pub path_style: bool,
+}
+
+impl Default for StorageConfig {
+    fn default() -> Self {
+        Self {
+            endpoint: default_s3_endpoint(),
+            region: default_s3_region(),
+            bucket: default_s3_bucket(),
+            access_key: default_s3_key(),
+            secret_key: default_s3_secret(),
+            path_style: true,
+        }
+    }
+}
+
+fn default_s3_endpoint() -> String {
+    "http://localhost:9000".to_string()
+}
+fn default_s3_region() -> String {
+    "us-east-1".to_string()
+}
+fn default_s3_bucket() -> String {
+    "admin".to_string()
+}
+fn default_s3_key() -> String {
+    "minioadmin".to_string()
+}
+fn default_s3_secret() -> String {
+    "minioadmin".to_string()
 }
 
 fn default_cors_origins() -> Vec<String> {
@@ -145,6 +202,7 @@ mod tests {
                 trust_forwarded_for: false,
                 request_body_limit: default_body_limit(),
                 request_timeout_secs: default_request_timeout(),
+                upload_body_limit: default_upload_limit(),
             },
             database: DatabaseConfig {
                 url: "postgres://localhost/x".into(),
@@ -165,6 +223,7 @@ mod tests {
             casbin: CasbinConfig {
                 model_path: "rbac_model.conf".into(),
             },
+            storage: StorageConfig::default(),
         }
     }
 
