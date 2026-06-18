@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod config;
 pub mod dept;
+pub mod dict;
 pub mod log;
 pub mod menu;
 pub mod role;

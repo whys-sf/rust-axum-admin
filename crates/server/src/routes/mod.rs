@@ -80,6 +80,30 @@ fn dept_routes() -> Router<AppState> {
         )
 }
 
+fn dict_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/dicts/types",
+            get(handlers::dict::list_types).post(handlers::dict::create_type),
+        )
+        .route(
+            "/dicts/types/{id}",
+            get(handlers::dict::type_detail)
+                .put(handlers::dict::update_type)
+                .delete(handlers::dict::remove_type),
+        )
+        .route("/dicts/types/{id}/items", get(handlers::dict::list_items))
+        .route(
+            "/dicts/code/{code}/items",
+            get(handlers::dict::list_items_by_code),
+        )
+        .route("/dicts/items", post(handlers::dict::create_item))
+        .route(
+            "/dicts/items/{id}",
+            put(handlers::dict::update_item).delete(handlers::dict::remove_item),
+        )
+}
+
 fn tenant_routes() -> Router<AppState> {
     Router::new()
         .route(
@@ -111,6 +135,7 @@ pub fn api_router(state: AppState) -> Router {
         .merge(role_routes())
         .merge(menu_routes())
         .merge(dept_routes())
+        .merge(dict_routes())
         .route("/logs", get(handlers::log::list))
         .route(
             "/settings",
