@@ -17,6 +17,9 @@ import { Route as AppTenantsRouteImport } from './routes/_app/tenants'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppRolesRouteImport } from './routes/_app/roles'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppPostsRouteImport } from './routes/_app/posts'
+import { Route as AppParamsRouteImport } from './routes/_app/params'
+import { Route as AppNoticesRouteImport } from './routes/_app/notices'
 import { Route as AppMenusRouteImport } from './routes/_app/menus'
 import { Route as AppLogsRouteImport } from './routes/_app/logs'
 import { Route as AppDictRouteImport } from './routes/_app/dict'
@@ -61,6 +64,21 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPostsRoute = AppPostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppParamsRoute = AppParamsRouteImport.update({
+  id: '/params',
+  path: '/params',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNoticesRoute = AppNoticesRouteImport.update({
+  id: '/notices',
+  path: '/notices',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMenusRoute = AppMenusRouteImport.update({
   id: '/menus',
   path: '/menus',
@@ -89,6 +107,9 @@ export interface FileRoutesByFullPath {
   '/dict': typeof AppDictRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
+  '/notices': typeof AppNoticesRoute
+  '/params': typeof AppParamsRoute
+  '/posts': typeof AppPostsRoute
   '/profile': typeof AppProfileRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
@@ -101,6 +122,9 @@ export interface FileRoutesByTo {
   '/dict': typeof AppDictRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
+  '/notices': typeof AppNoticesRoute
+  '/params': typeof AppParamsRoute
+  '/posts': typeof AppPostsRoute
   '/profile': typeof AppProfileRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
@@ -116,6 +140,9 @@ export interface FileRoutesById {
   '/_app/dict': typeof AppDictRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/menus': typeof AppMenusRoute
+  '/_app/notices': typeof AppNoticesRoute
+  '/_app/params': typeof AppParamsRoute
+  '/_app/posts': typeof AppPostsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/roles': typeof AppRolesRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -132,6 +159,9 @@ export interface FileRouteTypes {
     | '/dict'
     | '/logs'
     | '/menus'
+    | '/notices'
+    | '/params'
+    | '/posts'
     | '/profile'
     | '/roles'
     | '/settings'
@@ -144,6 +174,9 @@ export interface FileRouteTypes {
     | '/dict'
     | '/logs'
     | '/menus'
+    | '/notices'
+    | '/params'
+    | '/posts'
     | '/profile'
     | '/roles'
     | '/settings'
@@ -158,6 +191,9 @@ export interface FileRouteTypes {
     | '/_app/dict'
     | '/_app/logs'
     | '/_app/menus'
+    | '/_app/notices'
+    | '/_app/params'
+    | '/_app/posts'
     | '/_app/profile'
     | '/_app/roles'
     | '/_app/settings'
@@ -229,6 +265,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/posts': {
+      id: '/_app/posts'
+      path: '/posts'
+      fullPath: '/posts'
+      preLoaderRoute: typeof AppPostsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/params': {
+      id: '/_app/params'
+      path: '/params'
+      fullPath: '/params'
+      preLoaderRoute: typeof AppParamsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notices': {
+      id: '/_app/notices'
+      path: '/notices'
+      fullPath: '/notices'
+      preLoaderRoute: typeof AppNoticesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/menus': {
       id: '/_app/menus'
       path: '/menus'
@@ -265,6 +322,9 @@ interface AppRouteChildren {
   AppDictRoute: typeof AppDictRoute
   AppLogsRoute: typeof AppLogsRoute
   AppMenusRoute: typeof AppMenusRoute
+  AppNoticesRoute: typeof AppNoticesRoute
+  AppParamsRoute: typeof AppParamsRoute
+  AppPostsRoute: typeof AppPostsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -278,6 +338,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppDictRoute: AppDictRoute,
   AppLogsRoute: AppLogsRoute,
   AppMenusRoute: AppMenusRoute,
+  AppNoticesRoute: AppNoticesRoute,
+  AppParamsRoute: AppParamsRoute,
+  AppPostsRoute: AppPostsRoute,
   AppProfileRoute: AppProfileRoute,
   AppRolesRoute: AppRolesRoute,
   AppSettingsRoute: AppSettingsRoute,

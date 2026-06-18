@@ -180,3 +180,39 @@ export interface OperationLog {
   error_msg?: string | null
   created_at: string
 }
+
+export interface Post {
+  id: string
+  tenant_id: string
+  code: string
+  name: string
+  sort: number
+  status: number
+  remark?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Param {
+  id: string
+  tenant_id: string
+  name: string
+  param_key: string
+  param_value: string
+  param_type: number
+  remark?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Notice {
+  id: string
+  tenant_id: string
+  title: string
+  notice_type: number
+  content: string
+  status: number
+  created_by?: string | null
+  created_at: string
+  updated_at: string
+}

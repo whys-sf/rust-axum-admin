@@ -104,6 +104,40 @@ fn dict_routes() -> Router<AppState> {
         )
 }
 
+fn crud_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/posts",
+            get(handlers::post::list).post(handlers::post::create),
+        )
+        .route(
+            "/posts/{id}",
+            get(handlers::post::detail)
+                .put(handlers::post::update)
+                .delete(handlers::post::remove),
+        )
+        .route(
+            "/params",
+            get(handlers::param::list).post(handlers::param::create),
+        )
+        .route(
+            "/params/{id}",
+            get(handlers::param::detail)
+                .put(handlers::param::update)
+                .delete(handlers::param::remove),
+        )
+        .route(
+            "/notices",
+            get(handlers::notice::list).post(handlers::notice::create),
+        )
+        .route(
+            "/notices/{id}",
+            get(handlers::notice::detail)
+                .put(handlers::notice::update)
+                .delete(handlers::notice::remove),
+        )
+}
+
 fn tenant_routes() -> Router<AppState> {
     Router::new()
         .route(
@@ -136,6 +170,7 @@ pub fn api_router(state: AppState) -> Router {
         .merge(menu_routes())
         .merge(dept_routes())
         .merge(dict_routes())
+        .merge(crud_routes())
         .route("/logs", get(handlers::log::list))
         .route(
             "/settings",
