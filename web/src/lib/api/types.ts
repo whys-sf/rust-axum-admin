@@ -123,6 +123,14 @@ export interface Tenant {
   updated_at: string
 }
 
+export interface AppSettings {
+  site_name: string
+  login_title: string
+  login_subtitle: string
+  login_background: string
+  logo_url: string
+}
+
 export interface OperationLog {
   id: string
   tenant_id?: string | null

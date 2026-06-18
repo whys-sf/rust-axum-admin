@@ -7,6 +7,8 @@ export const PERM = {
   menuList: 'system:menu:list',
   deptList: 'system:dept:list',
   logList: 'system:log:list',
+  configList: 'system:config:list',
+  configEdit: 'system:config:edit',
   tenantList: 'platform:tenant:list',
 } as const
 

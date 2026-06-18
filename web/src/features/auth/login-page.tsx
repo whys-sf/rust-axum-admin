@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Building2, KeyRound, Loader2, User } from 'lucide-react'
 import { toast } from 'sonner'
@@ -14,7 +14,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { ThemeToggle } from '@/components/common/theme-toggle'
 import { authApi } from '@/lib/api/auth'
+import { settingsApi } from '@/lib/api/settings'
 import { useAuthStore } from '@/stores/auth'
 
 const schema = z.object({
@@ -33,6 +35,11 @@ export function LoginPage() {
     password: 'Admin@123456',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const { data: settings } = useQuery({
+    queryKey: ['public-settings'],
+    queryFn: settingsApi.public,
+  })
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -63,12 +70,32 @@ export function LoginPage() {
     mutation.mutate()
   }
 
+  const bg = settings?.login_background
+
   return (
-    <div className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm">
+    <div
+      className="relative flex min-h-svh items-center justify-center bg-muted/40 bg-cover bg-center p-4"
+      style={bg ? { backgroundImage: `url(${bg})` } : undefined}
+    >
+      {bg && <div className="absolute inset-0 bg-black/40" />}
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle />
+      </div>
+      <Card className="relative z-10 w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Rust Axum Admin</CardTitle>
-          <CardDescription>多租户管理后台</CardDescription>
+          {settings?.logo_url && (
+            <img
+              src={settings.logo_url}
+              alt="logo"
+              className="mx-auto mb-2 size-12 rounded-md object-cover"
+            />
+          )}
+          <CardTitle className="text-2xl">
+            {settings?.login_title || 'Rust Axum Admin'}
+          </CardTitle>
+          <CardDescription>
+            {settings?.login_subtitle || '多租户管理后台'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">

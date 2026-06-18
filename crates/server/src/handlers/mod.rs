@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod config;
 pub mod dept;
 pub mod log;
 pub mod menu;

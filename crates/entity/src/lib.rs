@@ -1,3 +1,4 @@
+pub mod config;
 pub mod dept;
 pub mod id;
 pub mod menu;
@@ -10,6 +11,7 @@ pub mod user;
 pub mod user_role;
 
 pub mod prelude {
+    pub use super::config::Entity as Config;
     pub use super::dept::Entity as Dept;
     pub use super::menu::Entity as Menu;
     pub use super::operation_log::Entity as OperationLog;

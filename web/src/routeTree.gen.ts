@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppUsersRouteImport } from './routes/_app/users'
 import { Route as AppTenantsRouteImport } from './routes/_app/tenants'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppRolesRouteImport } from './routes/_app/roles'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppMenusRouteImport } from './routes/_app/menus'
@@ -42,6 +43,11 @@ const AppUsersRoute = AppUsersRouteImport.update({
 const AppTenantsRoute = AppTenantsRouteImport.update({
   id: '/tenants',
   path: '/tenants',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRolesRoute = AppRolesRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/menus': typeof AppMenusRoute
   '/profile': typeof AppProfileRoute
   '/roles': typeof AppRolesRoute
+  '/settings': typeof AppSettingsRoute
   '/tenants': typeof AppTenantsRoute
   '/users': typeof AppUsersRoute
 }
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/menus': typeof AppMenusRoute
   '/profile': typeof AppProfileRoute
   '/roles': typeof AppRolesRoute
+  '/settings': typeof AppSettingsRoute
   '/tenants': typeof AppTenantsRoute
   '/users': typeof AppUsersRoute
   '/': typeof AppIndexRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_app/menus': typeof AppMenusRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/roles': typeof AppRolesRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/tenants': typeof AppTenantsRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/': typeof AppIndexRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/menus'
     | '/profile'
     | '/roles'
+    | '/settings'
     | '/tenants'
     | '/users'
   fileRoutesByTo: FileRoutesByTo
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/menus'
     | '/profile'
     | '/roles'
+    | '/settings'
     | '/tenants'
     | '/users'
     | '/'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_app/menus'
     | '/_app/profile'
     | '/_app/roles'
+    | '/_app/settings'
     | '/_app/tenants'
     | '/_app/users'
     | '/_app/'
@@ -184,6 +196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/roles': {
       id: '/_app/roles'
       path: '/roles'
@@ -228,6 +247,7 @@ interface AppRouteChildren {
   AppMenusRoute: typeof AppMenusRoute
   AppProfileRoute: typeof AppProfileRoute
   AppRolesRoute: typeof AppRolesRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppTenantsRoute: typeof AppTenantsRoute
   AppUsersRoute: typeof AppUsersRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -239,6 +259,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMenusRoute: AppMenusRoute,
   AppProfileRoute: AppProfileRoute,
   AppRolesRoute: AppRolesRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppTenantsRoute: AppTenantsRoute,
   AppUsersRoute: AppUsersRoute,
   AppIndexRoute: AppIndexRoute,

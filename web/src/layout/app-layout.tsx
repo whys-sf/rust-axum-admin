@@ -11,6 +11,7 @@ import {
   Menu as MenuIcon,
   ScrollText,
   Network,
+  Settings,
   ShieldCheck,
   Users,
 } from 'lucide-react'
@@ -39,7 +40,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { ThemeToggle } from '@/components/common/theme-toggle'
 import { authApi } from '@/lib/api/auth'
+import { settingsApi } from '@/lib/api/settings'
 import { useAuthStore } from '@/stores/auth'
 import type { MenuNode } from '@/lib/api/types'
 
@@ -65,6 +68,7 @@ const ROUTE_BY_PERM: Record<string, { to: string; icon: LucideIcon }> = {
   'system:menu:list': { to: '/menus', icon: MenuIcon },
   'system:dept:list': { to: '/depts', icon: Network },
   'system:log:list': { to: '/logs', icon: ScrollText },
+  'system:config:list': { to: '/settings', icon: Settings },
   'platform:tenant:list': { to: '/tenants', icon: Building2 },
 }
 
@@ -110,6 +114,11 @@ export function AppLayout() {
     queryFn: authApi.menus,
   })
 
+  const { data: settings } = useQuery({
+    queryKey: ['public-settings'],
+    queryFn: settingsApi.public,
+  })
+
   useEffect(() => {
     if (info) setUser(info)
   }, [info, setUser])
@@ -134,11 +143,21 @@ export function AppLayout() {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              <ShieldCheck className="size-4" />
+            <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              {settings?.logo_url ? (
+                <img
+                  src={settings.logo_url}
+                  alt="logo"
+                  className="size-full object-cover"
+                />
+              ) : (
+                <ShieldCheck className="size-4" />
+              )}
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate font-semibold">Axum Admin</span>
+              <span className="truncate font-semibold">
+                {settings?.site_name || 'Axum Admin'}
+              </span>
               <span className="truncate text-xs text-muted-foreground">
                 {current?.tenant_name ?? '多租户管理后台'}
               </span>
@@ -234,6 +253,9 @@ export function AppLayout() {
                 : location.pathname.startsWith(i.to),
             )?.label ?? '个人中心'}
           </h1>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </header>
         <main className="flex-1 overflow-auto p-4">
           <Outlet />
