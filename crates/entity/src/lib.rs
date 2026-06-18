@@ -1,3 +1,4 @@
+pub mod dept;
 pub mod menu;
 pub mod operation_log;
 pub mod role;
@@ -7,6 +8,7 @@ pub mod user;
 pub mod user_role;
 
 pub mod prelude {
+    pub use super::dept::Entity as Dept;
     pub use super::menu::Entity as Menu;
     pub use super::operation_log::Entity as OperationLog;
     pub use super::role::Entity as Role;
