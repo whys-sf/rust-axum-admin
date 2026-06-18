@@ -48,6 +48,8 @@ interface NavItem {
   icon: typeof LayoutDashboard
   /** Required permission to see this item; undefined means always visible. */
   perm?: string
+  /** Only visible to platform super admins (cross-tenant). */
+  platformOnly?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -56,7 +58,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/roles', label: '角色管理', icon: ShieldCheck, perm: PERM.roleList },
   { to: '/menus', label: '菜单管理', icon: MenuIcon, perm: PERM.menuList },
   { to: '/depts', label: '部门管理', icon: Network, perm: PERM.deptList },
-  { to: '/tenants', label: '租户管理', icon: Building2, perm: PERM.tenantList },
+  { to: '/tenants', label: '租户管理', icon: Building2, platformOnly: true },
   { to: '/logs', label: '操作日志', icon: ScrollText, perm: PERM.logList },
 ]
 
@@ -77,9 +79,10 @@ export function AppLayout() {
   }, [info, setUser])
 
   const current = info ?? user
-  const items = NAV_ITEMS.filter(
-    (i) => !i.perm || hasPermission(current, i.perm),
-  )
+  const items = NAV_ITEMS.filter((i) => {
+    if (i.platformOnly) return current?.is_platform ?? false
+    return !i.perm || hasPermission(current, i.perm)
+  })
   const displayName = current?.nickname || current?.username || '用户'
 
   async function handleLogout() {
