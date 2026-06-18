@@ -50,7 +50,12 @@ export function DeptDialog({
   })
 
   function submit() {
-    onSubmit(editing?.id, form)
+    onSubmit(editing?.id, {
+      ...form,
+      leader: form.leader?.trim() || null,
+      phone: form.phone?.trim() || null,
+      email: form.email?.trim() || null,
+    })
   }
 
   return (
