@@ -217,6 +217,34 @@ export interface Notice {
   updated_at: string
 }
 
+export interface Job {
+  id: string
+  tenant_id: string
+  name: string
+  job_group: string
+  invoke_target: string
+  cron_expr: string
+  status: number
+  remark?: string | null
+  last_run_at?: string | null
+  next_run_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface JobLog {
+  id: string
+  tenant_id: string
+  job_id: string
+  job_name: string
+  invoke_target: string
+  status: number
+  message: string
+  started_at: string
+  duration_ms: number
+  created_at: string
+}
+
 export interface InboxItem {
   message_id: string
   title: string

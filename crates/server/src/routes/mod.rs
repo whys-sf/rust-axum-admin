@@ -138,6 +138,23 @@ fn crud_routes() -> Router<AppState> {
         )
 }
 
+fn job_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/jobs",
+            get(handlers::job::list).post(handlers::job::create),
+        )
+        .route(
+            "/jobs/{id}",
+            get(handlers::job::detail)
+                .put(handlers::job::update)
+                .delete(handlers::job::remove),
+        )
+        .route("/jobs/{id}/status", put(handlers::job::set_status))
+        .route("/jobs/{id}/run", post(handlers::job::run_once))
+        .route("/job-logs", get(handlers::job::logs))
+}
+
 /// Admin-facing message routes (permission-gated, RBAC layer).
 fn message_admin_routes() -> Router<AppState> {
     Router::new()
@@ -204,6 +221,7 @@ pub fn api_router(state: AppState) -> Router {
         .merge(dict_routes())
         .merge(crud_routes())
         .merge(message_admin_routes())
+        .merge(job_routes())
         .route("/logs", get(handlers::log::list))
         .route(
             "/settings",
