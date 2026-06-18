@@ -41,6 +41,11 @@ fn test_settings() -> Settings {
     Settings {
         server: ServerConfig {
             addr: "127.0.0.1:0".into(),
+            cors_allowed_origins: vec!["*".into()],
+            enable_swagger: true,
+            trust_forwarded_for: true,
+            request_body_limit: 1024 * 1024,
+            request_timeout_secs: 30,
         },
         database: DatabaseConfig {
             url: std::env::var("DATABASE_URL")

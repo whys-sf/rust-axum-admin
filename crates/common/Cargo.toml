@@ -19,3 +19,4 @@ deadpool-redis.workspace = true
 tracing.workspace = true
 sea-orm.workspace = true
 casbin.workspace = true
+uuid.workspace = true

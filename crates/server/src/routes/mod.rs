@@ -157,9 +157,17 @@ pub fn api_router(state: AppState) -> Router {
         .merge(rbac)
         .merge(platform);
 
-    Router::new()
+    let enable_swagger = state.services.settings.server.enable_swagger;
+
+    let mut router = Router::new()
         .route("/health", get(|| async { "ok" }))
         .nest("/api/v1", api)
-        .with_state(state)
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .with_state(state);
+
+    // Only expose the API surface when explicitly enabled (off in production).
+    if enable_swagger {
+        router = router
+            .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
+    }
+    router
 }

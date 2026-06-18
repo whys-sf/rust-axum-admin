@@ -1,1 +1,11 @@
 # development overrides (merged on top of default.toml when RUN_MODE=development)
+
+[jwt]
+# Dev-only secret so `cargo run` works out of the box. Production MUST override
+# JWT__SECRET with a unique value (the default placeholder is rejected at boot).
+secret = "dev_only_jwt_secret_please_change_in_production_0123456789"
+
+[server]
+# permissive in development; lock down in production.toml
+cors_allowed_origins = ["*"]
+enable_swagger = true

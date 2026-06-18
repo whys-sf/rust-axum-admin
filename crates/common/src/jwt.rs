@@ -63,7 +63,7 @@ impl JwtService {
         ttl: i64,
     ) -> (Claims, String) {
         let now = Utc::now().timestamp();
-        let jti = uuid_like();
+        let jti = uuid::Uuid::new_v4().simple().to_string();
         let claims = Claims {
             sub: user_id.to_string(),
             username: username.to_string(),
@@ -126,19 +126,4 @@ impl JwtService {
     pub fn refresh_ttl(&self) -> i64 {
         self.refresh_ttl
     }
-}
-
-/// Generate a reasonably-unique token id without pulling in the uuid crate.
-fn uuid_like() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    let rand = {
-        // cheap entropy from address of a stack value
-        let x = 0u8;
-        (&x as *const u8 as usize) as u128
-    };
-    format!("{nanos:x}{rand:x}")
 }

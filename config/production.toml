@@ -1,1 +1,11 @@
 # production overrides (merged on top of default.toml when RUN_MODE=production)
+
+[server]
+# Lock down CORS to your real frontend origins (no wildcard in production).
+cors_allowed_origins = ["https://admin.example.com"]
+# Hide the API surface in production.
+enable_swagger = false
+# Behind a trusted reverse proxy/load balancer that sets X-Forwarded-For.
+trust_forwarded_for = true
+
+# jwt.secret MUST be provided via the JWT__SECRET environment variable.

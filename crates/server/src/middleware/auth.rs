@@ -44,6 +44,13 @@ pub async fn guard(
     }
 
     let user_id: i64 = claims.sub.parse().map_err(|_| AppError::Unauthorized)?;
+
+    // tokens issued before the user's last password change are invalid
+    if let Ok(Some(epoch)) = redis::password_epoch(&state.services.redis, user_id).await {
+        if (claims.iat as i64) < epoch {
+            return Err(AppError::Unauthorized);
+        }
+    }
     let roles = state
         .services
         .user_role_codes(claims.tenant_id, user_id)
