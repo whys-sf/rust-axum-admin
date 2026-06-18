@@ -12,6 +12,7 @@ mod m20240101_000009_message;
 mod m20240101_000010_job;
 mod m20240101_000011_gen;
 mod m20240101_000012_file;
+mod m20240101_000013_online_monitor;
 
 pub struct Migrator;
 
@@ -31,6 +32,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240101_000010_job::Migration),
             Box::new(m20240101_000011_gen::Migration),
             Box::new(m20240101_000012_file::Migration),
+            Box::new(m20240101_000013_online_monitor::Migration),
         ]
     }
 }

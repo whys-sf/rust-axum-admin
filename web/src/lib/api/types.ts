@@ -329,3 +329,43 @@ export interface FileItem {
   /** Resolved access URL (public proxy or authenticated download endpoint). */
   url: string
 }
+
+export interface OnlineUser {
+  token: string
+  user_id: string
+  username: string
+  tenant_id: string
+  is_platform: boolean
+  ip: string | null
+  login_at: string
+}
+
+export interface ServerStat {
+  cpu_usage: number
+  cpu_cores: number
+  mem_total: number
+  mem_used: number
+  swap_total: number
+  swap_used: number
+  disk_total: number
+  disk_used: number
+  uptime_secs: number
+  os_name: string
+  kernel_version: string
+  host_name: string
+  process_mem: number
+}
+
+export interface CacheStat {
+  version: string
+  mode: string
+  uptime_secs: number
+  connected_clients: number
+  used_memory: number
+  used_memory_human: string
+  max_memory: number
+  total_commands: number
+  keyspace_hits: number
+  keyspace_misses: number
+  db_size: number
+}

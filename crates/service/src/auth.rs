@@ -97,6 +97,17 @@ impl Services {
             .issue_pair(user.id, &user.username, tenant.id, is_platform)
             .map_err(AppError::Other)?;
 
+        // record the online session (keyed by the access-token jti)
+        self.register_session(
+            &pair.access_jti,
+            user.id,
+            &user.username,
+            tenant.id,
+            is_platform,
+            ip.as_deref(),
+        )
+        .await;
+
         // update last-login info (best effort)
         let mut active: entity::user::ActiveModel = user.clone().into();
         active.last_login_at = Set(Some(Utc::now()));
@@ -162,6 +173,17 @@ impl Services {
             )
             .map_err(AppError::Other)?;
 
+        // refresh keeps the session alive under the new access-token jti
+        self.register_session(
+            &pair.access_jti,
+            user_id,
+            &claims.username,
+            claims.tenant_id,
+            claims.is_platform,
+            None,
+        )
+        .await;
+
         // rotate: blacklist the used refresh token for its remaining lifetime
         let remaining = claims.exp as i64 - Utc::now().timestamp();
         let _ = redis::blacklist_token(&self.redis, &claims.jti, remaining).await;
@@ -180,7 +202,32 @@ impl Services {
         redis::blacklist_token(&self.redis, &claims.jti, remaining)
             .await
             .map_err(AppError::Other)?;
+        let _ = redis::remove_session(&self.redis, &claims.jti).await;
         Ok(())
+    }
+
+    /// Persist an online-session record keyed by the access-token jti. Best
+    /// effort: redis hiccups must not fail the login/refresh path.
+    async fn register_session(
+        &self,
+        session_id: &str,
+        user_id: i64,
+        username: &str,
+        tenant_id: i64,
+        is_platform: bool,
+        ip: Option<&str>,
+    ) {
+        let payload = serde_json::json!({
+            "user_id": user_id.to_string(),
+            "username": username,
+            "tenant_id": tenant_id.to_string(),
+            "is_platform": is_platform,
+            "ip": ip,
+            "login_at": Utc::now().to_rfc3339(),
+        })
+        .to_string();
+        let _ =
+            redis::register_session(&self.redis, session_id, &payload, self.jwt.access_ttl()).await;
     }
 
     /// Look up the role codes bound to a user in a tenant.

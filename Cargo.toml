@@ -58,6 +58,7 @@ cron = "0.17"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 rust-s3 = { version = "0.35", default-features = false, features = ["tokio-rustls-tls"] }
 bytes = "1"
+sysinfo = "0.32"
 
 [profile.dev]
 # faster incremental builds
