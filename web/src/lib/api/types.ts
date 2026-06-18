@@ -232,6 +232,53 @@ export interface Job {
   updated_at: string
 }
 
+export interface GenTable {
+  id: string
+  tenant_id: string
+  table_name: string
+  class_name: string
+  module_name: string
+  function_name: string
+  remark?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface GenColumn {
+  id: string
+  tenant_id: string
+  table_id: string
+  column_name: string
+  column_comment: string
+  column_type: string
+  rust_type: string
+  ts_type: string
+  is_pk: boolean
+  is_required: boolean
+  is_insert: boolean
+  is_edit: boolean
+  is_list: boolean
+  is_query: boolean
+  sort: number
+}
+
+export interface GenTableDetail {
+  table: GenTable
+  columns: GenColumn[]
+}
+
+export interface DbTableInfo {
+  table_name: string
+  comment: string
+  imported: boolean
+}
+
+export interface GenFile {
+  path: string
+  language: string
+  content: string
+}
+
 export interface JobLog {
   id: string
   tenant_id: string

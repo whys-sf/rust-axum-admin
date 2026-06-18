@@ -32,6 +32,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 dotenvy.workspace = true
 anyhow.workspace = true
+zip.workspace = true
 
 [dev-dependencies]
 tower = { workspace = true, features = ["util"] }

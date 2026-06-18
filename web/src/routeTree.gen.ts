@@ -24,6 +24,7 @@ import { Route as AppMessagesRouteImport } from './routes/_app/messages'
 import { Route as AppMenusRouteImport } from './routes/_app/menus'
 import { Route as AppLogsRouteImport } from './routes/_app/logs'
 import { Route as AppJobsRouteImport } from './routes/_app/jobs'
+import { Route as AppGenRouteImport } from './routes/_app/gen'
 import { Route as AppDictRouteImport } from './routes/_app/dict'
 import { Route as AppDeptsRouteImport } from './routes/_app/depts'
 
@@ -101,6 +102,11 @@ const AppJobsRoute = AppJobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGenRoute = AppGenRouteImport.update({
+  id: '/gen',
+  path: '/gen',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDictRoute = AppDictRouteImport.update({
   id: '/dict',
   path: '/dict',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/depts': typeof AppDeptsRoute
   '/dict': typeof AppDictRoute
+  '/gen': typeof AppGenRoute
   '/jobs': typeof AppJobsRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/depts': typeof AppDeptsRoute
   '/dict': typeof AppDictRoute
+  '/gen': typeof AppGenRoute
   '/jobs': typeof AppJobsRoute
   '/logs': typeof AppLogsRoute
   '/menus': typeof AppMenusRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/depts': typeof AppDeptsRoute
   '/_app/dict': typeof AppDictRoute
+  '/_app/gen': typeof AppGenRoute
   '/_app/jobs': typeof AppJobsRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/menus': typeof AppMenusRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/depts'
     | '/dict'
+    | '/gen'
     | '/jobs'
     | '/logs'
     | '/menus'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/depts'
     | '/dict'
+    | '/gen'
     | '/jobs'
     | '/logs'
     | '/menus'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/depts'
     | '/_app/dict'
+    | '/_app/gen'
     | '/_app/jobs'
     | '/_app/logs'
     | '/_app/menus'
@@ -338,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJobsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/gen': {
+      id: '/_app/gen'
+      path: '/gen'
+      fullPath: '/gen'
+      preLoaderRoute: typeof AppGenRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dict': {
       id: '/_app/dict'
       path: '/dict'
@@ -358,6 +377,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppDeptsRoute: typeof AppDeptsRoute
   AppDictRoute: typeof AppDictRoute
+  AppGenRoute: typeof AppGenRoute
   AppJobsRoute: typeof AppJobsRoute
   AppLogsRoute: typeof AppLogsRoute
   AppMenusRoute: typeof AppMenusRoute
@@ -376,6 +396,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppDeptsRoute: AppDeptsRoute,
   AppDictRoute: AppDictRoute,
+  AppGenRoute: AppGenRoute,
   AppJobsRoute: AppJobsRoute,
   AppLogsRoute: AppLogsRoute,
   AppMenusRoute: AppMenusRoute,

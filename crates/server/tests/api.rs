@@ -978,3 +978,101 @@ fn job_create_run_and_logs() {
         assert_eq!(status, StatusCode::OK);
     });
 }
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn gen_import_and_preview() {
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+
+        // database tables are introspectable
+        let (status, body) = send("GET", "/api/v1/gen/db-tables", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let tables = body["data"].as_array().expect("tables array");
+        assert!(tables.iter().any(|t| t["table_name"] == "sys_post"));
+
+        // import sys_post
+        let (status, body) = send(
+            "POST",
+            "/api/v1/gen/import",
+            Some(&token),
+            Some(json!({ "table_names": ["sys_post"] })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+
+        // importing a non-existent table is rejected
+        let (status, _) = send(
+            "POST",
+            "/api/v1/gen/import",
+            Some(&token),
+            Some(json!({ "table_names": ["no_such_table"] })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+
+        // the imported config appears in the list
+        let (status, body) = send("GET", "/api/v1/gen/tables", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let table_id = body["data"]["list"]
+            .as_array()
+            .expect("array")
+            .iter()
+            .find(|t| t["table_name"] == "sys_post")
+            .and_then(|t| as_id(&t["id"]))
+            .expect("imported table id");
+
+        // detail returns columns with mapped types
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/gen/tables/{table_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["table"]["class_name"], "Post");
+        let columns = body["data"]["columns"].as_array().expect("columns");
+        assert!(columns.iter().any(|c| c["column_name"] == "code"));
+
+        // update the business name
+        let (status, body) = send(
+            "PUT",
+            &format!("/api/v1/gen/tables/{table_id}"),
+            Some(&token),
+            Some(json!({ "function_name": "岗位" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["table"]["function_name"], "岗位");
+
+        // preview returns generated files for both backend and frontend
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/gen/tables/{table_id}/preview"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let files = body["data"].as_array().expect("files array");
+        assert!(files.len() >= 5);
+        assert!(files
+            .iter()
+            .any(|f| f["path"].as_str().unwrap().ends_with("entity/src/post.rs")));
+        assert!(files.iter().any(|f| f["path"]
+            .as_str()
+            .unwrap()
+            .contains("web/src/features/post")));
+
+        // cleanup
+        let (status, _) = send(
+            "DELETE",
+            &format!("/api/v1/gen/tables/{table_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+    });
+}
