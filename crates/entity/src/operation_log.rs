@@ -9,8 +9,14 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sys_operation_log")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub id: i64,
+    #[serde(with = "crate::id::string_opt")]
+    #[schema(value_type = Option<String>)]
     pub tenant_id: Option<i64>,
+    #[serde(with = "crate::id::string_opt")]
+    #[schema(value_type = Option<String>)]
     pub user_id: Option<i64>,
     pub username: Option<String>,
     pub module: Option<String>,

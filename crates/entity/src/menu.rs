@@ -9,8 +9,14 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sys_menu")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub id: i64,
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub tenant_id: i64,
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub parent_id: i64,
     pub name: String,
     pub r#type: i16,

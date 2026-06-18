@@ -9,8 +9,14 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sys_dept")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub id: i64,
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub tenant_id: i64,
+    #[serde(with = "crate::id::string")]
+    #[schema(value_type = String)]
     pub parent_id: i64,
     /// Comma-separated ancestor ids from the root sentinel `0` down to the
     /// parent, e.g. `0,100,101`. Enables cheap subtree queries.

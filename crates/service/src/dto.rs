@@ -101,10 +101,14 @@ pub struct RefreshReq {
 
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct UserInfoResp {
+    #[serde(with = "entity::id::string")]
+    #[schema(value_type = String)]
     pub id: i64,
     pub username: String,
     pub nickname: Option<String>,
     pub avatar: Option<String>,
+    #[serde(with = "entity::id::string")]
+    #[schema(value_type = String)]
     pub tenant_id: i64,
     pub tenant_name: String,
     pub is_platform: bool,
@@ -158,8 +162,11 @@ pub struct CreateUserReq {
     #[validate(email)]
     pub email: Option<String>,
     pub phone: Option<String>,
+    #[serde(with = "entity::id::string_opt", default)]
+    #[schema(value_type = Option<String>)]
     pub dept_id: Option<i64>,
-    #[serde(default)]
+    #[serde(default, with = "entity::id::string_vec")]
+    #[schema(value_type = Vec<String>)]
     pub role_ids: Vec<i64>,
     pub status: Option<i16>,
     pub remark: Option<String>,
@@ -171,6 +178,8 @@ pub struct UpdateUserReq {
     #[validate(email)]
     pub email: Option<String>,
     pub phone: Option<String>,
+    #[serde(with = "entity::id::string_opt", default)]
+    #[schema(value_type = Option<String>)]
     pub dept_id: Option<i64>,
     pub status: Option<i16>,
     pub remark: Option<String>,
@@ -196,6 +205,8 @@ impl UserQuery {
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AssignRolesReq {
+    #[serde(with = "entity::id::string_vec")]
+    #[schema(value_type = Vec<String>)]
     pub role_ids: Vec<i64>,
 }
 
@@ -216,6 +227,8 @@ pub struct ChangePasswordReq {
 pub struct UserDetail {
     #[serde(flatten)]
     pub user: entity::user::Model,
+    #[serde(with = "entity::id::string_vec")]
+    #[schema(value_type = Vec<String>)]
     pub role_ids: Vec<i64>,
 }
 
@@ -231,7 +244,8 @@ pub struct CreateRoleReq {
     pub status: Option<i16>,
     pub data_scope: Option<i16>,
     pub remark: Option<String>,
-    #[serde(default)]
+    #[serde(default, with = "entity::id::string_vec")]
+    #[schema(value_type = Vec<String>)]
     pub menu_ids: Vec<i64>,
 }
 
@@ -264,11 +278,15 @@ impl RoleQuery {
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AssignMenusReq {
+    #[serde(with = "entity::id::string_vec")]
+    #[schema(value_type = Vec<String>)]
     pub menu_ids: Vec<i64>,
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AssignDeptsReq {
+    #[serde(with = "entity::id::string_vec")]
+    #[schema(value_type = Vec<String>)]
     pub dept_ids: Vec<i64>,
 }
 
@@ -276,7 +294,8 @@ pub struct AssignDeptsReq {
 
 #[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct CreateMenuReq {
-    #[serde(default)]
+    #[serde(default, with = "entity::id::string")]
+    #[schema(value_type = String)]
     pub parent_id: i64,
     #[validate(length(min = 1, max = 64))]
     pub name: String,
@@ -294,6 +313,8 @@ pub struct CreateMenuReq {
 
 #[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct UpdateMenuReq {
+    #[serde(with = "entity::id::string_opt", default)]
+    #[schema(value_type = Option<String>)]
     pub parent_id: Option<i64>,
     #[validate(length(min = 1, max = 64))]
     pub name: Option<String>,
@@ -321,7 +342,8 @@ pub struct MenuNode {
 
 #[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct CreateDeptReq {
-    #[serde(default)]
+    #[serde(default, with = "entity::id::string")]
+    #[schema(value_type = String)]
     pub parent_id: i64,
     #[validate(length(min = 1, max = 64))]
     pub name: String,
@@ -335,6 +357,8 @@ pub struct CreateDeptReq {
 
 #[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct UpdateDeptReq {
+    #[serde(with = "entity::id::string_opt", default)]
+    #[schema(value_type = Option<String>)]
     pub parent_id: Option<i64>,
     #[validate(length(min = 1, max = 64))]
     pub name: Option<String>,

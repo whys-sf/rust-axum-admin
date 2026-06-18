@@ -4,7 +4,7 @@
       <h3 class="title">部门管理</h3>
       <div class="actions">
         <el-button :icon="Refresh" @click="load">刷新</el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreate(0)">新增根部门</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreate('0')">新增根部门</el-button>
       </div>
     </div>
 
@@ -92,7 +92,7 @@ const formRef = ref()
 const dialog = reactive({ visible: false, title: '', saving: false, editingId: null })
 
 const emptyForm = () => ({
-  parent_id: 0,
+  parent_id: '0',
   name: '',
   sort: 0,
   leader: '',
@@ -107,9 +107,10 @@ const rules = {
   email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
 }
 
-// A synthetic root so the tree-select can express "no parent" (id 0).
+// A synthetic root so the tree-select can express "no parent" (id "0"). Ids are
+// strings end-to-end (snowflake exceeds JS number precision).
 const parentOptions = computed(() => [
-  { id: 0, name: '顶级部门', children: tree.value },
+  { id: '0', name: '顶级部门', children: tree.value },
 ])
 
 function formatTime(s) {
@@ -156,9 +157,7 @@ function openEdit(row) {
 
 function payload() {
   return {
-    // Convert to BigInt so the snowflake id is serialized as an exact number
-    // (see http.js); a plain string would be rejected by the backend's i64.
-    parent_id: BigInt(form.parent_id ?? 0),
+    parent_id: form.parent_id ?? '0',
     name: form.name,
     sort: form.sort,
     leader: form.leader || null,
