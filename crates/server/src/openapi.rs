@@ -40,7 +40,8 @@ impl Modify for SecurityAddon {
         (name = "menu", description = "菜单 / 权限管理"),
         (name = "dept", description = "部门 / 组织架构"),
         (name = "tenant", description = "租户管理（仅平台超管）"),
-        (name = "log", description = "操作日志")
+        (name = "log", description = "操作日志"),
+        (name = "config", description = "系统设置（站点名 / Logo / 登录背景图等）")
     ),
     paths(
         crate::handlers::auth::login,
@@ -84,6 +85,9 @@ impl Modify for SecurityAddon {
         crate::handlers::tenant::set_status,
         crate::handlers::tenant::remove,
         crate::handlers::log::list,
+        crate::handlers::config::public_settings,
+        crate::handlers::config::get_settings,
+        crate::handlers::config::update_settings,
     )
 )]
 pub struct ApiDoc;

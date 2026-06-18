@@ -562,3 +562,33 @@ fn invalid_login_rejected() {
         assert_eq!(status, StatusCode::UNAUTHORIZED);
     });
 }
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn settings_public_and_admin_update() {
+    rt().block_on(async {
+        // public endpoint is reachable without authentication
+        let (status, body) = send("GET", "/api/v1/public/settings", None, None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(body["data"]["site_name"].is_string());
+
+        // demo admin holds system:config:* and may read + update settings
+        let token = login("demo", "admin", "Admin@123456").await;
+        let name = format!("站点-{}", uniq());
+        let (status, body) = send(
+            "PUT",
+            "/api/v1/settings",
+            Some(&token),
+            Some(json!({ "site_name": name, "login_subtitle": "欢迎" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["site_name"], name);
+
+        // the update is visible through the public endpoint
+        let (status, body) = send("GET", "/api/v1/public/settings", None, None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["site_name"], name);
+        assert_eq!(body["data"]["login_subtitle"], "欢迎");
+    });
+}

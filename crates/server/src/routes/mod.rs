@@ -101,7 +101,8 @@ fn tenant_routes() -> Router<AppState> {
 pub fn api_router(state: AppState) -> Router {
     let public = Router::new()
         .route("/auth/login", post(handlers::auth::login))
-        .route("/auth/refresh", post(handlers::auth::refresh));
+        .route("/auth/refresh", post(handlers::auth::refresh))
+        .route("/public/settings", get(handlers::config::public_settings));
 
     // tenant-scoped, RBAC-enforced resource routes.
     // layer order (outermost first): auth -> tenant -> operation_log -> casbin
@@ -111,6 +112,10 @@ pub fn api_router(state: AppState) -> Router {
         .merge(menu_routes())
         .merge(dept_routes())
         .route("/logs", get(handlers::log::list))
+        .route(
+            "/settings",
+            get(handlers::config::get_settings).put(handlers::config::update_settings),
+        )
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             mw::casbin_auth::guard,
