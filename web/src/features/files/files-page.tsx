@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { PagePagination } from '@/components/common/page-pagination'
+import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import { fileApi } from '@/lib/api/files'
 import type { FileItem } from '@/lib/api/types'
@@ -91,6 +92,7 @@ export function FilesPage() {
   const list = query.data?.list ?? []
 
   return (
+    <ManagementPage title="文件资产控制台" description="统一管理文件上传、存储状态和访问地址。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>文件管理</CardTitle>
@@ -239,5 +241,6 @@ export function FilesPage() {
         />
       </CardContent>
     </Card>
+    </ManagementPage>
   )
 }

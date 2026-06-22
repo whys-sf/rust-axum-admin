@@ -13,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import { monitorApi } from '@/lib/api/monitor'
 
@@ -37,6 +38,7 @@ export function OnlinePage() {
   const list = query.data ?? []
 
   return (
+    <ManagementPage title="在线会话控制台" description="监测当前在线会话并处置异常访问。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>在线用户</CardTitle>
@@ -119,5 +121,6 @@ export function OnlinePage() {
         </Table>
       </CardContent>
     </Card>
+    </ManagementPage>
   )
 }

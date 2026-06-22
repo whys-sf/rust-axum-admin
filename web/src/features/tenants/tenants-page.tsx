@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { PagePagination } from '@/components/common/page-pagination'
+import { ManagementPage } from '@/components/common/management-page'
 import {
   tenantApi,
   type CreateTenantPayload,
@@ -84,6 +85,7 @@ export function TenantsPage() {
   const list = tenantsQuery.data?.list ?? []
 
   return (
+    <ManagementPage title="租户运营控制台" description="管理租户生命周期、配额和服务状态。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>租户管理</CardTitle>
@@ -200,5 +202,6 @@ export function TenantsPage() {
         />
       )}
     </Card>
+    </ManagementPage>
   )
 }

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { PagePagination } from '@/components/common/page-pagination'
+import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
   paramApi,
@@ -79,6 +80,7 @@ export function ParamsPage() {
   const list = query.data?.list ?? []
 
   return (
+    <ManagementPage title="参数配置控制台" description="统一管理系统运行参数与配置值。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>参数配置</CardTitle>
@@ -196,5 +198,6 @@ export function ParamsPage() {
         />
       )}
     </Card>
+    </ManagementPage>
   )
 }

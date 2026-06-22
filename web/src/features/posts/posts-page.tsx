@@ -16,6 +16,7 @@ import {
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { StatusBadge } from '@/components/common/status-badge'
 import { PagePagination } from '@/components/common/page-pagination'
+import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
   postApi,
@@ -78,6 +79,7 @@ export function PostsPage() {
   const list = query.data?.list ?? []
 
   return (
+    <ManagementPage title="岗位编制控制台" description="维护组织岗位、排序和启用状态。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>岗位管理</CardTitle>
@@ -188,5 +190,6 @@ export function PostsPage() {
         />
       )}
     </Card>
+    </ManagementPage>
   )
 }

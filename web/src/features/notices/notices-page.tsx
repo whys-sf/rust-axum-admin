@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { PagePagination } from '@/components/common/page-pagination'
+import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
   noticeApi,
@@ -78,6 +79,7 @@ export function NoticesPage() {
   const list = query.data?.list ?? []
 
   return (
+    <ManagementPage title="通知公告控制台" description="编排系统通知、公告内容与发布状态。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>通知公告</CardTitle>
@@ -190,5 +192,6 @@ export function NoticesPage() {
         />
       )}
     </Card>
+    </ManagementPage>
   )
 }

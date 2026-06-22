@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { PagePagination } from '@/components/common/page-pagination'
+import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
   jobApi,
@@ -100,6 +101,7 @@ export function JobsPage() {
   const list = query.data?.list ?? []
 
   return (
+    <ManagementPage title="任务调度控制台" description="管理计划任务、执行周期和运行记录。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>定时任务</CardTitle>
@@ -256,5 +258,6 @@ export function JobsPage() {
         />
       )}
     </Card>
+    </ManagementPage>
   )
 }

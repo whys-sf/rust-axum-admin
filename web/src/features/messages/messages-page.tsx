@@ -9,12 +9,14 @@ import {
 import { PERM, usePermission } from '@/lib/permissions'
 import { InboxPanel } from '@/features/messages/inbox-panel'
 import { SentPanel } from '@/features/messages/sent-panel'
+import { ManagementPage } from '@/components/common/management-page'
 
 export function MessagesPage() {
   const canManage = usePermission(PERM.messageList)
   const [tab, setTab] = useState('inbox')
 
   return (
+    <ManagementPage title="消息协作控制台" description="集中处理收件、发件与内部协作消息。">
     <Card>
       <CardHeader>
         <CardTitle>消息中心</CardTitle>
@@ -38,5 +40,6 @@ export function MessagesPage() {
         )}
       </CardContent>
     </Card>
+    </ManagementPage>
   )
 }

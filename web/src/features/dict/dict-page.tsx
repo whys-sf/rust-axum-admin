@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { StatusBadge } from '@/components/common/status-badge'
 import { PagePagination } from '@/components/common/page-pagination'
+import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
   dictApi,
@@ -270,6 +271,7 @@ export function DictPage() {
   const types = typesQuery.data?.list ?? []
 
   return (
+    <ManagementPage title="数据字典控制台" description="维护系统枚举、标签和层级参考数据。">
     <div className="grid gap-4 lg:grid-cols-[420px_1fr]">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -467,5 +469,6 @@ export function DictPage() {
           />
         )}
     </div>
+    </ManagementPage>
   )
 }

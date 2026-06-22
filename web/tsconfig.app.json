@@ -9,7 +9,7 @@
 
     /* Bundler mode */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
     },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -17,12 +17,13 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "strictNullChecks": true,
 
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
   },
-  "include": ["src"]
+  "include": ["src"],
 }

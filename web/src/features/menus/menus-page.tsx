@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { StatusBadge } from '@/components/common/status-badge'
+import { ManagementPage } from '@/components/common/management-page'
 import { menuApi, type CreateMenuPayload } from '@/lib/api/menu'
 import { flattenTree } from '@/lib/tree'
 import { MENU_TYPE } from '@/lib/constants'
@@ -149,6 +150,7 @@ export function MenusPage() {
   }
 
   return (
+    <ManagementPage title="菜单路由控制台" description="编排导航结构、路由入口和权限标识。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>菜单管理</CardTitle>
@@ -200,5 +202,6 @@ export function MenusPage() {
         />
       )}
     </Card>
+    </ManagementPage>
   )
 }

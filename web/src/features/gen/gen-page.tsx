@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { PagePagination } from '@/components/common/page-pagination'
+import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import { genApi } from '@/lib/api/gen'
 import type { GenTable } from '@/lib/api/types'
@@ -64,6 +65,7 @@ export function GenPage() {
   const list = query.data?.list ?? []
 
   return (
+    <ManagementPage title="代码生成控制台" description="从数据模型生成一致、可维护的业务代码。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
@@ -187,5 +189,6 @@ export function GenPage() {
         />
       )}
     </Card>
+    </ManagementPage>
   )
 }

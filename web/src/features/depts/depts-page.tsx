@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { StatusBadge } from '@/components/common/status-badge'
+import { ManagementPage } from '@/components/common/management-page'
 import { deptApi, type CreateDeptPayload } from '@/lib/api/dept'
 import { flattenTree } from '@/lib/tree'
 import type { DeptNode } from '@/lib/api/types'
@@ -139,6 +140,7 @@ export function DeptsPage() {
   }
 
   return (
+    <ManagementPage title="组织架构控制台" description="维护部门层级、负责人和组织状态。">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>部门管理</CardTitle>
@@ -189,5 +191,6 @@ export function DeptsPage() {
         />
       )}
     </Card>
+    </ManagementPage>
   )
 }
