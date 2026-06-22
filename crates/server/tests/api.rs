@@ -264,6 +264,87 @@ fn tenant_admin_rbac_and_isolation() {
 
 #[test]
 #[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn tenant_admin_assign_roles_flow() {
+    // Regression: the "分配角色" dialog opens by fetching `GET /users/:id` to
+    // read the user's current roles, then submits `PUT /users/:id/roles`. The
+    // detail read endpoint lacked a casbin policy, so tenant admins got 403.
+    rt().block_on(async {
+        let token = login("demo", "admin", "Admin@123456").await;
+
+        let suffix = uniq();
+        let (status, body) = send(
+            "POST",
+            "/api/v1/roles",
+            Some(&token),
+            Some(json!({
+                "name": format!("角色-{suffix}"),
+                "code": format!("r{suffix}"),
+                "sort": 5,
+                "status": 1,
+                "data_scope": 1
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "create role: {body}");
+        let role_id = as_id(&body["data"]["id"]).expect("role id");
+
+        let (status, body) = send(
+            "POST",
+            "/api/v1/users",
+            Some(&token),
+            Some(json!({
+                "username": format!("u{suffix}"),
+                "password": "Member@123456",
+                "nickname": "成员",
+                "status": 1,
+                "role_ids": []
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "create user: {body}");
+        let user_id = as_id(&body["data"]["id"]).expect("user id");
+
+        // open the dialog: detail read must be allowed (was 403 before the fix)
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/users/{user_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "user detail: {body}");
+        assert_eq!(
+            body["data"]["role_ids"].as_array().map(|a| a.len()),
+            Some(0)
+        );
+
+        // submit the assignment
+        let (status, _) = send(
+            "PUT",
+            &format!("/api/v1/users/{user_id}/roles"),
+            Some(&token),
+            Some(json!({ "role_ids": [role_id.to_string()] })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+
+        // reopening the dialog reflects the assigned role
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/users/{user_id}"),
+            Some(&token),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let assigned = body["data"]["role_ids"].as_array().expect("role_ids");
+        assert_eq!(assigned.len(), 1);
+        assert_eq!(as_id(&assigned[0]), Some(role_id));
+    });
+}
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
 fn create_tenant_then_login_as_its_admin() {
     rt().block_on(async {
         let platform = login("platform", "superadmin", "Admin@123456").await;
