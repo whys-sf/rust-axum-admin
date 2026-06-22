@@ -1,0 +1,61 @@
+# Local development dependencies only (Postgres + Redis + MinIO).
+#
+# The backend (`cargo run -p server`) and frontend (`cd web && npm run dev`)
+# run on the host for fast hot-reload, while this file provides the backing
+# services. Ports are published to localhost so the host processes can reach
+# them via the values in .env.example.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d      # start deps
+#   docker compose -f docker-compose.dev.yml down       # stop deps
+#   docker compose -f docker-compose.dev.yml down -v     # stop + wipe data
+#
+# The production / full-stack compose remains in docker-compose.yml.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d admin"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata-dev:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata-dev:
+  miniodata-dev:

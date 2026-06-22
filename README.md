@@ -90,29 +90,49 @@ web/
 
 依赖方向：`server → service → entity → common`，`migration → entity`。
 
-## 本地运行
+本仓库提供两套 compose 文件：
 
-### 方式一：Docker Compose（推荐，含 Postgres + Redis + MinIO）
+| 文件 | 用途 | 包含 |
+| --- | --- | --- |
+| `docker-compose.yml` | 部署 / 全栈一键启动 | Postgres + Redis + MinIO + **app（容器内构建运行）** |
+| `docker-compose.dev.yml` | **本地开发依赖** | Postgres + Redis + MinIO（不含 app） |
+
+### 方式一：本地开发（推荐用于开发调试）
+
+依赖跑在容器里，后端 / 前端跑在宿主机以获得热重载：
+
+```bash
+# 1. 启动开发依赖（Postgres :5432 / Redis :6379 / MinIO :9000，控制台 :9001）
+docker compose -f docker-compose.dev.yml up -d
+
+# 2. 配置环境变量（.env.example 的默认值已对应上面的容器端口）
+cp .env.example .env   # JWT__SECRET 已有 dev 占位值，可直接用
+
+# 3. 启动后端（main 会自动跑迁移 + 重建 Casbin 策略 + 创建 MinIO bucket）
+cargo run -p server      # 监听 0.0.0.0:8080
+
+# 4. 启动前端（另开一个终端）
+cd web && npm install && npm run dev   # 监听 :5173
+```
+
+停止依赖：`docker compose -f docker-compose.dev.yml down`（加 `-v` 连数据卷一起清空）。
+开发数据卷为 `pgdata-dev` / `miniodata-dev`，与部署用 compose 的卷相互独立。
+
+### 方式二：Docker Compose 全栈一键启动
 
 ```bash
 docker compose up -d
 # app 监听 :8080；MinIO 控制台 :9001（minioadmin/minioadmin）
 ```
 
-### 方式二：本地裸跑
+### 方式三：完全本地裸跑
 
 ```bash
-# 1. 准备 PostgreSQL / Redis / MinIO，创建数据库 admin
+# 自备 PostgreSQL / Redis / MinIO，创建数据库 admin
 createdb admin
-
-# 2. 配置环境变量
 cp .env.example .env   # 按需修改 DATABASE_URL / REDIS_URL / JWT__SECRET / S3 配置
-
-# 3. 启动后端（main 会自动跑迁移 + 重建 Casbin 策略）
-cargo run -p server      # 监听 0.0.0.0:8080
-
-# 4. 启动前端
-cd web && npm install && npm run dev   # 监听 :5173
+cargo run -p server
+cd web && npm install && npm run dev
 ```
 
 迁移也可单独执行：`cargo run -p migration`。
