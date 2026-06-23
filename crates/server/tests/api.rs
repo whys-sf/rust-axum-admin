@@ -345,6 +345,68 @@ fn tenant_admin_assign_roles_flow() {
 
 #[test]
 #[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
+fn superadmin_menu_grant_and_dedup_flow() {
+    // Covers three regressions in the role-menu assignment dialog:
+    //  1. a menu created by the platform super admin is auto-granted to every
+    //     platform-tenant role (no manual re-assignment);
+    //  2. `GET /roles/:id/menus` returns ids as strings (so the tree回显 matches
+    //     the string ids elsewhere);
+    //  3. duplicate ids in the assignment (e.g. parent + child linkage, or the
+    //     string/number mix) are deduped instead of "包含无效的菜单 id".
+    rt().block_on(async {
+        let token = login("platform", "superadmin", "Admin@123456").await;
+
+        let suffix = uniq();
+        let role_id = create_role(&token, &format!("sa{suffix}"), 1, &[]).await;
+
+        // (1) create a menu -> it should appear in the role's menu ids
+        let (status, body) = send(
+            "POST",
+            "/api/v1/menus",
+            Some(&token),
+            Some(json!({
+                "parent_id": 0,
+                "name": format!("菜单-{suffix}"),
+                "type": 1,
+                "sort": 99
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "create menu: {body}");
+        let menu_id = as_id(&body["data"]["id"]).expect("menu id");
+
+        let (status, body) =
+            send("GET", &format!("/api/v1/roles/{role_id}/menus"), Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let ids = body["data"].as_array().expect("menu ids array");
+        // (2) every id must be a JSON string, not a number
+        assert!(ids.iter().all(|v| v.is_string()), "menu ids must be strings: {body}");
+        assert!(
+            ids.iter().any(|v| as_id(v) == Some(menu_id)),
+            "auto-grant: new menu missing from role: {body}"
+        );
+
+        // (3) duplicate ids (number + string of the same id) must not 400
+        let (status, _) = send(
+            "PUT",
+            &format!("/api/v1/roles/{role_id}/menus"),
+            Some(&token),
+            Some(json!({ "menu_ids": [menu_id, menu_id.to_string()] })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "dedup assignment should succeed");
+
+        let (status, body) =
+            send("GET", &format!("/api/v1/roles/{role_id}/menus"), Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let ids = body["data"].as_array().expect("menu ids array");
+        assert_eq!(ids.len(), 1, "duplicate ids should be deduped: {body}");
+        assert_eq!(as_id(&ids[0]), Some(menu_id));
+    });
+}
+
+#[test]
+#[ignore = "requires postgres + redis; run via the integration workflow with `--ignored`"]
 fn create_tenant_then_login_as_its_admin() {
     rt().block_on(async {
         let platform = login("platform", "superadmin", "Admin@123456").await;

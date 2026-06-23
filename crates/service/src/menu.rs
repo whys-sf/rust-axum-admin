@@ -84,7 +84,34 @@ impl Services {
             created_at: Set(now),
             updated_at: Set(now),
         };
-        Ok(model.insert(&self.db).await?)
+        let menu = model.insert(&self.db).await?;
+
+        // Platform-created menus join the shared pool; every platform-tenant
+        // role (the super-admin roles) should pick them up automatically so the
+        // super admin never has to re-assign menus by hand after adding one.
+        if current.is_platform {
+            let role_ids: Vec<i64> = Role::find()
+                .filter(entity::role::Column::TenantId.eq(PLATFORM_TENANT_ID))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|r| r.id)
+                .collect();
+            if !role_ids.is_empty() {
+                let rows: Vec<entity::role_menu::ActiveModel> = role_ids
+                    .iter()
+                    .map(|rid| entity::role_menu::ActiveModel {
+                        tenant_id: Set(PLATFORM_TENANT_ID),
+                        role_id: Set(*rid),
+                        menu_id: Set(menu.id),
+                    })
+                    .collect();
+                RoleMenu::insert_many(rows).exec(&self.db).await?;
+                // refresh casbin so the new menu's API is immediately grantable
+                crate::permission::rebuild_all(&self.db, &self.enforcer).await?;
+            }
+        }
+        Ok(menu)
     }
 
     pub async fn update_menu(
