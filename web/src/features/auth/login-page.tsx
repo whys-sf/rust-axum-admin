@@ -28,7 +28,7 @@ import { useAuthStore } from "@/stores/auth";
 
 const schema = z.object({
   tenant_code: z.string().min(2, "请输入租户编码"),
-  username: z.string().min(3, "请输入用户名"),
+  username: z.string().min(1, "请输入用户名"),
   password: z.string().min(6, "密码至少 6 位"),
 });
 
@@ -143,7 +143,9 @@ export function LoginPage() {
               />
               <div
                 className="absolute inset-4 rounded-full border border-dashed border-white/5"
-                style={{ animation: "login-ring-rotate 120s linear infinite reverse" }}
+                style={{
+                  animation: "login-ring-rotate 120s linear infinite reverse",
+                }}
               />
               <div
                 className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 size-2 rounded-full bg-primary/80 shadow-[0_0_8px_var(--primary)]"
@@ -187,8 +189,12 @@ export function LoginPage() {
             </div>
             {/* Mini tech badges */}
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-white/10 bg-white/4 px-2 py-0.5 font-mono text-[10px] tracking-tight text-white/45">Rust</span>
-              <span className="rounded-full border border-white/10 bg-white/4 px-2 py-0.5 font-mono text-[10px] tracking-tight text-white/45">Axum</span>
+              <span className="rounded-full border border-white/10 bg-white/4 px-2 py-0.5 font-mono text-[10px] tracking-tight text-white/45">
+                Rust
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/4 px-2 py-0.5 font-mono text-[10px] tracking-tight text-white/45">
+                Axum
+              </span>
             </div>
           </div>
 
@@ -235,14 +241,36 @@ export function LoginPage() {
                 <span className="size-2 rounded-full bg-red-400/70" />
                 <span className="size-2 rounded-full bg-yellow-400/70" />
                 <span className="size-2 rounded-full bg-green-400/70" />
-                <span className="ml-2 text-[10px] text-white/35 font-mono">cargo run --release</span>
+                <span className="ml-2 text-[10px] text-white/35 font-mono">
+                  cargo run --release
+                </span>
               </div>
               {/* Terminal body */}
               <div className="px-4 py-3 font-mono text-[11px] leading-[1.7] text-white/50 select-none">
-                <div><span className="text-emerald-400/80">$</span> cargo run --release</div>
-                <div className="text-white/30">   Compiling rust-axum-admin v1.0.0</div>
-                <div className="text-white/30">    Finished release [optimized] target(s)</div>
-                <div><span className="text-emerald-400/80">$</span> <span className="text-primary/70">Server running on 0.0.0.0:5173</span> <span className="ml-1 inline-block size-1.5 -translate-y-px rounded-full bg-emerald-400/70" style={{ animation: "login-dot-blink 1.5s ease-in-out infinite" }} /></div>
+                <div>
+                  <span className="text-emerald-400/80">$</span> cargo run
+                  --release
+                </div>
+                <div className="text-white/30">
+                  {" "}
+                  Compiling rust-axum-admin v1.0.0
+                </div>
+                <div className="text-white/30">
+                  {" "}
+                  Finished release [optimized] target(s)
+                </div>
+                <div>
+                  <span className="text-emerald-400/80">$</span>{" "}
+                  <span className="text-primary/70">
+                    Server running on 0.0.0.0:5173
+                  </span>{" "}
+                  <span
+                    className="ml-1 inline-block size-1.5 -translate-y-px rounded-full bg-emerald-400/70"
+                    style={{
+                      animation: "login-dot-blink 1.5s ease-in-out infinite",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -257,7 +285,9 @@ export function LoginPage() {
               <span className="flex items-center gap-1.5">
                 <span
                   className="inline-block size-1.25 rounded-full bg-emerald-400"
-                  style={{ animation: "login-dot-blink 2.5s ease-in-out infinite" }}
+                  style={{
+                    animation: "login-dot-blink 2.5s ease-in-out infinite",
+                  }}
                 />
                 Operational
               </span>
@@ -433,9 +463,7 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
         />
       </div>
-      {error && (
-        <p className="text-[11px] text-destructive mt-1">{error}</p>
-      )}
+      {error && <p className="text-[11px] text-destructive mt-1">{error}</p>}
     </div>
   );
 }
@@ -472,13 +500,7 @@ function FeatureCard({
 /* ──────────────────────────────────────────────
    Tech Badge — Bottom tech stack pill
    ────────────────────────────────────────────── */
-function TechBadge({
-  icon,
-  label,
-}: {
-  icon: React.ReactNode;
-  label: string;
-}) {
+function TechBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="flex items-center gap-1 text-white/35 hover:text-white/55 transition-colors">
       {icon}

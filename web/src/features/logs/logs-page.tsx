@@ -284,7 +284,7 @@ export function LogsPage() {
             <div className="flex items-center gap-2">
               <Button type="submit" variant="secondary">
                 <Search data-icon="inline-start" />
-                查询日志
+                查询
               </Button>
               {hasFilters && (
                 <Button type="button" variant="ghost" onClick={resetFilters}>

@@ -263,7 +263,7 @@ export function UsersPage() {
             <div className="flex items-center gap-2">
               <Button type="submit" variant="secondary">
                 <Search data-icon="inline-start" />
-                执行筛选
+                搜索
               </Button>
               {hasFilters && (
                 <Button type="button" variant="ghost" onClick={resetFilters}>

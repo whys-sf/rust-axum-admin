@@ -80,7 +80,7 @@ impl PageQuery {
 pub struct LoginReq {
     #[validate(length(min = 2, max = 64))]
     pub tenant_code: String,
-    #[validate(length(min = 3, max = 64))]
+    #[validate(length(min = 1, max = 64))]
     pub username: String,
     #[validate(length(min = 6, max = 64))]
     pub password: String,

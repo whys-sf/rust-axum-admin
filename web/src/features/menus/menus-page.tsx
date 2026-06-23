@@ -36,7 +36,7 @@ export function MenusPage() {
     queryFn: menuApi.list,
   })
 
-  const options = useMemo(() => flattenTree(data ?? []), [data])
+  const options = useMemo(() => flattenTree(data ?? [], undefined, undefined, (n) => n.type !== 3), [data])
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => menuApi.remove(id),
