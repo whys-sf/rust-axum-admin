@@ -375,12 +375,20 @@ fn superadmin_menu_grant_and_dedup_flow() {
         assert_eq!(status, StatusCode::OK, "create menu: {body}");
         let menu_id = as_id(&body["data"]["id"]).expect("menu id");
 
-        let (status, body) =
-            send("GET", &format!("/api/v1/roles/{role_id}/menus"), Some(&token), None).await;
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/roles/{role_id}/menus"),
+            Some(&token),
+            None,
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         let ids = body["data"].as_array().expect("menu ids array");
         // (2) every id must be a JSON string, not a number
-        assert!(ids.iter().all(|v| v.is_string()), "menu ids must be strings: {body}");
+        assert!(
+            ids.iter().all(|v| v.is_string()),
+            "menu ids must be strings: {body}"
+        );
         assert!(
             ids.iter().any(|v| as_id(v) == Some(menu_id)),
             "auto-grant: new menu missing from role: {body}"
@@ -396,8 +404,13 @@ fn superadmin_menu_grant_and_dedup_flow() {
         .await;
         assert_eq!(status, StatusCode::OK, "dedup assignment should succeed");
 
-        let (status, body) =
-            send("GET", &format!("/api/v1/roles/{role_id}/menus"), Some(&token), None).await;
+        let (status, body) = send(
+            "GET",
+            &format!("/api/v1/roles/{role_id}/menus"),
+            Some(&token),
+            None,
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         let ids = body["data"].as_array().expect("menu ids array");
         assert_eq!(ids.len(), 1, "duplicate ids should be deduped: {body}");
