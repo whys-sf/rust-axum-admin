@@ -102,15 +102,17 @@ pub async fn remove(
     tag = "role",
     params(("id" = i64, Path, description = "角色 ID")),
     security(("bearer" = [])),
-    responses((status = 200, description = "角色已分配菜单 ID 列表", body = Vec<i64>))
+    responses((status = 200, description = "角色已分配菜单 ID 列表", body = Vec<String>))
 )]
 pub async fn menu_ids(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<Vec<i64>>> {
+) -> AppResult<ApiResponse<Vec<String>>> {
     let ids = state.services.role_menu_ids(&current, id).await?;
-    Ok(ApiResponse::ok(ids))
+    Ok(ApiResponse::ok(
+        ids.into_iter().map(|i| i.to_string()).collect(),
+    ))
 }
 
 #[utoipa::path(
@@ -138,15 +140,17 @@ pub async fn assign_menus(
     tag = "role",
     params(("id" = i64, Path, description = "角色 ID")),
     security(("bearer" = [])),
-    responses((status = 200, description = "自定义数据范围的部门 ID 列表", body = Vec<i64>))
+    responses((status = 200, description = "自定义数据范围的部门 ID 列表", body = Vec<String>))
 )]
 pub async fn dept_ids(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<Vec<i64>>> {
+) -> AppResult<ApiResponse<Vec<String>>> {
     let ids = state.services.role_dept_ids(&current, id).await?;
-    Ok(ApiResponse::ok(ids))
+    Ok(ApiResponse::ok(
+        ids.into_iter().map(|i| i.to_string()).collect(),
+    ))
 }
 
 #[utoipa::path(

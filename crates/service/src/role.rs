@@ -179,14 +179,17 @@ impl Services {
         req: AssignDeptsReq,
     ) -> AppResult<()> {
         let role = self.find_role_scoped(current, id).await?;
+        let mut dept_ids = req.dept_ids;
+        dept_ids.sort_unstable();
+        dept_ids.dedup();
 
-        if !req.dept_ids.is_empty() {
+        if !dept_ids.is_empty() {
             let valid = Dept::find()
-                .filter(entity::dept::Column::Id.is_in(req.dept_ids.clone()))
+                .filter(entity::dept::Column::Id.is_in(dept_ids.clone()))
                 .filter(entity::dept::Column::TenantId.eq(role.tenant_id))
                 .count(&self.db)
                 .await?;
-            if valid as usize != req.dept_ids.len() {
+            if valid as usize != dept_ids.len() {
                 return Err(AppError::bad_request("包含无效的部门 id"));
             }
         }
@@ -196,9 +199,8 @@ impl Services {
             .filter(entity::role_dept::Column::RoleId.eq(id))
             .exec(&txn)
             .await?;
-        if !req.dept_ids.is_empty() {
-            let rows: Vec<entity::role_dept::ActiveModel> = req
-                .dept_ids
+        if !dept_ids.is_empty() {
+            let rows: Vec<entity::role_dept::ActiveModel> = dept_ids
                 .iter()
                 .map(|did| entity::role_dept::ActiveModel {
                     tenant_id: Set(role.tenant_id),
@@ -227,9 +229,12 @@ impl Services {
         &self,
         current: &CurrentUser,
         role: &entity::role::Model,
-        menu_ids: Vec<i64>,
+        mut menu_ids: Vec<i64>,
     ) -> AppResult<()> {
         let tenant_id = current.acting_tenant();
+        // the UI links parent/child checkboxes, so the same id can arrive twice
+        menu_ids.sort_unstable();
+        menu_ids.dedup();
 
         // validate every menu is in the accessible pool (platform or own tenant)
         let valid_menus = Menu::find()

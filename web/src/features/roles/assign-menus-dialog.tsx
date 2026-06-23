@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { TreeCheckbox } from '@/components/common/tree-checkbox'
+import { toggleTreeSelection } from '@/lib/tree'
 import type { MenuNode } from '@/lib/api/types'
 
 interface AssignMenusDialogProps {
@@ -28,15 +29,12 @@ export function AssignMenusDialog({
   onCancel,
   onSubmit,
 }: AssignMenusDialogProps) {
-  const [checked, setChecked] = useState<Set<string>>(new Set(selected))
+  const [checked, setChecked] = useState<Set<string>>(
+    () => new Set(selected.map(String)),
+  )
 
   function toggle(id: string) {
-    setChecked((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    setChecked((prev) => toggleTreeSelection(menus, prev, id))
   }
 
   return (
@@ -49,7 +47,12 @@ export function AssignMenusDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-80 overflow-y-auto rounded-md border p-2">
-          <TreeCheckbox nodes={menus} checked={checked} onToggle={toggle} />
+          <TreeCheckbox
+            nodes={menus}
+            checked={checked}
+            onToggle={toggle}
+            linked
+          />
           {menus.length === 0 && (
             <p className="text-sm text-muted-foreground">暂无菜单</p>
           )}

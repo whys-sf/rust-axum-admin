@@ -28,7 +28,9 @@ export function AssignDeptsDialog({
   onCancel,
   onSubmit,
 }: AssignDeptsDialogProps) {
-  const [checked, setChecked] = useState<Set<string>>(new Set(selected))
+  const [checked, setChecked] = useState<Set<string>>(
+    () => new Set(selected.map(String)),
+  )
 
   function toggle(id: string) {
     setChecked((prev) => {
