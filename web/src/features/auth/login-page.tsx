@@ -184,7 +184,7 @@ export function LoginPage() {
               )}
               <div className="flex items-center gap-2 text-white/65 text-xs font-medium tracking-[0.18em] uppercase">
                 <ShieldCheck className="size-3.5" />
-                Secure Access
+                安全接入
               </div>
             </div>
             {/* Mini tech badges */}
@@ -289,7 +289,7 @@ export function LoginPage() {
                     animation: "login-dot-blink 2.5s ease-in-out infinite",
                   }}
                 />
-                Operational
+                运行中
               </span>
               <span className="size-0.75 rounded-full bg-white/25" />
               <span>v1.0.0</span>

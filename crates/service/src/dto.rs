@@ -324,7 +324,7 @@ pub struct UpdateMenuReq {
     pub perm: Option<String>,
     pub api_path: Option<String>,
     pub api_method: Option<String>,
-    pub icon: Option<String>,
+    pub icon: Option<Option<String>>,
     pub sort: Option<i32>,
     pub visible: Option<i16>,
     pub status: Option<i16>,

@@ -3,27 +3,62 @@ import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
-  BookA,
-  Briefcase,
+  Activity,
+  Archive,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Boxes,
+  BriefcaseBusiness,
   Building2,
+  CalendarClock,
+  ChartNoAxesColumn,
+  Check,
   ChevronsUpDown,
-  Megaphone,
+  CircleGauge,
+  ClipboardList,
+  Code2,
+  Cog,
+  Database,
+  FileText,
+  FolderTree,
+  Gauge,
+  Globe,
+  HardDrive,
+  House,
   KeyRound,
   LayoutDashboard,
+  LayoutGrid,
+  LayoutList,
+  ListTree,
+  Lock,
   LogOut,
   Mail,
-  Clock,
-  Code2,
-  FolderArchive,
-  Menu as MenuIcon,
-  ScrollText,
+  MessageSquare,
+  Monitor,
   Network,
-  MonitorDot,
-  Activity,
+  PanelLeft,
+  Puzzle,
+  Radar,
+  Route,
+  ScanLine,
+  ScrollText,
+  Search,
+  Server,
   Settings,
-  SlidersHorizontal,
+  Shield,
   ShieldCheck,
+  SlidersHorizontal,
+  SquareMenu,
+  TableProperties,
+  Tag,
+  Terminal,
+  Upload,
+  UserCog,
+  UserRound,
   Users,
+  Workflow,
+  Zap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -70,34 +105,80 @@ interface NavGroup {
 }
 
 const DASHBOARD: NavLink = { to: "/", label: "仪表盘", icon: LayoutDashboard };
-
-/** Maps a backend menu (keyed by its perm) to the SPA route + icon to render.
- *  Backend menu `path` (e.g. `/system/user`) differs from the file-based route
- *  (`/users`), so we resolve by the stable permission string. */
-const ROUTE_BY_PERM: Record<string, { to: string; icon: LucideIcon }> = {
-  "system:user:list": { to: "/users", icon: Users },
-  "system:role:list": { to: "/roles", icon: ShieldCheck },
-  "system:menu:list": { to: "/menus", icon: MenuIcon },
-  "system:dept:list": { to: "/depts", icon: Network },
-  "system:dict:list": { to: "/dict", icon: BookA },
-  "system:post:list": { to: "/posts", icon: Briefcase },
-  "system:param:list": { to: "/params", icon: SlidersHorizontal },
-  "system:notice:list": { to: "/notices", icon: Megaphone },
-  "system:message:list": { to: "/messages", icon: Mail },
-  "system:job:list": { to: "/jobs", icon: Clock },
-  "system:gen:list": { to: "/gen", icon: Code2 },
-  "system:file:list": { to: "/files", icon: FolderArchive },
-  "system:online:list": { to: "/online", icon: MonitorDot },
-  "system:monitor:list": { to: "/monitor", icon: Activity },
-  "system:log:list": { to: "/logs", icon: ScrollText },
-  "system:config:list": { to: "/settings", icon: Settings },
-  "platform:tenant:list": { to: "/tenants", icon: Building2 },
+const DEFAULT_MENU_ICON = SquareMenu;
+const ICON_BY_NAME: Record<string, LucideIcon> = {
+  Activity,
+  Archive,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Boxes,
+  BriefcaseBusiness,
+  Building2,
+  CalendarClock,
+  ChartNoAxesColumn,
+  Check,
+  CircleGauge,
+  ClipboardList,
+  Code2,
+  Cog,
+  Database,
+  FileText,
+  FolderTree,
+  Gauge,
+  Globe,
+  HardDrive,
+  House,
+  KeyRound,
+  LayoutDashboard,
+  LayoutGrid,
+  LayoutList,
+  ListTree,
+  Lock,
+  Mail,
+  MessageSquare,
+  Monitor,
+  Network,
+  PanelLeft,
+  Puzzle,
+  Radar,
+  Route,
+  ScanLine,
+  ScrollText,
+  Search,
+  Server,
+  Settings,
+  Shield,
+  ShieldCheck,
+  SlidersHorizontal,
+  SquareMenu,
+  TableProperties,
+  Tag,
+  Terminal,
+  Upload,
+  UserCog,
+  UserRound,
+  Users,
+  Workflow,
+  Zap,
 };
 
+function normalizeRoutePath(path?: string | null) {
+  const value = path?.trim();
+  if (!value) return null;
+  return value.startsWith("/") ? value : `/${value}`;
+}
+
+function resolveIcon(icon?: string | null): LucideIcon {
+  const value = icon?.trim();
+  return value ? (ICON_BY_NAME[value] ?? DEFAULT_MENU_ICON) : DEFAULT_MENU_ICON;
+}
+
 function resolveLink(node: MenuNode): NavLink | null {
-  const route = node.perm ? ROUTE_BY_PERM[node.perm] : undefined;
-  if (!route) return null;
-  return { to: route.to, label: node.name, icon: route.icon };
+  if (node.visible !== 1 || node.status !== 1) return null;
+  const to = normalizeRoutePath(node.path);
+  if (!to) return null;
+  return { to, label: node.name, icon: resolveIcon(node.icon) };
 }
 
 /** Build the sidebar nav from the backend menu tree. Directories (type 1)
@@ -182,7 +263,7 @@ export function AppLayout() {
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-semibold">
-                {settings?.site_name || "Axum Admin"}
+          {settings?.site_name || "管理后台"}
               </span>
               <span className="truncate text-xs text-muted-foreground">
                 {current?.tenant_name ?? "多租户管理后台"}

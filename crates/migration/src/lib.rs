@@ -15,6 +15,7 @@ mod m20240101_000012_file;
 mod m20240101_000013_online_monitor;
 mod m20240101_000014_read_detail_perms;
 mod m20240101_000015_grant_platform_roles_menus;
+mod m20240101_000016_menu_route_icons;
 
 pub struct Migrator;
 
@@ -37,6 +38,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240101_000013_online_monitor::Migration),
             Box::new(m20240101_000014_read_detail_perms::Migration),
             Box::new(m20240101_000015_grant_platform_roles_menus::Migration),
+            Box::new(m20240101_000016_menu_route_icons::Migration),
         ]
     }
 }

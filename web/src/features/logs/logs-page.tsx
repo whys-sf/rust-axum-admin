@@ -208,7 +208,7 @@ export function LogsPage() {
               <div className="flex items-center gap-2 text-primary-foreground/55">
                 <ShieldCheck className="size-4" />
                 <span className="truncate font-mono text-[0.65rem] tracking-widest">
-                  EVENTS
+                  事件
                 </span>
               </div>
               <strong className="font-mono text-2xl font-medium tabular-nums sm:text-3xl">
@@ -222,7 +222,7 @@ export function LogsPage() {
               <div className="flex items-center gap-2 text-primary-foreground/55">
                 <TriangleAlert className="size-4" />
                 <span className="truncate font-mono text-[0.65rem] tracking-widest">
-                  ANOMALY
+                  异常
                 </span>
               </div>
               <strong className="font-mono text-2xl font-medium tabular-nums sm:text-3xl">
@@ -236,7 +236,7 @@ export function LogsPage() {
               <div className="flex items-center gap-2 text-primary-foreground/55">
                 <Timer className="size-4" />
                 <span className="truncate font-mono text-[0.65rem] tracking-widest">
-                  LATENCY
+                  耗时
                 </span>
               </div>
               <strong className="font-mono text-2xl font-medium tabular-nums sm:text-3xl">
@@ -260,7 +260,7 @@ export function LogsPage() {
           <CardAction>
             <Badge variant="outline">
               <span className="font-mono tracking-wider">
-                {hasFilters ? "FILTERED" : "AUDIT STREAM"}
+                {hasFilters ? "已筛选" : "审计流"}
               </span>
             </Badge>
           </CardAction>

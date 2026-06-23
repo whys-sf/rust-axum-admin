@@ -11,7 +11,6 @@ import {
   LoaderCircle,
   Lock,
   Paintbrush,
-  Puzzle,
   Route,
   ShieldCheck,
   Tag,
@@ -85,6 +84,11 @@ const MENU_TYPES: Record<number, { label: string; desc: string }> = {
   3: { label: "按钮", desc: "页面内的操作权限点" },
 };
 
+function cleanOptional(value?: string | null) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 export function MenuDialog({
   editing,
   parentId,
@@ -98,7 +102,7 @@ export function MenuDialog({
     name: editing?.name ?? "",
     type: editing?.type ?? 2,
     path: editing?.path ?? "",
-    component: editing?.component ?? "",
+    component: null,
     perm: editing?.perm ?? "",
     api_path: editing?.api_path ?? "",
     api_method: editing?.api_method ?? "",
@@ -114,7 +118,17 @@ export function MenuDialog({
   function submit(event?: SubmitEvent<HTMLFormElement>) {
     event?.preventDefault();
     if (saving || !form.name.trim()) return;
-    onSubmit(editing?.id, form);
+    const payload: CreateMenuPayload = {
+      ...form,
+      name: form.name.trim(),
+      path: isButton ? null : cleanOptional(form.path),
+      component: null,
+      perm: cleanOptional(form.perm),
+      api_path: cleanOptional(form.api_path),
+      api_method: cleanOptional(form.api_method),
+      icon: isButton ? null : cleanOptional(form.icon),
+    };
+    onSubmit(editing?.id, payload);
   }
 
   return (
@@ -133,7 +147,7 @@ export function MenuDialog({
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="size-3.5 text-primary-foreground/80" />
                     <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                      {editing ? "Record update" : "New entry"}
+                      {editing ? "记录更新" : "新增记录"}
                     </span>
                   </div>
                   <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
@@ -282,7 +296,7 @@ export function MenuDialog({
                       <div>
                         <h3 className="text-sm font-semibold">基本信息</h3>
                         <p className="text-xs text-muted-foreground">
-                          名称、路由与组件配置
+                          名称、路由与图标配置
                         </p>
                       </div>
                     </div>
@@ -322,38 +336,17 @@ export function MenuDialog({
                       )}
                     </div>
                     {!isButton && (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <Field
-                          icon={Route}
-                          label="路由路径"
-                          htmlFor="menu-path"
-                        >
-                          <Input
-                            id="menu-path"
-                            value={form.path ?? ""}
-                            placeholder="/system/user"
-                            onChange={(e) =>
-                              setForm({ ...form, path: e.target.value })
-                            }
-                            className="h-10 bg-muted/25 px-3 font-mono text-sm"
-                          />
-                        </Field>
-                        <Field
-                          icon={Puzzle}
-                          label="组件路径"
-                          htmlFor="menu-component"
-                        >
-                          <Input
-                            id="menu-component"
-                            value={form.component ?? ""}
-                            placeholder="system/user/index"
-                            onChange={(e) =>
-                              setForm({ ...form, component: e.target.value })
-                            }
-                            className="h-10 bg-muted/25 px-3 font-mono text-sm"
-                          />
-                        </Field>
-                      </div>
+                      <Field icon={Route} label="路由路径" htmlFor="menu-path">
+                        <Input
+                          id="menu-path"
+                          value={form.path ?? ""}
+                          placeholder="/users"
+                          onChange={(e) =>
+                            setForm({ ...form, path: e.target.value })
+                          }
+                          className="h-10 bg-muted/25 px-3 font-mono text-sm"
+                        />
+                      </Field>
                     )}
                   </section>
 

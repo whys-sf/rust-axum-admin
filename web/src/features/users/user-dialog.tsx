@@ -144,7 +144,7 @@ export function UserDialog({
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="size-3.5 text-primary-foreground/80" />
                       <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                        {editing ? "Record update" : "New credential"}
+                        {editing ? "记录更新" : "新增凭证"}
                       </span>
                     </div>
                     <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">

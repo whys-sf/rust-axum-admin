@@ -12,7 +12,7 @@ config/local.toml
 
 # Logs
 *.log
-logs/
+/logs/
 
 # Editor / IDE
 .idea/

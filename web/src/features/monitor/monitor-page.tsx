@@ -214,7 +214,7 @@ export function MonitorPage() {
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.22em] text-primary-foreground/75 uppercase">
               <Activity className="size-4" />
-              System telemetry
+              系统遥测
             </div>
             <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
               运行态指挥台
@@ -270,7 +270,7 @@ export function MonitorPage() {
         <div className="mb-3 flex items-end justify-between gap-4">
           <div>
             <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase">
-              Resource pressure
+              资源压力
             </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight">资源压力</h2>
           </div>
@@ -318,7 +318,7 @@ export function MonitorPage() {
             <div>
               <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] text-primary uppercase">
                 <Server className="size-4" />
-                Host environment
+                主机环境
               </div>
               <h2 className="mt-2 text-lg font-semibold tracking-tight">主机环境</h2>
               <p className="mt-1 text-xs text-muted-foreground">操作系统、运行进程与节点身份</p>
@@ -363,7 +363,7 @@ export function MonitorPage() {
             <div>
               <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] text-primary uppercase">
                 <Database className="size-4" />
-                Redis efficiency
+                缓存效能
               </div>
               <h2 className="mt-2 text-lg font-semibold tracking-tight">缓存效能</h2>
               <p className="mt-1 text-xs text-muted-foreground">

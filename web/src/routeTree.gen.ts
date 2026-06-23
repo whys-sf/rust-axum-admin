@@ -9,200 +9,217 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteRouteImport } from './routes/login/route'
+import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppUsersRouteImport } from './routes/_app/users'
-import { Route as AppTenantsRouteImport } from './routes/_app/tenants'
-import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppRolesRouteImport } from './routes/_app/roles'
-import { Route as AppProfileRouteImport } from './routes/_app/profile'
-import { Route as AppPostsRouteImport } from './routes/_app/posts'
-import { Route as AppParamsRouteImport } from './routes/_app/params'
-import { Route as AppOnlineRouteImport } from './routes/_app/online'
-import { Route as AppNoticesRouteImport } from './routes/_app/notices'
-import { Route as AppMonitorRouteImport } from './routes/_app/monitor'
-import { Route as AppMessagesRouteImport } from './routes/_app/messages'
-import { Route as AppMenusRouteImport } from './routes/_app/menus'
-import { Route as AppLogsRouteImport } from './routes/_app/logs'
-import { Route as AppJobsRouteImport } from './routes/_app/jobs'
-import { Route as AppGenRouteImport } from './routes/_app/gen'
-import { Route as AppFilesRouteImport } from './routes/_app/files'
-import { Route as AppDictRouteImport } from './routes/_app/dict'
-import { Route as AppDeptsRouteImport } from './routes/_app/depts'
+import { Route as AppUsersRouteRouteImport } from './routes/_app/users/route'
+import { Route as AppTenantsRouteRouteImport } from './routes/_app/tenants/route'
+import { Route as AppSettingsRouteRouteImport } from './routes/_app/settings/route'
+import { Route as AppRolesRouteRouteImport } from './routes/_app/roles/route'
+import { Route as AppProfileRouteRouteImport } from './routes/_app/profile/route'
+import { Route as AppPostsRouteRouteImport } from './routes/_app/posts/route'
+import { Route as AppParamsRouteRouteImport } from './routes/_app/params/route'
+import { Route as AppOnlineRouteRouteImport } from './routes/_app/online/route'
+import { Route as AppNoticesRouteRouteImport } from './routes/_app/notices/route'
+import { Route as AppMonitorRouteRouteImport } from './routes/_app/monitor/route'
+import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/route'
+import { Route as AppMenusRouteRouteImport } from './routes/_app/menus/route'
+import { Route as AppLogsRouteRouteImport } from './routes/_app/logs/route'
+import { Route as AppJobsRouteRouteImport } from './routes/_app/jobs/route'
+import { Route as AppGenRouteRouteImport } from './routes/_app/gen/route'
+import { Route as AppFilesRouteRouteImport } from './routes/_app/files/route'
+import { Route as AppDictRouteRouteImport } from './routes/_app/dict/route'
+import { Route as AppDeptsRouteRouteImport } from './routes/_app/depts/route'
+import { Route as AppDictIndexRouteImport } from './routes/_app/dict/index'
+import { Route as AppDictItemsRouteImport } from './routes/_app/dict/items'
 
-const LoginRoute = LoginRouteImport.update({
+const LoginRouteRoute = LoginRouteRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
+const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppUsersRoute = AppUsersRouteImport.update({
+const AppUsersRouteRoute = AppUsersRouteRouteImport.update({
   id: '/users',
   path: '/users',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppTenantsRoute = AppTenantsRouteImport.update({
+const AppTenantsRouteRoute = AppTenantsRouteRouteImport.update({
   id: '/tenants',
   path: '/tenants',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
+const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppRolesRoute = AppRolesRouteImport.update({
+const AppRolesRouteRoute = AppRolesRouteRouteImport.update({
   id: '/roles',
   path: '/roles',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppProfileRoute = AppProfileRouteImport.update({
+const AppProfileRouteRoute = AppProfileRouteRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppPostsRoute = AppPostsRouteImport.update({
+const AppPostsRouteRoute = AppPostsRouteRouteImport.update({
   id: '/posts',
   path: '/posts',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppParamsRoute = AppParamsRouteImport.update({
+const AppParamsRouteRoute = AppParamsRouteRouteImport.update({
   id: '/params',
   path: '/params',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppOnlineRoute = AppOnlineRouteImport.update({
+const AppOnlineRouteRoute = AppOnlineRouteRouteImport.update({
   id: '/online',
   path: '/online',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppNoticesRoute = AppNoticesRouteImport.update({
+const AppNoticesRouteRoute = AppNoticesRouteRouteImport.update({
   id: '/notices',
   path: '/notices',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppMonitorRoute = AppMonitorRouteImport.update({
+const AppMonitorRouteRoute = AppMonitorRouteRouteImport.update({
   id: '/monitor',
   path: '/monitor',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppMessagesRoute = AppMessagesRouteImport.update({
+const AppMessagesRouteRoute = AppMessagesRouteRouteImport.update({
   id: '/messages',
   path: '/messages',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppMenusRoute = AppMenusRouteImport.update({
+const AppMenusRouteRoute = AppMenusRouteRouteImport.update({
   id: '/menus',
   path: '/menus',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppLogsRoute = AppLogsRouteImport.update({
+const AppLogsRouteRoute = AppLogsRouteRouteImport.update({
   id: '/logs',
   path: '/logs',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppJobsRoute = AppJobsRouteImport.update({
+const AppJobsRouteRoute = AppJobsRouteRouteImport.update({
   id: '/jobs',
   path: '/jobs',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppGenRoute = AppGenRouteImport.update({
+const AppGenRouteRoute = AppGenRouteRouteImport.update({
   id: '/gen',
   path: '/gen',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppFilesRoute = AppFilesRouteImport.update({
+const AppFilesRouteRoute = AppFilesRouteRouteImport.update({
   id: '/files',
   path: '/files',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppDictRoute = AppDictRouteImport.update({
+const AppDictRouteRoute = AppDictRouteRouteImport.update({
   id: '/dict',
   path: '/dict',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppDeptsRoute = AppDeptsRouteImport.update({
+const AppDeptsRouteRoute = AppDeptsRouteRouteImport.update({
   id: '/depts',
   path: '/depts',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDictIndexRoute = AppDictIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppDictRouteRoute,
+} as any)
+const AppDictItemsRoute = AppDictItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => AppDictRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/login': typeof LoginRoute
-  '/depts': typeof AppDeptsRoute
-  '/dict': typeof AppDictRoute
-  '/files': typeof AppFilesRoute
-  '/gen': typeof AppGenRoute
-  '/jobs': typeof AppJobsRoute
-  '/logs': typeof AppLogsRoute
-  '/menus': typeof AppMenusRoute
-  '/messages': typeof AppMessagesRoute
-  '/monitor': typeof AppMonitorRoute
-  '/notices': typeof AppNoticesRoute
-  '/online': typeof AppOnlineRoute
-  '/params': typeof AppParamsRoute
-  '/posts': typeof AppPostsRoute
-  '/profile': typeof AppProfileRoute
-  '/roles': typeof AppRolesRoute
-  '/settings': typeof AppSettingsRoute
-  '/tenants': typeof AppTenantsRoute
-  '/users': typeof AppUsersRoute
+  '/login': typeof LoginRouteRoute
+  '/depts': typeof AppDeptsRouteRoute
+  '/dict': typeof AppDictRouteRouteWithChildren
+  '/files': typeof AppFilesRouteRoute
+  '/gen': typeof AppGenRouteRoute
+  '/jobs': typeof AppJobsRouteRoute
+  '/logs': typeof AppLogsRouteRoute
+  '/menus': typeof AppMenusRouteRoute
+  '/messages': typeof AppMessagesRouteRoute
+  '/monitor': typeof AppMonitorRouteRoute
+  '/notices': typeof AppNoticesRouteRoute
+  '/online': typeof AppOnlineRouteRoute
+  '/params': typeof AppParamsRouteRoute
+  '/posts': typeof AppPostsRouteRoute
+  '/profile': typeof AppProfileRouteRoute
+  '/roles': typeof AppRolesRouteRoute
+  '/settings': typeof AppSettingsRouteRoute
+  '/tenants': typeof AppTenantsRouteRoute
+  '/users': typeof AppUsersRouteRoute
+  '/dict/items': typeof AppDictItemsRoute
+  '/dict/': typeof AppDictIndexRoute
 }
 export interface FileRoutesByTo {
-  '/login': typeof LoginRoute
-  '/depts': typeof AppDeptsRoute
-  '/dict': typeof AppDictRoute
-  '/files': typeof AppFilesRoute
-  '/gen': typeof AppGenRoute
-  '/jobs': typeof AppJobsRoute
-  '/logs': typeof AppLogsRoute
-  '/menus': typeof AppMenusRoute
-  '/messages': typeof AppMessagesRoute
-  '/monitor': typeof AppMonitorRoute
-  '/notices': typeof AppNoticesRoute
-  '/online': typeof AppOnlineRoute
-  '/params': typeof AppParamsRoute
-  '/posts': typeof AppPostsRoute
-  '/profile': typeof AppProfileRoute
-  '/roles': typeof AppRolesRoute
-  '/settings': typeof AppSettingsRoute
-  '/tenants': typeof AppTenantsRoute
-  '/users': typeof AppUsersRoute
+  '/login': typeof LoginRouteRoute
+  '/depts': typeof AppDeptsRouteRoute
+  '/files': typeof AppFilesRouteRoute
+  '/gen': typeof AppGenRouteRoute
+  '/jobs': typeof AppJobsRouteRoute
+  '/logs': typeof AppLogsRouteRoute
+  '/menus': typeof AppMenusRouteRoute
+  '/messages': typeof AppMessagesRouteRoute
+  '/monitor': typeof AppMonitorRouteRoute
+  '/notices': typeof AppNoticesRouteRoute
+  '/online': typeof AppOnlineRouteRoute
+  '/params': typeof AppParamsRouteRoute
+  '/posts': typeof AppPostsRouteRoute
+  '/profile': typeof AppProfileRouteRoute
+  '/roles': typeof AppRolesRouteRoute
+  '/settings': typeof AppSettingsRouteRoute
+  '/tenants': typeof AppTenantsRouteRoute
+  '/users': typeof AppUsersRouteRoute
   '/': typeof AppIndexRoute
+  '/dict/items': typeof AppDictItemsRoute
+  '/dict': typeof AppDictIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_app': typeof AppRouteWithChildren
-  '/login': typeof LoginRoute
-  '/_app/depts': typeof AppDeptsRoute
-  '/_app/dict': typeof AppDictRoute
-  '/_app/files': typeof AppFilesRoute
-  '/_app/gen': typeof AppGenRoute
-  '/_app/jobs': typeof AppJobsRoute
-  '/_app/logs': typeof AppLogsRoute
-  '/_app/menus': typeof AppMenusRoute
-  '/_app/messages': typeof AppMessagesRoute
-  '/_app/monitor': typeof AppMonitorRoute
-  '/_app/notices': typeof AppNoticesRoute
-  '/_app/online': typeof AppOnlineRoute
-  '/_app/params': typeof AppParamsRoute
-  '/_app/posts': typeof AppPostsRoute
-  '/_app/profile': typeof AppProfileRoute
-  '/_app/roles': typeof AppRolesRoute
-  '/_app/settings': typeof AppSettingsRoute
-  '/_app/tenants': typeof AppTenantsRoute
-  '/_app/users': typeof AppUsersRoute
+  '/_app': typeof AppRouteRouteWithChildren
+  '/login': typeof LoginRouteRoute
+  '/_app/depts': typeof AppDeptsRouteRoute
+  '/_app/dict': typeof AppDictRouteRouteWithChildren
+  '/_app/files': typeof AppFilesRouteRoute
+  '/_app/gen': typeof AppGenRouteRoute
+  '/_app/jobs': typeof AppJobsRouteRoute
+  '/_app/logs': typeof AppLogsRouteRoute
+  '/_app/menus': typeof AppMenusRouteRoute
+  '/_app/messages': typeof AppMessagesRouteRoute
+  '/_app/monitor': typeof AppMonitorRouteRoute
+  '/_app/notices': typeof AppNoticesRouteRoute
+  '/_app/online': typeof AppOnlineRouteRoute
+  '/_app/params': typeof AppParamsRouteRoute
+  '/_app/posts': typeof AppPostsRouteRoute
+  '/_app/profile': typeof AppProfileRouteRoute
+  '/_app/roles': typeof AppRolesRouteRoute
+  '/_app/settings': typeof AppSettingsRouteRoute
+  '/_app/tenants': typeof AppTenantsRouteRoute
+  '/_app/users': typeof AppUsersRouteRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/dict/items': typeof AppDictItemsRoute
+  '/_app/dict/': typeof AppDictIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -227,11 +244,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tenants'
     | '/users'
+    | '/dict/items'
+    | '/dict/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/depts'
-    | '/dict'
     | '/files'
     | '/gen'
     | '/jobs'
@@ -249,6 +267,8 @@ export interface FileRouteTypes {
     | '/tenants'
     | '/users'
     | '/'
+    | '/dict/items'
+    | '/dict'
   id:
     | '__root__'
     | '/_app'
@@ -272,11 +292,13 @@ export interface FileRouteTypes {
     | '/_app/tenants'
     | '/_app/users'
     | '/_app/'
+    | '/_app/dict/items'
+    | '/_app/dict/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AppRoute: typeof AppRouteWithChildren
-  LoginRoute: typeof LoginRoute
+  AppRouteRoute: typeof AppRouteRouteWithChildren
+  LoginRouteRoute: typeof LoginRouteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -285,14 +307,14 @@ declare module '@tanstack/react-router' {
       id: '/login'
       path: '/login'
       fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+      preLoaderRoute: typeof LoginRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
       id: '/_app'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -300,186 +322,216 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/users': {
       id: '/_app/users'
       path: '/users'
       fullPath: '/users'
-      preLoaderRoute: typeof AppUsersRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppUsersRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/tenants': {
       id: '/_app/tenants'
       path: '/tenants'
       fullPath: '/tenants'
-      preLoaderRoute: typeof AppTenantsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppTenantsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppSettingsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/roles': {
       id: '/_app/roles'
       path: '/roles'
       fullPath: '/roles'
-      preLoaderRoute: typeof AppRolesRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppRolesRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/profile': {
       id: '/_app/profile'
       path: '/profile'
       fullPath: '/profile'
-      preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppProfileRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/posts': {
       id: '/_app/posts'
       path: '/posts'
       fullPath: '/posts'
-      preLoaderRoute: typeof AppPostsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppPostsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/params': {
       id: '/_app/params'
       path: '/params'
       fullPath: '/params'
-      preLoaderRoute: typeof AppParamsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppParamsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/online': {
       id: '/_app/online'
       path: '/online'
       fullPath: '/online'
-      preLoaderRoute: typeof AppOnlineRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppOnlineRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/notices': {
       id: '/_app/notices'
       path: '/notices'
       fullPath: '/notices'
-      preLoaderRoute: typeof AppNoticesRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppNoticesRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/monitor': {
       id: '/_app/monitor'
       path: '/monitor'
       fullPath: '/monitor'
-      preLoaderRoute: typeof AppMonitorRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppMonitorRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/messages': {
       id: '/_app/messages'
       path: '/messages'
       fullPath: '/messages'
-      preLoaderRoute: typeof AppMessagesRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppMessagesRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/menus': {
       id: '/_app/menus'
       path: '/menus'
       fullPath: '/menus'
-      preLoaderRoute: typeof AppMenusRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppMenusRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/logs': {
       id: '/_app/logs'
       path: '/logs'
       fullPath: '/logs'
-      preLoaderRoute: typeof AppLogsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppLogsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/jobs': {
       id: '/_app/jobs'
       path: '/jobs'
       fullPath: '/jobs'
-      preLoaderRoute: typeof AppJobsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppJobsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/gen': {
       id: '/_app/gen'
       path: '/gen'
       fullPath: '/gen'
-      preLoaderRoute: typeof AppGenRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppGenRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/files': {
       id: '/_app/files'
       path: '/files'
       fullPath: '/files'
-      preLoaderRoute: typeof AppFilesRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppFilesRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/dict': {
       id: '/_app/dict'
       path: '/dict'
       fullPath: '/dict'
-      preLoaderRoute: typeof AppDictRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppDictRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/depts': {
       id: '/_app/depts'
       path: '/depts'
       fullPath: '/depts'
-      preLoaderRoute: typeof AppDeptsRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof AppDeptsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/dict/': {
+      id: '/_app/dict/'
+      path: '/'
+      fullPath: '/dict/'
+      preLoaderRoute: typeof AppDictIndexRouteImport
+      parentRoute: typeof AppDictRouteRoute
+    }
+    '/_app/dict/items': {
+      id: '/_app/dict/items'
+      path: '/items'
+      fullPath: '/dict/items'
+      preLoaderRoute: typeof AppDictItemsRouteImport
+      parentRoute: typeof AppDictRouteRoute
     }
   }
 }
 
-interface AppRouteChildren {
-  AppDeptsRoute: typeof AppDeptsRoute
-  AppDictRoute: typeof AppDictRoute
-  AppFilesRoute: typeof AppFilesRoute
-  AppGenRoute: typeof AppGenRoute
-  AppJobsRoute: typeof AppJobsRoute
-  AppLogsRoute: typeof AppLogsRoute
-  AppMenusRoute: typeof AppMenusRoute
-  AppMessagesRoute: typeof AppMessagesRoute
-  AppMonitorRoute: typeof AppMonitorRoute
-  AppNoticesRoute: typeof AppNoticesRoute
-  AppOnlineRoute: typeof AppOnlineRoute
-  AppParamsRoute: typeof AppParamsRoute
-  AppPostsRoute: typeof AppPostsRoute
-  AppProfileRoute: typeof AppProfileRoute
-  AppRolesRoute: typeof AppRolesRoute
-  AppSettingsRoute: typeof AppSettingsRoute
-  AppTenantsRoute: typeof AppTenantsRoute
-  AppUsersRoute: typeof AppUsersRoute
+interface AppDictRouteRouteChildren {
+  AppDictItemsRoute: typeof AppDictItemsRoute
+  AppDictIndexRoute: typeof AppDictIndexRoute
+}
+
+const AppDictRouteRouteChildren: AppDictRouteRouteChildren = {
+  AppDictItemsRoute: AppDictItemsRoute,
+  AppDictIndexRoute: AppDictIndexRoute,
+}
+
+const AppDictRouteRouteWithChildren = AppDictRouteRoute._addFileChildren(
+  AppDictRouteRouteChildren,
+)
+
+interface AppRouteRouteChildren {
+  AppDeptsRouteRoute: typeof AppDeptsRouteRoute
+  AppDictRouteRoute: typeof AppDictRouteRouteWithChildren
+  AppFilesRouteRoute: typeof AppFilesRouteRoute
+  AppGenRouteRoute: typeof AppGenRouteRoute
+  AppJobsRouteRoute: typeof AppJobsRouteRoute
+  AppLogsRouteRoute: typeof AppLogsRouteRoute
+  AppMenusRouteRoute: typeof AppMenusRouteRoute
+  AppMessagesRouteRoute: typeof AppMessagesRouteRoute
+  AppMonitorRouteRoute: typeof AppMonitorRouteRoute
+  AppNoticesRouteRoute: typeof AppNoticesRouteRoute
+  AppOnlineRouteRoute: typeof AppOnlineRouteRoute
+  AppParamsRouteRoute: typeof AppParamsRouteRoute
+  AppPostsRouteRoute: typeof AppPostsRouteRoute
+  AppProfileRouteRoute: typeof AppProfileRouteRoute
+  AppRolesRouteRoute: typeof AppRolesRouteRoute
+  AppSettingsRouteRoute: typeof AppSettingsRouteRoute
+  AppTenantsRouteRoute: typeof AppTenantsRouteRoute
+  AppUsersRouteRoute: typeof AppUsersRouteRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
-const AppRouteChildren: AppRouteChildren = {
-  AppDeptsRoute: AppDeptsRoute,
-  AppDictRoute: AppDictRoute,
-  AppFilesRoute: AppFilesRoute,
-  AppGenRoute: AppGenRoute,
-  AppJobsRoute: AppJobsRoute,
-  AppLogsRoute: AppLogsRoute,
-  AppMenusRoute: AppMenusRoute,
-  AppMessagesRoute: AppMessagesRoute,
-  AppMonitorRoute: AppMonitorRoute,
-  AppNoticesRoute: AppNoticesRoute,
-  AppOnlineRoute: AppOnlineRoute,
-  AppParamsRoute: AppParamsRoute,
-  AppPostsRoute: AppPostsRoute,
-  AppProfileRoute: AppProfileRoute,
-  AppRolesRoute: AppRolesRoute,
-  AppSettingsRoute: AppSettingsRoute,
-  AppTenantsRoute: AppTenantsRoute,
-  AppUsersRoute: AppUsersRoute,
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppDeptsRouteRoute: AppDeptsRouteRoute,
+  AppDictRouteRoute: AppDictRouteRouteWithChildren,
+  AppFilesRouteRoute: AppFilesRouteRoute,
+  AppGenRouteRoute: AppGenRouteRoute,
+  AppJobsRouteRoute: AppJobsRouteRoute,
+  AppLogsRouteRoute: AppLogsRouteRoute,
+  AppMenusRouteRoute: AppMenusRouteRoute,
+  AppMessagesRouteRoute: AppMessagesRouteRoute,
+  AppMonitorRouteRoute: AppMonitorRouteRoute,
+  AppNoticesRouteRoute: AppNoticesRouteRoute,
+  AppOnlineRouteRoute: AppOnlineRouteRoute,
+  AppParamsRouteRoute: AppParamsRouteRoute,
+  AppPostsRouteRoute: AppPostsRouteRoute,
+  AppProfileRouteRoute: AppProfileRouteRoute,
+  AppRolesRouteRoute: AppRolesRouteRoute,
+  AppSettingsRouteRoute: AppSettingsRouteRoute,
+  AppTenantsRouteRoute: AppTenantsRouteRoute,
+  AppUsersRouteRoute: AppUsersRouteRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
-  AppRoute: AppRouteWithChildren,
-  LoginRoute: LoginRoute,
+  AppRouteRoute: AppRouteRouteWithChildren,
+  LoginRouteRoute: LoginRouteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -150,8 +150,8 @@ impl Services {
         if req.api_method.is_some() {
             active.api_method = Set(req.api_method);
         }
-        if req.icon.is_some() {
-            active.icon = Set(req.icon);
+        if let Some(v) = req.icon {
+            active.icon = Set(v);
         }
         if let Some(v) = req.sort {
             active.sort = Set(v);
