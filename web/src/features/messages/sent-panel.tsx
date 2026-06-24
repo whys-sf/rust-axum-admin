@@ -5,16 +5,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { PagePagination } from '@/components/common/page-pagination'
 import { PERM, usePermission } from '@/lib/permissions'
 import { messageApi } from '@/lib/api/message'
 import type { SentMessage } from '@/lib/api/types'
@@ -66,6 +58,50 @@ export function SentPanel() {
 
   const list = query.data?.list ?? []
 
+  const columns: DataTableColumnDef<SentMessage>[] = [
+    {
+      accessorKey: 'title',
+      header: '标题',
+      cell: ({ row }) => <span className="font-medium">{row.original.title}</span>,
+    },
+    {
+      accessorKey: 'msg_type',
+      header: '类型',
+      cell: ({ row }) => <Badge variant="outline">{typeLabel(row.original.msg_type)}</Badge>,
+    },
+    {
+      id: 'read_rate',
+      header: '已读 / 收件人',
+      cell: ({ row }) => `${row.original.read} / ${row.original.total}`,
+    },
+    {
+      accessorKey: 'created_at',
+      header: '发送时间',
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{new Date(row.original.created_at).toLocaleString()}</span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '操作',
+      className: 'text-right',
+      cell: ({ row }) => {
+        const m = row.original
+        return canDelete ? (
+          <ConfirmDialog
+            description={`确定删除消息「${m.title}」吗？此操作会同时删除所有收件箱副本。`}
+            onConfirm={() => removeMutation.mutateAsync(m.id)}
+            trigger={
+              <Button variant="ghost" size="icon" title="删除">
+                <Trash2 className="size-4 text-destructive" />
+              </Button>
+            }
+          />
+        ) : null
+      },
+    },
+  ]
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -95,65 +131,13 @@ export function SentPanel() {
           </Button>
         )}
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>标题</TableHead>
-            <TableHead>类型</TableHead>
-            <TableHead>已读 / 收件人</TableHead>
-            <TableHead>发送时间</TableHead>
-            <TableHead className="text-right">操作</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {query.isLoading ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
-                加载中...
-              </TableCell>
-            </TableRow>
-          ) : list.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
-                暂无数据
-              </TableCell>
-            </TableRow>
-          ) : (
-            list.map((m: SentMessage) => (
-              <TableRow key={m.id}>
-                <TableCell className="font-medium">{m.title}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{typeLabel(m.msg_type)}</Badge>
-                </TableCell>
-                <TableCell>
-                  {m.read} / {m.total}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {new Date(m.created_at).toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right">
-                  {canDelete && (
-                    <ConfirmDialog
-                      description={`确定删除消息「${m.title}」吗？此操作会同时删除所有收件箱副本。`}
-                      onConfirm={() => removeMutation.mutateAsync(m.id)}
-                      trigger={
-                        <Button variant="ghost" size="icon" title="删除">
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
-                      }
-                    />
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-      <PagePagination
-        page={page}
-        pageSize={PAGE_SIZE}
-        total={query.data?.total ?? 0}
-        onChange={setPage}
+      <DataTable
+        columns={columns}
+        data={list}
+        loading={query.isLoading}
+        error={query.isError}
+        onRetry={() => void query.refetch()}
+        pagination={{ page, pageSize: PAGE_SIZE, total: query.data?.total ?? 0, onChange: setPage }}
       />
       {composing && (
         <ComposeDialog

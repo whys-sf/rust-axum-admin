@@ -1,26 +1,27 @@
-import { Fragment, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { StatusBadge } from '@/components/common/status-badge'
 import { ManagementPage } from '@/components/common/management-page'
+import {
+  DataTable,
+  type DataTableColumnDef,
+} from '@/components/common/data-table'
 import { menuApi, type CreateMenuPayload } from '@/lib/api/menu'
 import { flattenTree } from '@/lib/tree'
 import { MENU_TYPE } from '@/lib/constants'
 import type { MenuNode } from '@/lib/api/types'
 import { MenuDialog } from '@/features/menus/menu-dialog'
+
+interface MenuTableRow {
+  node: MenuNode
+  depth: number
+}
 
 export function MenusPage() {
   const qc = useQueryClient()
@@ -67,87 +68,119 @@ export function MenusPage() {
     })
   }
 
-  function renderRows(nodes: MenuNode[], depth: number): React.ReactNode {
-    return nodes.map((node) => {
-      const hasChildren = (node.children?.length ?? 0) > 0
-      const isOpen = expanded.has(node.id)
-      const type = MENU_TYPE[node.type]
-      return (
-        <Fragment key={node.id}>
-          <TableRow>
-            <TableCell>
-              <div
-                className="flex items-center"
-                style={{ paddingLeft: depth * 20 }}
+  const rows = useMemo(() => {
+    const visibleRows: MenuTableRow[] = []
+    function walk(nodes: MenuNode[], depth: number) {
+      for (const node of nodes) {
+        visibleRows.push({ node, depth })
+        if ((node.children?.length ?? 0) > 0 && expanded.has(node.id)) {
+          walk(node.children, depth + 1)
+        }
+      }
+    }
+    walk(data ?? [], 0)
+    return visibleRows
+  }, [data, expanded])
+
+  const columns = useMemo<DataTableColumnDef<MenuTableRow>[]>(
+    () => [
+      {
+        header: '菜单名称',
+        cell: ({ row }) => {
+          const { node, depth } = row.original
+          const hasChildren = (node.children?.length ?? 0) > 0
+          const isOpen = expanded.has(node.id)
+          return (
+            <div className="flex items-center" style={{ paddingLeft: depth * 20 }}>
+              {hasChildren ? (
+                <button
+                  type="button"
+                  onClick={() => toggle(node.id)}
+                  className="mr-1 text-muted-foreground hover:text-foreground"
+                >
+                  {isOpen ? (
+                    <ChevronDown className="size-4" />
+                  ) : (
+                    <ChevronRight className="size-4" />
+                  )}
+                </button>
+              ) : (
+                <span className="mr-1 inline-block size-4" />
+              )}
+              <span className="font-medium">{node.name}</span>
+            </div>
+          )
+        },
+      },
+      {
+        header: '类型',
+        cell: ({ row }) => {
+          const type = MENU_TYPE[row.original.node.type]
+          return (
+            <Badge variant={type?.variant ?? 'outline'}>
+              {type?.label ?? row.original.node.type}
+            </Badge>
+          )
+        },
+      },
+      {
+        header: '路由路径',
+        meta: { cellClassName: 'text-muted-foreground' },
+        cell: ({ row }) => row.original.node.path || '—',
+      },
+      {
+        header: '权限标识',
+        meta: { cellClassName: 'text-muted-foreground' },
+        cell: ({ row }) => row.original.node.perm || '—',
+      },
+      {
+        header: '排序',
+        cell: ({ row }) => row.original.node.sort,
+      },
+      {
+        header: '状态',
+        cell: ({ row }) => <StatusBadge status={row.original.node.status} />,
+      },
+      {
+        header: '操作',
+        className: 'text-right',
+        meta: { cellClassName: 'text-right' },
+        cell: ({ row }) => {
+          const { node } = row.original
+          return (
+            <div className="flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                title="新增子菜单"
+                onClick={() => setDialog({ open: true, parentId: node.id })}
               >
-                {hasChildren ? (
-                  <button
-                    type="button"
-                    onClick={() => toggle(node.id)}
-                    className="mr-1 text-muted-foreground hover:text-foreground"
-                  >
-                    {isOpen ? (
-                      <ChevronDown className="size-4" />
-                    ) : (
-                      <ChevronRight className="size-4" />
-                    )}
-                  </button>
-                ) : (
-                  <span className="mr-1 inline-block size-4" />
-                )}
-                <span className="font-medium">{node.name}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <Badge variant={type?.variant ?? 'outline'}>
-                {type?.label ?? node.type}
-              </Badge>
-            </TableCell>
-            <TableCell className="text-muted-foreground">
-              {node.path || '—'}
-            </TableCell>
-            <TableCell className="text-muted-foreground">
-              {node.perm || '—'}
-            </TableCell>
-            <TableCell>{node.sort}</TableCell>
-            <TableCell>
-              <StatusBadge status={node.status} />
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="新增子菜单"
-                  onClick={() => setDialog({ open: true, parentId: node.id })}
-                >
-                  <Plus className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="编辑"
-                  onClick={() => setDialog({ open: true, editing: node })}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <ConfirmDialog
-                  description={`确定删除菜单「${node.name}」吗？`}
-                  onConfirm={() => removeMutation.mutateAsync(node.id)}
-                  trigger={
-                    <Button variant="ghost" size="icon" title="删除">
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  }
-                />
-              </div>
-            </TableCell>
-          </TableRow>
-          {hasChildren && isOpen && renderRows(node.children, depth + 1)}
-        </Fragment>
-      )
-    })
-  }
+                <Plus className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                title="编辑"
+                onClick={() => setDialog({ open: true, editing: node })}
+              >
+                <Pencil className="size-4" />
+              </Button>
+              <ConfirmDialog
+                description={`确定删除菜单「${node.name}」吗？`}
+                onConfirm={() => removeMutation.mutateAsync(node.id)}
+                trigger={
+                  <Button variant="ghost" size="icon" title="删除">
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                }
+              />
+            </div>
+          )
+        },
+      },
+    ],
+    [expanded, removeMutation],
+  )
 
   return (
     <ManagementPage title="菜单路由控制台" description="编排导航结构、路由入口和权限标识。">
@@ -160,36 +193,12 @@ export function MenusPage() {
         </Button>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>菜单名称</TableHead>
-              <TableHead>类型</TableHead>
-              <TableHead>路由路径</TableHead>
-              <TableHead>权限标识</TableHead>
-              <TableHead>排序</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
-                  加载中...
-                </TableCell>
-              </TableRow>
-            ) : (data?.length ?? 0) === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
-                  暂无数据
-                </TableCell>
-              </TableRow>
-            ) : (
-              renderRows(data!, 0)
-            )}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={columns}
+          data={rows}
+          loading={isLoading}
+          empty={(data?.length ?? 0) === 0}
+        />
       </CardContent>
       {dialog.open && (
         <MenuDialog

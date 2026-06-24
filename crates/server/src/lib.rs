@@ -1,8 +1,10 @@
+pub mod error;
 pub mod extract;
 pub mod handlers;
 pub mod infra;
 pub mod middleware;
 pub mod openapi;
+pub mod response;
 pub mod routes;
 pub mod state;
 
@@ -43,7 +45,11 @@ fn cors_layer(origins: &[String]) -> CorsLayer {
 /// create the redis pool, initialise the casbin enforcer and load all policies.
 pub async fn init_state(settings: Arc<Settings>) -> anyhow::Result<AppState> {
     let db = infra::db::connect(&settings.database.url, settings.database.max_connections).await?;
-    Migrator::up(&db, None).await?;
+    if settings.server.auto_migrate {
+        Migrator::up(&db, None).await?;
+    } else {
+        tracing::info!("database migrations skipped because server.auto_migrate=false");
+    }
 
     let redis = common::redis::create_pool(&settings.redis.url)?;
     let enforcer =

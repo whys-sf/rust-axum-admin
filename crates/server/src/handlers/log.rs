@@ -1,7 +1,8 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Query, State};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use serde::Deserialize;
 use service::dto::{CurrentUser, PageQuery};
 
@@ -27,7 +28,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<LogQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::operation_log::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::operation_log::Model>>> {
     let page = PageQuery::new(query.page.unwrap_or(1), query.page_size.unwrap_or(10));
     let result = state
         .services

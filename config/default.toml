@@ -1,5 +1,9 @@
 [server]
 addr = "0.0.0.0:8080"
+# Development-friendly defaults. Disable these in production or multi-instance
+# deployments unless a single designated instance owns startup jobs.
+auto_migrate = true
+enable_scheduler = true
 
 [database]
 # overridden by DATABASE_URL env var
@@ -12,7 +16,8 @@ url = "redis://127.0.0.1:6379"
 
 [jwt]
 secret = "change_me_to_a_long_random_secret_string_at_least_32_chars"
-access_ttl = 900
+# seconds
+access_ttl = 1440
 refresh_ttl = 604800
 
 [snowflake]

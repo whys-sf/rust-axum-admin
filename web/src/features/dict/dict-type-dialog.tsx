@@ -1,6 +1,5 @@
 import { useState, type SubmitEvent } from "react";
 import {
-  ArrowUpDown,
   BookOpen,
   Hash,
   LoaderCircle,
@@ -199,7 +198,7 @@ export function DictTypeDialog({
                   {/* 02 结构设置 */}
                   <section className="space-y-4 border-t border-dashed pt-6">
                     <div className="flex items-center gap-3">
-                      <span className="grid size-6 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      <span className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                         02
                       </span>
                       <div>
@@ -238,7 +237,7 @@ export function DictTypeDialog({
                   {/* 03 其他 */}
                   <section className="space-y-4 border-t border-dashed pt-6">
                     <div className="flex items-center gap-3">
-                      <span className="grid size-6 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      <span className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                         03
                       </span>
                       <div>

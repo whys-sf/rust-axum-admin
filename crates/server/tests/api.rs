@@ -47,6 +47,8 @@ fn test_settings() -> Settings {
             trust_forwarded_for: true,
             request_body_limit: 1024 * 1024,
             request_timeout_secs: 30,
+            auto_migrate: true,
+            enable_scheduler: true,
             upload_body_limit: 20 * 1024 * 1024,
         },
         database: DatabaseConfig {

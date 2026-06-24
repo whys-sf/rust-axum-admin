@@ -2,15 +2,11 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   KeyRound,
-  MoreHorizontal,
   Pencil,
   Plus,
-  RefreshCw,
-  RotateCcw,
   Search,
   Trash2,
   UserCog,
-  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,22 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   Card,
-  CardAction,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -42,18 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { ManagementPage } from "@/components/common/management-page";
-import { PagePagination } from "@/components/common/page-pagination";
+import {
+  DataTable,
+  type DataTableColumnDef,
+} from "@/components/common/data-table";
 import { StatusBadge } from "@/components/common/status-badge";
 import {
   userApi,
@@ -64,7 +42,6 @@ import { roleApi } from "@/lib/api/role";
 import { deptApi } from "@/lib/api/dept";
 import { flattenTree } from "@/lib/tree";
 import { PERM, usePermission } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
 import type { User } from "@/lib/api/types";
 import { UserDialog } from "@/features/users/user-dialog";
 import { AssignRolesDialog } from "@/features/users/assign-roles-dialog";
@@ -180,55 +157,135 @@ export function UsersPage() {
   });
 
   const list = usersQuery.data?.list ?? [];
-  const hasFilters = Boolean(search) || status !== "all";
-  const enabledOnPage = list.filter((user) => user.status === 1).length;
 
-  function resetFilters() {
-    setKeyword("");
-    setSearch("");
-    setStatus("all");
-    setPage(1);
-  }
+  const columns: DataTableColumnDef<User>[] = [
+    {
+      accessorKey: "username",
+      header: "用户名",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.username}</span>
+      ),
+    },
+    {
+      accessorKey: "nickname",
+      header: "昵称",
+      cell: ({ row }) => row.original.nickname || "—",
+    },
+    {
+      accessorKey: "email",
+      header: "邮箱",
+      className: "hidden md:table-cell",
+      meta: { cellClassName: "hidden md:table-cell" },
+      cell: ({ row }) => row.original.email || "—",
+    },
+    {
+      accessorKey: "phone",
+      header: "手机号",
+      className: "hidden lg:table-cell",
+      meta: { cellClassName: "hidden lg:table-cell" },
+      cell: ({ row }) => row.original.phone || "—",
+    },
+    {
+      accessorKey: "dept_id",
+      header: "部门",
+      className: "hidden xl:table-cell",
+      meta: { cellClassName: "hidden xl:table-cell" },
+      cell: ({ row }) =>
+        row.original.dept_id
+          ? (deptName.get(row.original.dept_id) ?? "未分配")
+          : "未分配",
+    },
+    {
+      accessorKey: "status",
+      header: "状态",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Switch
+            aria-label={`${row.original.status === 1 ? "停用" : "启用"}用户 ${row.original.username}`}
+            checked={row.original.status === 1}
+            disabled={statusMutation.isPending}
+            onCheckedChange={(checked) =>
+              statusMutation.mutate({
+                id: row.original.id,
+                status: checked ? 1 : 0,
+              })
+            }
+          />
+          <div className="hidden sm:block">
+            <StatusBadge status={row.original.status} />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: "操作",
+      className: "text-right",
+      meta: { cellClassName: "text-right" },
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="编辑"
+              onClick={() => setDialog({ kind: "edit", user })}
+            >
+              <Pencil className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="分配角色"
+              onClick={() => setDialog({ kind: "roles", user })}
+            >
+              <UserCog className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="重置密码"
+              onClick={() => setDialog({ kind: "reset", user })}
+            >
+              <KeyRound className="size-4" />
+            </Button>
+            <ConfirmDialog
+              description={`确定删除用户「${user.username}」吗？此操作不可撤销。`}
+              onConfirm={() => removeMutation.mutateAsync(user.id)}
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="删除"
+                  aria-label={`删除用户 ${user.username}`}
+                >
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              }
+            />
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <ManagementPage
       title="组织身份控制台"
       description="统一维护成员身份、部门归属与权限边界，让每一个账号都处于清晰、可控的访问状态。"
-      metrics={[
-        {
-          label: "结果总数",
-          value: String(usersQuery.data?.total ?? 0).padStart(2, "0"),
-          caption: "当前筛选",
-        },
-        {
-          label: "启用账号",
-          value: String(enabledOnPage).padStart(2, "0"),
-          caption: "当前页面",
-        },
-        {
-          label: "组织单元",
-          value: String(deptOptions.length).padStart(2, "0"),
-          caption: "可选部门",
-        },
-      ]}
     >
-      <Card
-        size="sm"
-        className="animate-in fade-in slide-in-from-bottom-2 duration-500"
-      >
-        <CardHeader>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>用户目录</CardTitle>
-          <CardDescription>账户状态与组织数据实时同步</CardDescription>
-          <CardAction>
-            <Button onClick={() => setDialog({ kind: "create" })}>
-              <Plus data-icon="inline-start" />
-              新增用户
-            </Button>
-          </CardAction>
+          <Button onClick={() => setDialog({ kind: "create" })}>
+            <Plus className="mr-1 size-4" />
+            新增用户
+          </Button>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent>
           <form
-            className="flex flex-col gap-2 sm:flex-row sm:items-center"
+            className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center"
             onSubmit={(e) => {
               e.preventDefault();
               setPage(1);
@@ -239,7 +296,7 @@ export function UsersPage() {
               aria-label="搜索用户"
               placeholder="搜索用户名"
               value={keyword}
-              className="sm:max-w-72"
+              className="max-w-xs"
               onChange={(e) => setKeyword(e.target.value)}
             />
             <Select
@@ -260,254 +317,31 @@ export function UsersPage() {
                 </SelectGroup>
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-2">
-              <Button type="submit" variant="secondary">
-                <Search data-icon="inline-start" />
-                搜索
-              </Button>
-              {hasFilters && (
-                <Button type="button" variant="ghost" onClick={resetFilters}>
-                  <RotateCcw data-icon="inline-start" />
-                  重置
-                </Button>
-              )}
-            </div>
-            <div className="hidden flex-1 sm:block" />
-            <div className="flex items-center justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="刷新用户列表"
-                title="刷新"
-                disabled={usersQuery.isFetching}
-                onClick={() => void usersQuery.refetch()}
-              >
-                <RefreshCw
-                  className={cn(usersQuery.isFetching && "animate-spin")}
-                />
-              </Button>
-            </div>
+            <Button type="submit" variant="secondary">
+              <Search className="mr-1 size-4" />
+              搜索
+            </Button>
           </form>
-          <div className="overflow-hidden rounded-lg border">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead>用户</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    联系方式
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell">部门</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {usersQuery.isLoading ? (
-                  Array.from({ length: 5 }, (_, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Skeleton className="h-8 w-40" />
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-8 w-48" />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-6 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-20" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="ml-auto size-8" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : usersQuery.isError ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-48 text-center">
-                      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                        <span>用户数据加载失败</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void usersQuery.refetch()}
-                        >
-                          <RefreshCw data-icon="inline-start" />
-                          重新加载
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : list.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-48 text-center">
-                      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                        <Users className="size-8" />
-                        <div className="flex flex-col gap-1">
-                          <span className="font-medium text-foreground">
-                            未找到用户
-                          </span>
-                          <span>
-                            {hasFilters
-                              ? "请调整筛选条件后重试。"
-                              : "新增用户后会显示在这里。"}
-                          </span>
-                        </div>
-                        {hasFilters && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={resetFilters}
-                          >
-                            <RotateCcw data-icon="inline-start" />
-                            清除筛选
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  list.map((user, index) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="size-8 sm:size-10">
-                            {user.avatar && (
-                              <AvatarImage src={user.avatar} alt="" />
-                            )}
-                            <AvatarFallback>
-                              {(user.nickname || user.username)
-                                .slice(0, 1)
-                                .toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex min-w-0 flex-col gap-0.5">
-                            <span className="font-mono text-[0.65rem] tracking-widest text-muted-foreground">
-                              USR-
-                              {String(
-                                (page - 1) * PAGE_SIZE + index + 1,
-                              ).padStart(3, "0")}
-                            </span>
-                            <div className="truncate font-medium">
-                              {user.nickname || user.username}
-                            </div>
-                            <div className="truncate text-xs text-muted-foreground">
-                              @{user.username}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex max-w-64 flex-col gap-0.5">
-                          <span className="truncate">
-                            {user.email || "未设置邮箱"}
-                          </span>
-                          <span className="truncate text-xs text-muted-foreground">
-                            {user.phone || "未设置手机号"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {user.dept_id
-                          ? (deptName.get(user.dept_id) ?? "未分配")
-                          : "未分配"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            aria-label={`${user.status === 1 ? "停用" : "启用"}用户 ${user.username}`}
-                            checked={user.status === 1}
-                            disabled={statusMutation.isPending}
-                            onCheckedChange={(checked) =>
-                              statusMutation.mutate({
-                                id: user.id,
-                                status: checked ? 1 : 0,
-                              })
-                            }
-                          />
-                          <div className="hidden sm:block">
-                            <StatusBadge status={user.status} />
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`管理用户 ${user.username}`}
-                              >
-                                <MoreHorizontal />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuGroup>
-                                <DropdownMenuLabel>账号操作</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  onSelect={() =>
-                                    setDialog({ kind: "edit", user })
-                                  }
-                                >
-                                  <Pencil />
-                                  编辑资料
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onSelect={() =>
-                                    setDialog({ kind: "roles", user })
-                                  }
-                                >
-                                  <UserCog />
-                                  分配角色
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onSelect={() =>
-                                    setDialog({ kind: "reset", user })
-                                  }
-                                >
-                                  <KeyRound />
-                                  重置密码
-                                </DropdownMenuItem>
-                              </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <ConfirmDialog
-                            description={`确定删除用户「${user.username}」吗？此操作不可撤销。`}
-                            onConfirm={() =>
-                              removeMutation.mutateAsync(user.id)
-                            }
-                            trigger={
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`删除用户 ${user.username}`}
-                                title="删除"
-                              >
-                                <Trash2 />
-                              </Button>
-                            }
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable
+            columns={columns}
+            data={list}
+            loading={usersQuery.isLoading}
+            error={usersQuery.isError}
+            emptyTitle="未找到用户"
+            emptyDescription={
+              search || status !== "all"
+                ? "请调整筛选条件后重试。"
+                : "新增用户后会显示在这里。"
+            }
+            onRetry={() => void usersQuery.refetch()}
+            pagination={{
+              page,
+              pageSize: PAGE_SIZE,
+              total: usersQuery.data?.total ?? 0,
+              onChange: setPage,
+            }}
+          />
         </CardContent>
-        <CardFooter>
-          <div className="w-full">
-            <PagePagination
-              page={page}
-              pageSize={PAGE_SIZE}
-              total={usersQuery.data?.total ?? 0}
-              onChange={setPage}
-            />
-          </div>
-        </CardFooter>
 
         {(dialog.kind === "create" || dialog.kind === "edit") && (
           <UserDialog

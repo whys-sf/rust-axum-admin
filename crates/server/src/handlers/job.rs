@@ -1,7 +1,8 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Path, Query, State};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use service::dto::{
     CreateJobReq, CurrentUser, JobLogQuery, JobQuery, SetJobStatusReq, UpdateJobReq,
 };
@@ -21,7 +22,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<JobQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::job::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::job::Model>>> {
     let page = state.services.list_jobs(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -38,7 +39,7 @@ pub async fn detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<entity::job::Model>> {
+) -> HttpResult<ApiResponse<entity::job::Model>> {
     let job = state.services.get_job(&current, id).await?;
     Ok(ApiResponse::ok(job))
 }
@@ -55,7 +56,7 @@ pub async fn create(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<CreateJobReq>,
-) -> AppResult<ApiResponse<entity::job::Model>> {
+) -> HttpResult<ApiResponse<entity::job::Model>> {
     let job = state.services.create_job(&current, req).await?;
     Ok(ApiResponse::ok(job))
 }
@@ -74,7 +75,7 @@ pub async fn update(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<UpdateJobReq>,
-) -> AppResult<ApiResponse<entity::job::Model>> {
+) -> HttpResult<ApiResponse<entity::job::Model>> {
     let job = state.services.update_job(&current, id, req).await?;
     Ok(ApiResponse::ok(job))
 }
@@ -91,7 +92,7 @@ pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_job(&current, id).await?;
     Ok(ApiResponse::ok(()))
 }
@@ -110,7 +111,7 @@ pub async fn set_status(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<SetJobStatusReq>,
-) -> AppResult<ApiResponse<entity::job::Model>> {
+) -> HttpResult<ApiResponse<entity::job::Model>> {
     let job = state.services.set_job_status(&current, id, req).await?;
     Ok(ApiResponse::ok(job))
 }
@@ -127,7 +128,7 @@ pub async fn run_once(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<entity::job_log::Model>> {
+) -> HttpResult<ApiResponse<entity::job_log::Model>> {
     let log = state.services.run_job_once(&current, id).await?;
     Ok(ApiResponse::ok(log))
 }
@@ -144,7 +145,7 @@ pub async fn logs(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<JobLogQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::job_log::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::job_log::Model>>> {
     let page = state.services.list_job_logs(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }

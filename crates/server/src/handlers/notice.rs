@@ -1,7 +1,8 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Path, Query, State};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use service::dto::{CreateNoticeReq, CurrentUser, NoticeQuery, UpdateNoticeReq};
 
 use crate::extract::ValidatedJson;
@@ -19,7 +20,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<NoticeQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::notice::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::notice::Model>>> {
     let page = state.services.list_notices(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -36,7 +37,7 @@ pub async fn detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<entity::notice::Model>> {
+) -> HttpResult<ApiResponse<entity::notice::Model>> {
     let notice = state.services.get_notice(&current, id).await?;
     Ok(ApiResponse::ok(notice))
 }
@@ -53,7 +54,7 @@ pub async fn create(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<CreateNoticeReq>,
-) -> AppResult<ApiResponse<entity::notice::Model>> {
+) -> HttpResult<ApiResponse<entity::notice::Model>> {
     let notice = state.services.create_notice(&current, req).await?;
     Ok(ApiResponse::ok(notice))
 }
@@ -72,7 +73,7 @@ pub async fn update(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<UpdateNoticeReq>,
-) -> AppResult<ApiResponse<entity::notice::Model>> {
+) -> HttpResult<ApiResponse<entity::notice::Model>> {
     let notice = state.services.update_notice(&current, id, req).await?;
     Ok(ApiResponse::ok(notice))
 }
@@ -89,7 +90,7 @@ pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_notice(&current, id).await?;
     Ok(ApiResponse::ok_empty())
 }

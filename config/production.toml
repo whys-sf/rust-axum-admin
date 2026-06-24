@@ -7,5 +7,9 @@ cors_allowed_origins = ["https://admin.example.com"]
 enable_swagger = false
 # Behind a trusted reverse proxy/load balancer that sets X-Forwarded-For.
 trust_forwarded_for = true
+# Run schema migrations explicitly before deployment.
+auto_migrate = false
+# Enable only on one designated worker, or use a distributed scheduler lock.
+enable_scheduler = false
 
 # jwt.secret MUST be provided via the JWT__SECRET environment variable.

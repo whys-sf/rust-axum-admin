@@ -1,7 +1,7 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Path, State};
 use axum::Extension;
-use common::response::ApiResponse;
-use common::AppResult;
 use service::dto::{CacheStat, CurrentUser, OnlineUser, ServerStat};
 
 use crate::state::AppState;
@@ -16,7 +16,7 @@ use crate::state::AppState;
 pub async fn online_list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
-) -> AppResult<ApiResponse<Vec<OnlineUser>>> {
+) -> HttpResult<ApiResponse<Vec<OnlineUser>>> {
     let list = state.services.list_online(&current).await?;
     Ok(ApiResponse::ok(list))
 }
@@ -33,7 +33,7 @@ pub async fn kick(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(token): Path<String>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.force_logout(&current, &token).await?;
     Ok(ApiResponse::ok(()))
 }
@@ -45,7 +45,7 @@ pub async fn kick(
     security(("bearer" = [])),
     responses((status = 200, description = "服务器资源监控", body = ServerStat))
 )]
-pub async fn server(State(state): State<AppState>) -> AppResult<ApiResponse<ServerStat>> {
+pub async fn server(State(state): State<AppState>) -> HttpResult<ApiResponse<ServerStat>> {
     let stat = state.services.server_stat().await?;
     Ok(ApiResponse::ok(stat))
 }
@@ -57,7 +57,7 @@ pub async fn server(State(state): State<AppState>) -> AppResult<ApiResponse<Serv
     security(("bearer" = [])),
     responses((status = 200, description = "Redis 缓存监控", body = CacheStat))
 )]
-pub async fn cache(State(state): State<AppState>) -> AppResult<ApiResponse<CacheStat>> {
+pub async fn cache(State(state): State<AppState>) -> HttpResult<ApiResponse<CacheStat>> {
     let stat = state.services.cache_stat().await?;
     Ok(ApiResponse::ok(stat))
 }

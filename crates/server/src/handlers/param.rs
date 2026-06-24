@@ -1,7 +1,8 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Path, Query, State};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use service::dto::{CreateParamReq, CurrentUser, ParamQuery, UpdateParamReq};
 
 use crate::extract::ValidatedJson;
@@ -19,7 +20,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<ParamQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::param::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::param::Model>>> {
     let page = state.services.list_params(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -36,7 +37,7 @@ pub async fn detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<entity::param::Model>> {
+) -> HttpResult<ApiResponse<entity::param::Model>> {
     let param = state.services.get_param(&current, id).await?;
     Ok(ApiResponse::ok(param))
 }
@@ -53,7 +54,7 @@ pub async fn create(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<CreateParamReq>,
-) -> AppResult<ApiResponse<entity::param::Model>> {
+) -> HttpResult<ApiResponse<entity::param::Model>> {
     let param = state.services.create_param(&current, req).await?;
     Ok(ApiResponse::ok(param))
 }
@@ -72,7 +73,7 @@ pub async fn update(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<UpdateParamReq>,
-) -> AppResult<ApiResponse<entity::param::Model>> {
+) -> HttpResult<ApiResponse<entity::param::Model>> {
     let param = state.services.update_param(&current, id, req).await?;
     Ok(ApiResponse::ok(param))
 }
@@ -89,7 +90,7 @@ pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_param(&current, id).await?;
     Ok(ApiResponse::ok_empty())
 }

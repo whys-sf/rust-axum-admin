@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowUpDown,
   Globe,
   Image,
   LoaderCircle,
@@ -106,7 +105,7 @@ export function SettingsPage() {
                   caption: "品牌与外观",
                 },
               ] as const
-            ).map(({ icon: Icon, label, value: v, caption }, i) => (
+            ).map(({ icon: Icon, label, value: v, caption }) => (
               <div
                 key={label}
                 className="flex min-w-0 flex-col gap-2 border-l border-primary-foreground/15 p-3 first:border-l-0 sm:p-4"

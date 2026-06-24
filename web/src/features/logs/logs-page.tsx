@@ -2,24 +2,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Eye,
-  RefreshCw,
-  RotateCcw,
   Search,
-  ShieldCheck,
-  Timer,
-  TriangleAlert,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -29,19 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { PagePagination } from "@/components/common/page-pagination";
+import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
+import { ManagementPage } from "@/components/common/management-page";
 import { logApi } from "@/lib/api/log";
 import type { OperationLog } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 15;
 
@@ -166,108 +144,101 @@ export function LogsPage() {
   });
 
   const list = query.data?.list ?? [];
-  const failedOnPage = list.filter(
-    (log) => log.status_code !== null && (log.status_code ?? 0) >= 400,
-  ).length;
-  const durations = list
-    .map((log) => log.duration_ms)
-    .filter((value): value is number => value !== null && value !== undefined);
-  const averageDuration = durations.length
-    ? Math.round(
-        durations.reduce((total, duration) => total + duration, 0) /
-          durations.length,
-      )
-    : 0;
-
   const hasFilters = Boolean(search);
 
-  function resetFilters() {
-    setKeyword("");
-    setSearch("");
-    setPage(1);
-  }
+  const desktopColumns: DataTableColumnDef<OperationLog>[] = [
+    {
+      id: "request",
+      header: "请求",
+      cell: ({ row }) => {
+        const log = row.original;
+        return (
+          <div className="flex max-w-80 flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Badge variant={methodVariant(log.method)}>
+                {log.method || "—"}
+              </Badge>
+              <span className="truncate font-mono text-xs">
+                {log.path || "—"}
+              </span>
+            </div>
+            <span className="font-mono text-[0.65rem] tracking-wider text-muted-foreground">
+              LOG-{log.id}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "username",
+      header: "操作用户",
+      className: "hidden sm:table-cell",
+      meta: { cellClassName: "hidden sm:table-cell" },
+      cell: ({ row }) => row.original.username || "匿名用户",
+    },
+    {
+      accessorKey: "status_code",
+      header: "状态",
+      cell: ({ row }) => {
+        const success = isSuccess(row.original.status_code);
+        return (
+          <Badge variant={success ? "default" : "destructive"}>
+            {row.original.status_code ?? "—"}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "ip",
+      header: "来源 IP",
+      className: "hidden md:table-cell",
+      meta: { cellClassName: "hidden font-mono text-xs text-muted-foreground md:table-cell" },
+      cell: ({ row }) => row.original.ip || "—",
+    },
+    {
+      accessorKey: "duration_ms",
+      header: "耗时",
+      className: "hidden lg:table-cell",
+      meta: { cellClassName: "hidden font-mono text-xs lg:table-cell" },
+      cell: ({ row }) => `${row.original.duration_ms ?? 0} ms`,
+    },
+    {
+      accessorKey: "created_at",
+      header: "发生时间",
+      className: "hidden xl:table-cell",
+      meta: { cellClassName: "hidden text-xs text-muted-foreground xl:table-cell" },
+      cell: ({ row }) => formatDate(row.original.created_at),
+    },
+    {
+      id: "actions",
+      header: "详情",
+      className: "text-right",
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`查看日志 ${row.original.id}`}
+          title="查看详情"
+          onClick={() => setSelected(row.original)}
+        >
+          <Eye />
+        </Button>
+      ),
+    },
+  ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="control-grid relative overflow-hidden rounded-xl bg-primary text-primary-foreground shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="absolute top-0 right-0 size-24 border-b border-l border-primary-foreground/15" />
-        <div className="relative grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_1fr] lg:items-end lg:p-8">
-          <div className="flex max-w-xl flex-col items-start gap-4">
-            <div className="flex flex-col gap-2">
-              <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-                系统审计流
-              </h1>
-              <p className="text-sm leading-6 text-primary-foreground/70">
-                捕获关键写操作、访问异常与响应延迟，快速还原每一次系统变更。
-              </p>
-            </div>
-          </div>
-
-          <div className="grid w-full grid-cols-3 overflow-hidden rounded-lg border border-primary-foreground/15 bg-primary-foreground/5 backdrop-blur-xs lg:max-w-xl">
-            <div className="flex min-w-0 flex-col gap-2 p-3 sm:p-4">
-              <div className="flex items-center gap-2 text-primary-foreground/55">
-                <ShieldCheck className="size-4" />
-                <span className="truncate font-mono text-[0.65rem] tracking-widest">
-                  事件
-                </span>
-              </div>
-              <strong className="font-mono text-2xl font-medium tabular-nums sm:text-3xl">
-                {String(query.data?.total ?? 0).padStart(2, "0")}
-              </strong>
-              <span className="truncate text-xs text-primary-foreground/65">
-                审计事件
-              </span>
-            </div>
-            <div className="flex min-w-0 flex-col gap-2 border-l border-primary-foreground/15 p-3 sm:p-4">
-              <div className="flex items-center gap-2 text-primary-foreground/55">
-                <TriangleAlert className="size-4" />
-                <span className="truncate font-mono text-[0.65rem] tracking-widest">
-                  异常
-                </span>
-              </div>
-              <strong className="font-mono text-2xl font-medium tabular-nums sm:text-3xl">
-                {String(failedOnPage).padStart(2, "0")}
-              </strong>
-              <span className="truncate text-xs text-primary-foreground/65">
-                本页异常
-              </span>
-            </div>
-            <div className="flex min-w-0 flex-col gap-2 border-l border-primary-foreground/15 p-3 sm:p-4">
-              <div className="flex items-center gap-2 text-primary-foreground/55">
-                <Timer className="size-4" />
-                <span className="truncate font-mono text-[0.65rem] tracking-widest">
-                  耗时
-                </span>
-              </div>
-              <strong className="font-mono text-2xl font-medium tabular-nums sm:text-3xl">
-                {averageDuration}
-                <small className="ml-1 text-xs">ms</small>
-              </strong>
-              <span className="truncate text-xs text-primary-foreground/65">
-                平均耗时
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <Card size="sm">
-        <CardHeader>
+    <ManagementPage
+      title="系统审计流"
+      description="捕获关键写操作、访问异常与响应延迟，快速还原每一次系统变更。"
+    >
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>操作日志</CardTitle>
-          <CardDescription>
-            追踪系统写操作、响应状态及客户端来源。
-          </CardDescription>
-          <CardAction>
-            <Badge variant="outline">
-              <span className="font-mono tracking-wider">
-                {hasFilters ? "已筛选" : "审计流"}
-              </span>
-            </Badge>
-          </CardAction>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent>
           <form
-            className="flex flex-col gap-2 sm:flex-row sm:items-center"
+            className="mb-4 flex gap-2"
             onSubmit={(event) => {
               event.preventDefault();
               setPage(1);
@@ -278,271 +249,39 @@ export function LogsPage() {
               aria-label="搜索操作用户"
               placeholder="按用户名搜索"
               value={keyword}
-              className="sm:max-w-72"
+              className="max-w-xs"
               onChange={(event) => setKeyword(event.target.value)}
             />
-            <div className="flex items-center gap-2">
-              <Button type="submit" variant="secondary">
-                <Search data-icon="inline-start" />
-                查询
-              </Button>
-              {hasFilters && (
-                <Button type="button" variant="ghost" onClick={resetFilters}>
-                  <RotateCcw data-icon="inline-start" />
-                  重置
-                </Button>
-              )}
-            </div>
-            <div className="hidden flex-1 sm:block" />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="刷新操作日志"
-              title="刷新"
-              disabled={query.isFetching}
-              onClick={() => void query.refetch()}
-            >
-              <RefreshCw className={cn(query.isFetching && "animate-spin")} />
+            <Button type="submit" variant="secondary">
+              <Search className="mr-1 size-4" />
+              搜索
             </Button>
           </form>
-
-          <div className="audit-mobile-view flex-col overflow-hidden rounded-lg border">
-            {query.isLoading ? (
-              <div className="flex flex-col gap-4 p-4">
-                {Array.from({ length: 4 }, (_, index) => (
-                  <div key={index} className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <Skeleton className="h-6 w-24" />
-                      <Skeleton className="h-6 w-14" />
-                    </div>
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                ))}
-              </div>
-            ) : query.isError ? (
-              <div className="flex h-44 flex-col items-center justify-center gap-3 text-muted-foreground">
-                <span>操作日志加载失败</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void query.refetch()}
-                >
-                  <RefreshCw data-icon="inline-start" />
-                  重新加载
-                </Button>
-              </div>
-            ) : list.length === 0 ? (
-              <div className="flex h-44 flex-col items-center justify-center gap-2 text-muted-foreground">
-                <ShieldCheck className="size-8" />
-                <span className="font-medium text-foreground">
-                  暂无审计记录
-                </span>
-                <span className="text-xs">
-                  {hasFilters
-                    ? "没有匹配当前用户名的记录。"
-                    : "写操作发生后会显示在这里。"}
-                </span>
-              </div>
-            ) : (
-              list.map((log, index) => {
-                const success = isSuccess(log.status_code);
-                return (
-                  <div key={log.id}>
-                    {index > 0 && <Separator />}
-                    <article className="flex flex-col gap-3 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <Badge variant={methodVariant(log.method)}>
-                            {log.method || "—"}
-                          </Badge>
-                          <span className="truncate font-mono text-[0.65rem] tracking-wider text-muted-foreground">
-                            LOG-{log.id}
-                          </span>
-                        </div>
-                        <Badge variant={success ? "default" : "destructive"}>
-                          {log.status_code ?? "—"}
-                        </Badge>
-                      </div>
-                      <code className="break-all text-xs leading-5">
-                        {log.path || "—"}
-                      </code>
-                      <div className="flex items-end justify-between gap-3">
-                        <div className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground">
-                          <span className="truncate">
-                            {log.username || "匿名用户"} ·{" "}
-                            {log.duration_ms ?? 0} ms
-                          </span>
-                          <span className="truncate">
-                            {formatDate(log.created_at)}
-                          </span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="icon-sm"
-                          aria-label={`查看日志 ${log.id}`}
-                          onClick={() => setSelected(log)}
-                        >
-                          <Eye />
-                        </Button>
-                      </div>
-                    </article>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          <div className="audit-desktop-view overflow-hidden rounded-lg border">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead>请求</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    操作用户
-                  </TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    来源 IP
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell">耗时</TableHead>
-                  <TableHead className="hidden xl:table-cell">
-                    发生时间
-                  </TableHead>
-                  <TableHead className="text-right">详情</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {query.isLoading ? (
-                  Array.from({ length: 6 }, (_, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Skeleton className="h-9 w-52" />
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Skeleton className="h-6 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-16" />
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-6 w-28" />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-6 w-16" />
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <Skeleton className="h-6 w-36" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="ml-auto size-8" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : query.isError ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-48 text-center">
-                      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                        <span>操作日志加载失败</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void query.refetch()}
-                        >
-                          <RefreshCw data-icon="inline-start" />
-                          重新加载
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : list.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-48 text-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <ShieldCheck className="size-8" />
-                        <span className="font-medium text-foreground">
-                          暂无审计记录
-                        </span>
-                        <span>
-                          {hasFilters
-                            ? "没有匹配当前用户名的记录。"
-                            : "写操作发生后会显示在这里。"}
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  list.map((log) => {
-                    const success = isSuccess(log.status_code);
-                    return (
-                      <TableRow key={log.id}>
-                        <TableCell>
-                          <div className="flex max-w-80 flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <Badge variant={methodVariant(log.method)}>
-                                {log.method || "—"}
-                              </Badge>
-                              <span className="truncate font-mono text-xs">
-                                {log.path || "—"}
-                              </span>
-                            </div>
-                            <span className="font-mono text-[0.65rem] tracking-wider text-muted-foreground">
-                              LOG-{log.id}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          {log.username || "匿名用户"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={success ? "default" : "destructive"}>
-                            {log.status_code ?? "—"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden font-mono text-xs text-muted-foreground md:table-cell">
-                          {log.ip || "—"}
-                        </TableCell>
-                        <TableCell className="hidden font-mono text-xs lg:table-cell">
-                          {log.duration_ms ?? 0} ms
-                        </TableCell>
-                        <TableCell className="hidden text-xs text-muted-foreground xl:table-cell">
-                          {formatDate(log.created_at)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`查看日志 ${log.id}`}
-                            title="查看详情"
-                            onClick={() => setSelected(log)}
-                          >
-                            <Eye />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable
+            columns={desktopColumns}
+            data={list}
+            loading={query.isLoading}
+            error={query.isError}
+            onRetry={() => void query.refetch()}
+            emptyTitle="暂无审计记录"
+            emptyDescription={
+              hasFilters
+                ? "没有匹配当前用户名的记录。"
+                : "写操作发生后会显示在这里。"
+            }
+            pagination={{
+              page,
+              pageSize: PAGE_SIZE,
+              total: query.data?.total ?? 0,
+              onChange: setPage,
+            }}
+          />
         </CardContent>
-        <CardFooter>
-          <div className="w-full">
-            <PagePagination
-              page={page}
-              pageSize={PAGE_SIZE}
-              total={query.data?.total ?? 0}
-              onChange={setPage}
-            />
-          </div>
-        </CardFooter>
       </Card>
 
       {selected && (
         <LogDetailDialog log={selected} onClose={() => setSelected(null)} />
       )}
-    </div>
+    </ManagementPage>
   );
 }

@@ -4,6 +4,8 @@ use common::AppError;
 use serde::de::DeserializeOwned;
 use validator::Validate;
 
+use crate::error::HttpError;
+
 /// `Json<T>` plus `validator` validation. Rejects with a 400 on either a
 /// malformed body or a failed validation.
 pub struct ValidatedJson<T>(pub T);
@@ -13,7 +15,7 @@ where
     T: DeserializeOwned + Validate,
     S: Send + Sync,
 {
-    type Rejection = AppError;
+    type Rejection = HttpError;
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Json(value) = Json::<T>::from_request(req, state)

@@ -1,17 +1,13 @@
-import { Fragment, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+  DataTable,
+  type DataTableColumnDef,
+} from '@/components/common/data-table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { StatusBadge } from '@/components/common/status-badge'
 import { ManagementPage } from '@/components/common/management-page'
@@ -19,6 +15,11 @@ import { deptApi, type CreateDeptPayload } from '@/lib/api/dept'
 import { flattenTree } from '@/lib/tree'
 import type { DeptNode } from '@/lib/api/types'
 import { DeptDialog } from '@/features/depts/dept-dialog'
+
+interface DeptTableRow {
+  node: DeptNode
+  depth: number
+}
 
 export function DeptsPage() {
   const qc = useQueryClient()
@@ -65,79 +66,111 @@ export function DeptsPage() {
     })
   }
 
-  function renderRows(nodes: DeptNode[], depth: number): React.ReactNode {
-    return nodes.map((node) => {
-      const hasChildren = (node.children?.length ?? 0) > 0
-      const isOpen = expanded.has(node.id)
-      return (
-        <Fragment key={node.id}>
-          <TableRow>
-            <TableCell>
-              <div
-                className="flex items-center"
-                style={{ paddingLeft: depth * 20 }}
+  const rows = useMemo(() => {
+    const visibleRows: DeptTableRow[] = []
+    function walk(nodes: DeptNode[], depth: number) {
+      for (const node of nodes) {
+        visibleRows.push({ node, depth })
+        if ((node.children?.length ?? 0) > 0 && expanded.has(node.id)) {
+          walk(node.children, depth + 1)
+        }
+      }
+    }
+    walk(data ?? [], 0)
+    return visibleRows
+  }, [data, expanded])
+
+  const columns = useMemo<DataTableColumnDef<DeptTableRow>[]>(
+    () => [
+      {
+        header: '部门名称',
+        cell: ({ row }: { row: { original: DeptTableRow } }) => {
+          const { node, depth } = row.original
+          const hasChildren = (node.children?.length ?? 0) > 0
+          const isOpen = expanded.has(node.id)
+          return (
+            <div className="flex items-center" style={{ paddingLeft: depth * 20 }}>
+              {hasChildren ? (
+                <button
+                  type="button"
+                  onClick={() => toggle(node.id)}
+                  className="mr-1 text-muted-foreground hover:text-foreground"
+                >
+                  {isOpen ? (
+                    <ChevronDown className="size-4" />
+                  ) : (
+                    <ChevronRight className="size-4" />
+                  )}
+                </button>
+              ) : (
+                <span className="mr-1 inline-block size-4" />
+              )}
+              <span className="font-medium">{node.name}</span>
+            </div>
+          )
+        },
+      },
+      {
+        header: '负责人',
+        cell: ({ row }: { row: { original: DeptTableRow } }) =>
+          row.original.node.leader || '—',
+      },
+      {
+        header: '联系电话',
+        cell: ({ row }: { row: { original: DeptTableRow } }) =>
+          row.original.node.phone || '—',
+      },
+      {
+        header: '排序',
+        cell: ({ row }: { row: { original: DeptTableRow } }) =>
+          row.original.node.sort,
+      },
+      {
+        header: '状态',
+        cell: ({ row }: { row: { original: DeptTableRow } }) => (
+          <StatusBadge status={row.original.node.status} />
+        ),
+      },
+      {
+        header: '操作',
+        className: 'text-right',
+        meta: { cellClassName: 'text-right' },
+        cell: ({ row }: { row: { original: DeptTableRow } }) => {
+          const { node } = row.original
+          return (
+            <div className="flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                title="新增子部门"
+                onClick={() => setDialog({ open: true, parentId: node.id })}
               >
-                {hasChildren ? (
-                  <button
-                    type="button"
-                    onClick={() => toggle(node.id)}
-                    className="mr-1 text-muted-foreground hover:text-foreground"
-                  >
-                    {isOpen ? (
-                      <ChevronDown className="size-4" />
-                    ) : (
-                      <ChevronRight className="size-4" />
-                    )}
-                  </button>
-                ) : (
-                  <span className="mr-1 inline-block size-4" />
-                )}
-                <span className="font-medium">{node.name}</span>
-              </div>
-            </TableCell>
-            <TableCell>{node.leader || '—'}</TableCell>
-            <TableCell>{node.phone || '—'}</TableCell>
-            <TableCell>{node.sort}</TableCell>
-            <TableCell>
-              <StatusBadge status={node.status} />
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="新增子部门"
-                  onClick={() =>
-                    setDialog({ open: true, parentId: node.id })
-                  }
-                >
-                  <Plus className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="编辑"
-                  onClick={() => setDialog({ open: true, editing: node })}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <ConfirmDialog
-                  description={`确定删除部门「${node.name}」吗？`}
-                  onConfirm={() => removeMutation.mutateAsync(node.id)}
-                  trigger={
-                    <Button variant="ghost" size="icon" title="删除">
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  }
-                />
-              </div>
-            </TableCell>
-          </TableRow>
-          {hasChildren && isOpen && renderRows(node.children, depth + 1)}
-        </Fragment>
-      )
-    })
-  }
+                <Plus className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                title="编辑"
+                onClick={() => setDialog({ open: true, editing: node })}
+              >
+                <Pencil className="size-4" />
+              </Button>
+              <ConfirmDialog
+                description={`确定删除部门「${node.name}」吗？`}
+                onConfirm={() => removeMutation.mutateAsync(node.id)}
+                trigger={
+                  <Button variant="ghost" size="icon" title="删除">
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                }
+              />
+            </div>
+          )
+        },
+      },
+    ],
+    [expanded, removeMutation],
+  )
 
   return (
     <ManagementPage title="组织架构控制台" description="维护部门层级、负责人和组织状态。">
@@ -150,35 +183,12 @@ export function DeptsPage() {
         </Button>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>部门名称</TableHead>
-              <TableHead>负责人</TableHead>
-              <TableHead>联系电话</TableHead>
-              <TableHead>排序</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  加载中...
-                </TableCell>
-              </TableRow>
-            ) : (data?.length ?? 0) === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  暂无数据
-                </TableCell>
-              </TableRow>
-            ) : (
-              renderRows(data!, 0)
-            )}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={columns}
+          data={rows}
+          loading={isLoading}
+          empty={(data?.length ?? 0) === 0 && !isLoading}
+        />
       </CardContent>
       {dialog.open && (
         <DeptDialog

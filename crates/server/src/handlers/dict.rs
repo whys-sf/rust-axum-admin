@@ -1,7 +1,8 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Path, Query, State};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use service::dto::{
     CreateDictItemReq, CreateDictTypeReq, CurrentUser, DictItemNode, DictTypeQuery,
     UpdateDictItemReq, UpdateDictTypeReq,
@@ -24,7 +25,7 @@ pub async fn list_types(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<DictTypeQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::dict_type::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::dict_type::Model>>> {
     let page = state.services.list_dict_types(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -41,7 +42,7 @@ pub async fn type_detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<entity::dict_type::Model>> {
+) -> HttpResult<ApiResponse<entity::dict_type::Model>> {
     let ty = state.services.get_dict_type(&current, id).await?;
     Ok(ApiResponse::ok(ty))
 }
@@ -58,7 +59,7 @@ pub async fn create_type(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<CreateDictTypeReq>,
-) -> AppResult<ApiResponse<entity::dict_type::Model>> {
+) -> HttpResult<ApiResponse<entity::dict_type::Model>> {
     let ty = state.services.create_dict_type(&current, req).await?;
     Ok(ApiResponse::ok(ty))
 }
@@ -77,7 +78,7 @@ pub async fn update_type(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<UpdateDictTypeReq>,
-) -> AppResult<ApiResponse<entity::dict_type::Model>> {
+) -> HttpResult<ApiResponse<entity::dict_type::Model>> {
     let ty = state.services.update_dict_type(&current, id, req).await?;
     Ok(ApiResponse::ok(ty))
 }
@@ -94,7 +95,7 @@ pub async fn remove_type(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_dict_type(&current, id).await?;
     Ok(ApiResponse::ok_empty())
 }
@@ -113,7 +114,7 @@ pub async fn list_items(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<Vec<DictItemNode>>> {
+) -> HttpResult<ApiResponse<Vec<DictItemNode>>> {
     let items = state.services.list_dict_items(&current, id).await?;
     Ok(ApiResponse::ok(items))
 }
@@ -130,7 +131,7 @@ pub async fn list_items_by_code(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(code): Path<String>,
-) -> AppResult<ApiResponse<Vec<DictItemNode>>> {
+) -> HttpResult<ApiResponse<Vec<DictItemNode>>> {
     let items = state
         .services
         .list_dict_items_by_code(&current, &code)
@@ -150,7 +151,7 @@ pub async fn create_item(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<CreateDictItemReq>,
-) -> AppResult<ApiResponse<entity::dict_item::Model>> {
+) -> HttpResult<ApiResponse<entity::dict_item::Model>> {
     let item = state.services.create_dict_item(&current, req).await?;
     Ok(ApiResponse::ok(item))
 }
@@ -169,7 +170,7 @@ pub async fn update_item(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<UpdateDictItemReq>,
-) -> AppResult<ApiResponse<entity::dict_item::Model>> {
+) -> HttpResult<ApiResponse<entity::dict_item::Model>> {
     let item = state.services.update_dict_item(&current, id, req).await?;
     Ok(ApiResponse::ok(item))
 }
@@ -186,7 +187,7 @@ pub async fn remove_item(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_dict_item(&current, id).await?;
     Ok(ApiResponse::ok_empty())
 }

@@ -1,7 +1,8 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Path, Query, State};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use service::dto::{CreatePostReq, CurrentUser, PostQuery, UpdatePostReq};
 
 use crate::extract::ValidatedJson;
@@ -19,7 +20,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<PostQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::post::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::post::Model>>> {
     let page = state.services.list_posts(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -36,7 +37,7 @@ pub async fn detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<entity::post::Model>> {
+) -> HttpResult<ApiResponse<entity::post::Model>> {
     let post = state.services.get_post(&current, id).await?;
     Ok(ApiResponse::ok(post))
 }
@@ -53,7 +54,7 @@ pub async fn create(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<CreatePostReq>,
-) -> AppResult<ApiResponse<entity::post::Model>> {
+) -> HttpResult<ApiResponse<entity::post::Model>> {
     let post = state.services.create_post(&current, req).await?;
     Ok(ApiResponse::ok(post))
 }
@@ -72,7 +73,7 @@ pub async fn update(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<UpdatePostReq>,
-) -> AppResult<ApiResponse<entity::post::Model>> {
+) -> HttpResult<ApiResponse<entity::post::Model>> {
     let post = state.services.update_post(&current, id, req).await?;
     Ok(ApiResponse::ok(post))
 }
@@ -89,7 +90,7 @@ pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_post(&current, id).await?;
     Ok(ApiResponse::ok_empty())
 }

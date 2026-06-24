@@ -1,7 +1,8 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Path, Query, State};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use service::dto::{
     CurrentUser, InboxItem, InboxQuery, MessageQuery, SendMessageReq, SentMessageItem, UnreadCount,
 };
@@ -23,7 +24,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<MessageQuery>,
-) -> AppResult<ApiResponse<PageResult<SentMessageItem>>> {
+) -> HttpResult<ApiResponse<PageResult<SentMessageItem>>> {
     let page = state.services.list_messages(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -40,7 +41,7 @@ pub async fn send(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<SendMessageReq>,
-) -> AppResult<ApiResponse<entity::message::Model>> {
+) -> HttpResult<ApiResponse<entity::message::Model>> {
     let message = state.services.send_message(&current, req).await?;
     Ok(ApiResponse::ok(message))
 }
@@ -57,7 +58,7 @@ pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_message(&current, id).await?;
     Ok(ApiResponse::ok(()))
 }
@@ -76,7 +77,7 @@ pub async fn inbox(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<InboxQuery>,
-) -> AppResult<ApiResponse<PageResult<InboxItem>>> {
+) -> HttpResult<ApiResponse<PageResult<InboxItem>>> {
     let page = state.services.list_inbox(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -91,7 +92,7 @@ pub async fn inbox(
 pub async fn unread_count(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
-) -> AppResult<ApiResponse<UnreadCount>> {
+) -> HttpResult<ApiResponse<UnreadCount>> {
     let count = state.services.unread_count(&current).await?;
     Ok(ApiResponse::ok(count))
 }
@@ -108,7 +109,7 @@ pub async fn view(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<InboxItem>> {
+) -> HttpResult<ApiResponse<InboxItem>> {
     let item = state.services.view_inbox_message(&current, id).await?;
     Ok(ApiResponse::ok(item))
 }
@@ -125,7 +126,7 @@ pub async fn mark_read(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.mark_message_read(&current, id).await?;
     Ok(ApiResponse::ok(()))
 }
@@ -140,7 +141,7 @@ pub async fn mark_read(
 pub async fn mark_all_read(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.mark_all_read(&current).await?;
     Ok(ApiResponse::ok(()))
 }
@@ -157,7 +158,7 @@ pub async fn delete_inbox(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_inbox_message(&current, id).await?;
     Ok(ApiResponse::ok(()))
 }

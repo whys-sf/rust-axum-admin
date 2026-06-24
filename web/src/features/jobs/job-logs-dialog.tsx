@@ -7,15 +7,11 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+  DataTable,
+  type DataTableColumnDef,
+} from '@/components/common/data-table'
 import { jobApi } from '@/lib/api/job'
-import type { Job } from '@/lib/api/types'
+import type { Job, JobLog } from '@/lib/api/types'
 
 interface JobLogsDialogProps {
   job: Job
@@ -29,6 +25,32 @@ export function JobLogsDialog({ job, onClose }: JobLogsDialogProps) {
   })
 
   const list = query.data?.list ?? []
+  const columns: DataTableColumnDef<JobLog>[] = [
+    {
+      header: '结果',
+      cell: ({ row }) =>
+        row.original.status === 1 ? (
+          <Badge variant="outline">成功</Badge>
+        ) : (
+          <Badge variant="destructive">失败</Badge>
+        ),
+    },
+    {
+      header: '信息',
+      meta: { cellClassName: 'max-w-xs truncate' },
+      cell: ({ row }) => <span title={row.original.message}>{row.original.message}</span>,
+    },
+    {
+      header: '耗时',
+      meta: { cellClassName: 'text-muted-foreground' },
+      cell: ({ row }) => `${row.original.duration_ms}ms`,
+    },
+    {
+      header: '开始时间',
+      meta: { cellClassName: 'text-muted-foreground' },
+      cell: ({ row }) => new Date(row.original.started_at).toLocaleString(),
+    },
+  ]
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -37,52 +59,13 @@ export function JobLogsDialog({ job, onClose }: JobLogsDialogProps) {
           <DialogTitle>执行日志 · {job.name}</DialogTitle>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>结果</TableHead>
-                <TableHead>信息</TableHead>
-                <TableHead>耗时</TableHead>
-                <TableHead>开始时间</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {query.isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    加载中...
-                  </TableCell>
-                </TableRow>
-              ) : list.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    暂无执行记录
-                  </TableCell>
-                </TableRow>
-              ) : (
-                list.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell>
-                      {log.status === 1 ? (
-                        <Badge variant="outline">成功</Badge>
-                      ) : (
-                        <Badge variant="destructive">失败</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate" title={log.message}>
-                      {log.message}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {log.duration_ms}ms
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(log.started_at).toLocaleString()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={columns}
+            data={list}
+            loading={query.isLoading}
+            empty={list.length === 0}
+            emptyTitle="暂无执行记录"
+          />
         </div>
       </DialogContent>
     </Dialog>

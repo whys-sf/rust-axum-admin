@@ -6,17 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { PagePagination } from '@/components/common/page-pagination'
 import { ManagementPage } from '@/components/common/management-page'
+import {
+  DataTable,
+  type DataTableColumnDef,
+} from '@/components/common/data-table'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
   noticeApi,
@@ -77,6 +72,67 @@ export function NoticesPage() {
   })
 
   const list = query.data?.list ?? []
+  const columns: DataTableColumnDef<Notice>[] = [
+    {
+      accessorKey: 'title',
+      header: '标题',
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.title}</span>
+      ),
+    },
+    {
+      accessorKey: 'notice_type',
+      header: '类型',
+      cell: ({ row }) => (
+        <Badge variant="outline">
+          {row.original.notice_type === 2 ? '公告' : '通知'}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: '状态',
+      cell: ({ row }) => (
+        <Badge variant={row.original.status === 1 ? 'default' : 'secondary'}>
+          {row.original.status === 1 ? '已发布' : '草稿'}
+        </Badge>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '操作',
+      className: 'text-right',
+      meta: { cellClassName: 'text-right' },
+      cell: ({ row }) => {
+        const notice = row.original
+        return (
+          <div className="flex justify-end gap-1">
+            {canUpdate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title="编辑"
+                onClick={() => setDialog({ kind: 'edit', notice })}
+              >
+                <Pencil className="size-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <ConfirmDialog
+                description={`确定删除公告「${notice.title}」吗？`}
+                onConfirm={() => removeMutation.mutateAsync(notice.id)}
+                trigger={
+                  <Button variant="ghost" size="icon" title="删除">
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        )
+      },
+    },
+  ]
 
   return (
     <ManagementPage title="通知公告控制台" description="编排系统通知、公告内容与发布状态。">
@@ -110,77 +166,18 @@ export function NoticesPage() {
             搜索
           </Button>
         </form>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>标题</TableHead>
-              <TableHead>类型</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {query.isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  加载中...
-                </TableCell>
-              </TableRow>
-            ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  暂无数据
-                </TableCell>
-              </TableRow>
-            ) : (
-              list.map((notice) => (
-                <TableRow key={notice.id}>
-                  <TableCell className="font-medium">{notice.title}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {notice.notice_type === 2 ? '公告' : '通知'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={notice.status === 1 ? 'default' : 'secondary'}>
-                      {notice.status === 1 ? '已发布' : '草稿'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      {canUpdate && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="编辑"
-                          onClick={() => setDialog({ kind: 'edit', notice })}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                      )}
-                      {canDelete && (
-                        <ConfirmDialog
-                          description={`确定删除公告「${notice.title}」吗？`}
-                          onConfirm={() => removeMutation.mutateAsync(notice.id)}
-                          trigger={
-                            <Button variant="ghost" size="icon" title="删除">
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          }
-                        />
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        <PagePagination
-          page={page}
-          pageSize={PAGE_SIZE}
-          total={query.data?.total ?? 0}
-          onChange={setPage}
+        <DataTable
+          columns={columns}
+          data={list}
+          loading={query.isLoading}
+          error={query.isError}
+          onRetry={() => void query.refetch()}
+          pagination={{
+            page,
+            pageSize: PAGE_SIZE,
+            total: query.data?.total ?? 0,
+            onChange: setPage,
+          }}
         />
       </CardContent>
       {(dialog.kind === 'create' || dialog.kind === 'edit') && (

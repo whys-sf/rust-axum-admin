@@ -5,6 +5,7 @@ use common::jwt::{Claims, TOKEN_TYPE_ACCESS};
 use common::{redis, AppError};
 use service::dto::CurrentUser;
 
+use crate::error::HttpResult;
 use crate::state::AppState;
 
 const BEARER_PREFIX: &str = "Bearer ";
@@ -23,7 +24,7 @@ pub async fn guard(
     State(state): State<AppState>,
     mut req: Request,
     next: Next,
-) -> Result<Response, AppError> {
+) -> HttpResult<Response> {
     let token = extract_token(&req).ok_or(AppError::Unauthorized)?;
 
     let claims: Claims = state
@@ -33,14 +34,14 @@ pub async fn guard(
         .map_err(|_| AppError::Unauthorized)?;
 
     if claims.typ != TOKEN_TYPE_ACCESS {
-        return Err(AppError::Unauthorized);
+        return Err(AppError::Unauthorized.into());
     }
 
     if redis::is_blacklisted(&state.services.redis, &claims.jti)
         .await
         .unwrap_or(false)
     {
-        return Err(AppError::Unauthorized);
+        return Err(AppError::Unauthorized.into());
     }
 
     let user_id: i64 = claims.sub.parse().map_err(|_| AppError::Unauthorized)?;
@@ -48,7 +49,7 @@ pub async fn guard(
     // tokens issued before the user's last password change are invalid
     if let Ok(Some(epoch)) = redis::password_epoch(&state.services.redis, user_id).await {
         if (claims.iat as i64) < epoch {
-            return Err(AppError::Unauthorized);
+            return Err(AppError::Unauthorized.into());
         }
     }
     let roles = state
@@ -72,13 +73,13 @@ pub async fn guard(
 }
 
 /// Guard restricting a route to platform administrators only.
-pub async fn platform_only(req: Request, next: Next) -> Result<Response, AppError> {
+pub async fn platform_only(req: Request, next: Next) -> HttpResult<Response> {
     let current = req
         .extensions()
         .get::<CurrentUser>()
         .ok_or(AppError::Unauthorized)?;
     if !current.is_platform {
-        return Err(AppError::Forbidden);
+        return Err(AppError::Forbidden.into());
     }
     Ok(next.run(req).await)
 }

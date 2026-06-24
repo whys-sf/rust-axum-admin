@@ -8,16 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { PagePagination } from '@/components/common/page-pagination'
 import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import { fileApi } from '@/lib/api/files'
@@ -91,6 +83,72 @@ export function FilesPage() {
 
   const list = query.data?.list ?? []
 
+  const columns: DataTableColumnDef<FileItem>[] = [
+    {
+      accessorKey: 'original_name',
+      header: '文件名',
+      cell: ({ row }) => <span className="font-medium">{row.original.original_name}</span>,
+    },
+    {
+      accessorKey: 'content_type',
+      header: '类型',
+      cell: ({ row }) => (
+        <span className="font-mono text-xs text-muted-foreground">{row.original.content_type}</span>
+      ),
+    },
+    {
+      accessorKey: 'size',
+      header: '大小',
+      cell: ({ row }) => formatSize(row.original.size),
+    },
+    {
+      accessorKey: 'is_public',
+      header: '访问',
+      cell: ({ row }) =>
+        row.original.is_public ? (
+          <Badge variant="secondary">公开</Badge>
+        ) : (
+          <Badge variant="outline">私有</Badge>
+        ),
+    },
+    {
+      accessorKey: 'created_at',
+      header: '上传时间',
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{new Date(row.original.created_at).toLocaleString()}</span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '操作',
+      className: 'text-right',
+      cell: ({ row }) => {
+        const item = row.original
+        return (
+          <div className="flex justify-end gap-1">
+            <Button variant="ghost" size="icon" title="下载" onClick={() => fileApi.download(item)}>
+              <Download className="size-4" />
+            </Button>
+            <Button variant="ghost" size="icon" title="复制链接" onClick={() => copyUrl(item)}>
+              <Copy className="size-4" />
+            </Button>
+            {canDelete && (
+              <ConfirmDialog
+                description={`确定删除文件「${item.original_name}」吗？`}
+                onConfirm={() => removeMutation.mutateAsync(item.id)}
+                trigger={
+                  <Button variant="ghost" size="icon" title="删除">
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        )
+      },
+    },
+  ]
+
   return (
     <ManagementPage title="文件资产控制台" description="统一管理文件上传、存储状态和访问地址。">
     <Card>
@@ -147,97 +205,13 @@ export function FilesPage() {
             搜索
           </Button>
         </form>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>文件名</TableHead>
-              <TableHead>类型</TableHead>
-              <TableHead>大小</TableHead>
-              <TableHead>访问</TableHead>
-              <TableHead>上传时间</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {query.isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="text-center text-muted-foreground"
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
-            ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="text-center text-muted-foreground"
-                >
-                  暂无数据
-                </TableCell>
-              </TableRow>
-            ) : (
-              list.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.original_name}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {item.content_type}
-                  </TableCell>
-                  <TableCell>{formatSize(item.size)}</TableCell>
-                  <TableCell>
-                    {item.is_public ? (
-                      <Badge variant="secondary">公开</Badge>
-                    ) : (
-                      <Badge variant="outline">私有</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(item.created_at).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="下载"
-                        onClick={() => fileApi.download(item)}
-                      >
-                        <Download className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="复制链接"
-                        onClick={() => copyUrl(item)}
-                      >
-                        <Copy className="size-4" />
-                      </Button>
-                      {canDelete && (
-                        <ConfirmDialog
-                          description={`确定删除文件「${item.original_name}」吗？`}
-                          onConfirm={() => removeMutation.mutateAsync(item.id)}
-                          trigger={
-                            <Button variant="ghost" size="icon" title="删除">
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          }
-                        />
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        <PagePagination
-          page={page}
-          pageSize={PAGE_SIZE}
-          total={query.data?.total ?? 0}
-          onChange={setPage}
+        <DataTable
+          columns={columns}
+          data={list}
+          loading={query.isLoading}
+          error={query.isError}
+          onRetry={() => void query.refetch()}
+          pagination={{ page, pageSize: PAGE_SIZE, total: query.data?.total ?? 0, onChange: setPage }}
         />
       </CardContent>
     </Card>

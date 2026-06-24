@@ -1,7 +1,8 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::{Path, Query, State};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use service::dto::{
     AssignRolesReq, ChangePasswordReq, CreateUserReq, CurrentUser, ResetPasswordReq, StatusReq,
     UpdateUserReq, UserDetail, UserQuery,
@@ -22,7 +23,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<UserQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::user::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::user::Model>>> {
     let page = state.services.list_users(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -39,7 +40,7 @@ pub async fn detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<UserDetail>> {
+) -> HttpResult<ApiResponse<UserDetail>> {
     let user = state.services.get_user(&current, id).await?;
     Ok(ApiResponse::ok(user))
 }
@@ -56,7 +57,7 @@ pub async fn create(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<CreateUserReq>,
-) -> AppResult<ApiResponse<entity::user::Model>> {
+) -> HttpResult<ApiResponse<entity::user::Model>> {
     let user = state.services.create_user(&current, req).await?;
     Ok(ApiResponse::ok(user))
 }
@@ -75,7 +76,7 @@ pub async fn update(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<UpdateUserReq>,
-) -> AppResult<ApiResponse<entity::user::Model>> {
+) -> HttpResult<ApiResponse<entity::user::Model>> {
     let user = state.services.update_user(&current, id, req).await?;
     Ok(ApiResponse::ok(user))
 }
@@ -92,7 +93,7 @@ pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_user(&current, id).await?;
     Ok(ApiResponse::ok_empty())
 }
@@ -111,7 +112,7 @@ pub async fn set_status(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     axum::Json(req): axum::Json<StatusReq>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state
         .services
         .set_user_status(&current, id, req.status)
@@ -133,7 +134,7 @@ pub async fn reset_password(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<ResetPasswordReq>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.reset_password(&current, id, req).await?;
     Ok(ApiResponse::ok_empty())
 }
@@ -152,7 +153,7 @@ pub async fn assign_roles(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     axum::Json(req): axum::Json<AssignRolesReq>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.assign_user_roles(&current, id, req).await?;
     Ok(ApiResponse::ok_empty())
 }
@@ -169,7 +170,7 @@ pub async fn change_own_password(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<ChangePasswordReq>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.change_own_password(&current, req).await?;
     Ok(ApiResponse::ok_empty())
 }

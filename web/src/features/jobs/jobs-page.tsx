@@ -7,16 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { PagePagination } from '@/components/common/page-pagination'
 import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
@@ -100,6 +92,112 @@ export function JobsPage() {
 
   const list = query.data?.list ?? []
 
+  const columns: DataTableColumnDef<Job>[] = [
+    {
+      accessorKey: 'name',
+      header: '任务名称',
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+    },
+    {
+      accessorKey: 'invoke_target',
+      header: '调用目标',
+      cell: ({ row }) => (
+        <span className="font-mono text-muted-foreground">{row.original.invoke_target}</span>
+      ),
+    },
+    {
+      accessorKey: 'cron_expr',
+      header: 'Cron',
+      cell: ({ row }) => <span className="font-mono text-xs">{row.original.cron_expr}</span>,
+    },
+    {
+      accessorKey: 'status',
+      header: '状态',
+      cell: ({ row }) => {
+        const job = row.original
+        return (
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={job.status === 1}
+              disabled={!canUpdate || statusMutation.isPending}
+              onCheckedChange={(c) =>
+                statusMutation.mutate({ id: job.id, status: c ? 1 : 0 })
+              }
+            />
+            <Badge variant={job.status === 1 ? 'default' : 'secondary'}>
+              {job.status === 1 ? '运行中' : '暂停'}
+            </Badge>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'schedule',
+      header: '上次 / 下次执行',
+      cell: ({ row }) => {
+        const job = row.original
+        return (
+          <div className="text-xs text-muted-foreground">
+            <div>{fmt(job.last_run_at)}</div>
+            <div>{fmt(job.next_run_at)}</div>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'actions',
+      header: '操作',
+      className: 'text-right',
+      cell: ({ row }) => {
+        const job = row.original
+        return (
+          <div className="flex justify-end gap-1">
+            {canRun && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title="立即执行"
+                disabled={runMutation.isPending}
+                onClick={() => runMutation.mutate(job.id)}
+              >
+                <Play className="size-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              title="执行日志"
+              onClick={() => setDialog({ kind: 'logs', job })}
+            >
+              <ScrollText className="size-4" />
+            </Button>
+            {canUpdate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title="编辑"
+                onClick={() => setDialog({ kind: 'edit', job })}
+              >
+                <Pencil className="size-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <ConfirmDialog
+                description={`确定删除任务「${job.name}」吗？`}
+                onConfirm={() => removeMutation.mutateAsync(job.id)}
+                trigger={
+                  <Button variant="ghost" size="icon" title="删除">
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        )
+      },
+    },
+  ]
+
   return (
     <ManagementPage title="任务调度控制台" description="管理计划任务、执行周期和运行记录。">
     <Card>
@@ -132,115 +230,13 @@ export function JobsPage() {
             搜索
           </Button>
         </form>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>任务名称</TableHead>
-              <TableHead>调用目标</TableHead>
-              <TableHead>Cron</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead>上次 / 下次执行</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {query.isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  加载中...
-                </TableCell>
-              </TableRow>
-            ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  暂无数据
-                </TableCell>
-              </TableRow>
-            ) : (
-              list.map((job) => (
-                <TableRow key={job.id}>
-                  <TableCell className="font-medium">{job.name}</TableCell>
-                  <TableCell className="font-mono text-muted-foreground">
-                    {job.invoke_target}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {job.cron_expr}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={job.status === 1}
-                        disabled={!canUpdate || statusMutation.isPending}
-                        onCheckedChange={(c) =>
-                          statusMutation.mutate({
-                            id: job.id,
-                            status: c ? 1 : 0,
-                          })
-                        }
-                      />
-                      <Badge variant={job.status === 1 ? 'default' : 'secondary'}>
-                        {job.status === 1 ? '运行中' : '暂停'}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    <div>{fmt(job.last_run_at)}</div>
-                    <div>{fmt(job.next_run_at)}</div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      {canRun && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="立即执行"
-                          disabled={runMutation.isPending}
-                          onClick={() => runMutation.mutate(job.id)}
-                        >
-                          <Play className="size-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="执行日志"
-                        onClick={() => setDialog({ kind: 'logs', job })}
-                      >
-                        <ScrollText className="size-4" />
-                      </Button>
-                      {canUpdate && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="编辑"
-                          onClick={() => setDialog({ kind: 'edit', job })}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                      )}
-                      {canDelete && (
-                        <ConfirmDialog
-                          description={`确定删除任务「${job.name}」吗？`}
-                          onConfirm={() => removeMutation.mutateAsync(job.id)}
-                          trigger={
-                            <Button variant="ghost" size="icon" title="删除">
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          }
-                        />
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        <PagePagination
-          page={page}
-          pageSize={PAGE_SIZE}
-          total={query.data?.total ?? 0}
-          onChange={setPage}
+        <DataTable
+          columns={columns}
+          data={list}
+          loading={query.isLoading}
+          error={query.isError}
+          onRetry={() => void query.refetch()}
+          pagination={{ page, pageSize: PAGE_SIZE, total: query.data?.total ?? 0, onChange: setPage }}
         />
       </CardContent>
       {(dialog.kind === 'create' || dialog.kind === 'edit') && (

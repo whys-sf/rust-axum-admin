@@ -5,6 +5,7 @@ use common::AppError;
 use service::dto::CurrentUser;
 use service::PLATFORM_TENANT_ID;
 
+use crate::error::HttpResult;
 use crate::state::AppState;
 
 const TENANT_HEADER: &str = "x-tenant-id";
@@ -16,7 +17,7 @@ pub async fn resolve(
     State(state): State<AppState>,
     mut req: Request,
     next: Next,
-) -> Result<Response, AppError> {
+) -> HttpResult<Response> {
     let mut current = req
         .extensions()
         .get::<CurrentUser>()
@@ -42,11 +43,11 @@ pub async fn resolve(
     if acting != PLATFORM_TENANT_ID {
         let tenant = state.services.get_tenant(acting).await?;
         if tenant.status != 1 {
-            return Err(AppError::Forbidden);
+            return Err(AppError::Forbidden.into());
         }
         if let Some(expire) = tenant.expire_at {
             if expire < chrono::Utc::now() {
-                return Err(AppError::Forbidden);
+                return Err(AppError::Forbidden.into());
             }
         }
     }

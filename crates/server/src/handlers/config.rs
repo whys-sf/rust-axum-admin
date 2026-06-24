@@ -1,6 +1,6 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::extract::State;
-use common::response::ApiResponse;
-use common::AppResult;
 use service::dto::{AppSettings, UpdateSettingsReq};
 
 use crate::extract::ValidatedJson;
@@ -12,7 +12,9 @@ use crate::state::AppState;
     tag = "config",
     responses((status = 200, description = "公开站点设置（免登录）", body = AppSettings))
 )]
-pub async fn public_settings(State(state): State<AppState>) -> AppResult<ApiResponse<AppSettings>> {
+pub async fn public_settings(
+    State(state): State<AppState>,
+) -> HttpResult<ApiResponse<AppSettings>> {
     let settings = state.services.get_settings().await?;
     Ok(ApiResponse::ok(settings))
 }
@@ -24,7 +26,7 @@ pub async fn public_settings(State(state): State<AppState>) -> AppResult<ApiResp
     security(("bearer" = [])),
     responses((status = 200, description = "站点设置", body = AppSettings))
 )]
-pub async fn get_settings(State(state): State<AppState>) -> AppResult<ApiResponse<AppSettings>> {
+pub async fn get_settings(State(state): State<AppState>) -> HttpResult<ApiResponse<AppSettings>> {
     let settings = state.services.get_settings().await?;
     Ok(ApiResponse::ok(settings))
 }
@@ -40,7 +42,7 @@ pub async fn get_settings(State(state): State<AppState>) -> AppResult<ApiRespons
 pub async fn update_settings(
     State(state): State<AppState>,
     ValidatedJson(req): ValidatedJson<UpdateSettingsReq>,
-) -> AppResult<ApiResponse<AppSettings>> {
+) -> HttpResult<ApiResponse<AppSettings>> {
     let settings = state.services.update_settings(req).await?;
     Ok(ApiResponse::ok(settings))
 }

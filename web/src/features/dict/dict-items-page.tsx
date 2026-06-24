@@ -1,31 +1,24 @@
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   ArrowLeft,
-  BookOpen,
   ChevronDown,
   ChevronRight,
-  LoaderCircle,
   Pencil,
   Plus,
   Trash2,
-  Trees,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import {
+  DataTable,
+  type DataTableColumnDef,
+} from "@/components/common/data-table";
 import { StatusBadge } from "@/components/common/status-badge";
 import { ManagementPage } from "@/components/common/management-page";
 import { PERM, usePermission } from "@/lib/permissions";
@@ -71,6 +64,11 @@ type ItemDialog =
   | { kind: "none" }
   | { kind: "create"; parentId?: string }
   | { kind: "edit"; item: DictItem };
+
+interface DictItemTableRow {
+  node: DictItemNode;
+  depth: number;
+}
 
 export function DictItemsPage() {
   const qc = useQueryClient();
@@ -135,178 +133,169 @@ export function DictItemsPage() {
     });
   }
 
-  function renderItemRows(
-    nodes: DictItemNode[],
-    depth: number,
-  ): React.ReactNode {
-    return nodes.map((node) => {
-      const hasChildren = (node.children?.length ?? 0) > 0;
-      const isOpen = expanded.has(node.id);
-      return (
-        <Fragment key={node.id}>
-          <TableRow>
-            <TableCell>
-              <div
-                className="flex items-center"
-                style={{ paddingLeft: isTreeBool ? depth * 20 : 0 }}
-              >
-                {isTreeBool ? (
-                  hasChildren ? (
-                    <button
-                      type="button"
-                      onClick={() => toggle(node.id)}
-                      className="mr-1 text-muted-foreground hover:text-foreground"
-                    >
-                      {isOpen ? (
-                        <ChevronDown className="size-4" />
-                      ) : (
-                        <ChevronRight className="size-4" />
-                      )}
-                    </button>
-                  ) : (
-                    <span className="mr-1 inline-block size-4" />
-                  )
-                ) : null}
-                <DictTag item={node} />
-              </div>
-            </TableCell>
-            <TableCell className="font-mono text-muted-foreground">
-              {node.value}
-            </TableCell>
-            <TableCell>{node.sort}</TableCell>
-            <TableCell>
-              <StatusBadge status={node.status} />
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-1">
-                {isTreeBool && canCreate && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title="新增子项"
-                    onClick={() =>
-                      setItemDialog({ kind: "create", parentId: node.id })
-                    }
+  const rows = useMemo(() => {
+    const visibleRows: DictItemTableRow[] = [];
+    function walk(nodes: DictItemNode[], depth: number) {
+      for (const node of nodes) {
+        visibleRows.push({ node, depth });
+        if (
+          isTreeBool &&
+          (node.children?.length ?? 0) > 0 &&
+          expanded.has(node.id)
+        ) {
+          walk(node.children, depth + 1);
+        }
+      }
+    }
+    walk(itemsQuery.data ?? [], 0);
+    return visibleRows;
+  }, [expanded, isTreeBool, itemsQuery.data]);
+
+  const columns = useMemo<DataTableColumnDef<DictItemTableRow>[]>(
+    () => [
+      {
+        header: "标签",
+        cell: ({ row }) => {
+          const { node, depth } = row.original;
+          const hasChildren = (node.children?.length ?? 0) > 0;
+          const isOpen = expanded.has(node.id);
+          return (
+            <div
+              className="flex items-center"
+              style={{ paddingLeft: isTreeBool ? depth * 20 : 0 }}
+            >
+              {isTreeBool ? (
+                hasChildren ? (
+                  <button
+                    type="button"
+                    onClick={() => toggle(node.id)}
+                    className="mr-1 text-muted-foreground hover:text-foreground"
                   >
-                    <Plus className="size-4" />
-                  </Button>
-                )}
-                {canUpdate && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title="编辑"
-                    onClick={() => setItemDialog({ kind: "edit", item: node })}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                )}
-                {canDelete && (
-                  <ConfirmDialog
-                    description={`确定删除字典项「${node.label}」吗？`}
-                    onConfirm={() => removeItemMutation.mutateAsync(node.id)}
-                    trigger={
-                      <Button variant="ghost" size="icon" title="删除">
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
-                    }
-                  />
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-          {isTreeBool &&
-            hasChildren &&
-            isOpen &&
-            renderItemRows(node.children, depth + 1)}
-        </Fragment>
-      );
-    });
-  }
+                    {isOpen ? (
+                      <ChevronDown className="size-4" />
+                    ) : (
+                      <ChevronRight className="size-4" />
+                    )}
+                  </button>
+                ) : (
+                  <span className="mr-1 inline-block size-4" />
+                )
+              ) : null}
+              <DictTag item={node} />
+            </div>
+          );
+        },
+      },
+      {
+        header: "键值",
+        meta: { cellClassName: "font-mono text-muted-foreground" },
+        cell: ({ row }) => row.original.node.value,
+      },
+      {
+        header: "排序",
+        cell: ({ row }) => row.original.node.sort,
+      },
+      {
+        header: "状态",
+        cell: ({ row }) => <StatusBadge status={row.original.node.status} />,
+      },
+      {
+        header: "操作",
+        className: "text-right",
+        meta: { cellClassName: "text-right" },
+        cell: ({ row }) => {
+          const { node } = row.original;
+          return (
+            <div className="flex justify-end gap-1">
+              {isTreeBool && canCreate && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="新增子项"
+                  onClick={() =>
+                    setItemDialog({ kind: "create", parentId: node.id })
+                  }
+                >
+                  <Plus className="size-4" />
+                </Button>
+              )}
+              {canUpdate && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="编辑"
+                  onClick={() => setItemDialog({ kind: "edit", item: node })}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+              )}
+              {canDelete && (
+                <ConfirmDialog
+                  description={`确定删除字典项「${node.label}」吗？`}
+                  onConfirm={() => removeItemMutation.mutateAsync(node.id)}
+                  trigger={
+                    <Button variant="ghost" size="icon" title="删除">
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  }
+                />
+              )}
+            </div>
+          );
+        },
+      },
+    ],
+    [
+      canCreate,
+      canDelete,
+      canUpdate,
+      expanded,
+      isTreeBool,
+      removeItemMutation,
+    ],
+  );
 
   return (
     <ManagementPage
       title="字典项管理"
       description={`字典「${typeName}」下的所有字典项。`}
     >
-      <Card className="animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-hidden rounded-xl border-0 shadow-sm ring-1 ring-black/6 dark:ring-white/8">
-        <CardContent className="p-0">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b px-5 py-4 sm:px-6">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8"
-                onClick={() => navigate({ to: "/dict" })}
-              >
-                <ArrowLeft className="size-4" />
-              </Button>
-              <div className="flex items-center gap-2">
-                <Trees className="size-4 text-primary" />
-                <span className="text-sm font-semibold">{typeName}</span>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {code}
-                </span>
-                <Badge
-                  variant={isTreeBool ? "secondary" : "outline"}
-                  className="scale-90 px-1.5 py-0 text-[10px]"
-                >
-                  {isTreeBool ? "树形" : "平铺"}
-                </Badge>
-              </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex min-w-0 items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="返回"
+              onClick={() => navigate({ to: "/dict" })}
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+            <div className="flex min-w-0 items-center gap-2">
+              <CardTitle className="truncate">{typeName}</CardTitle>
+              <span className="font-mono text-xs text-muted-foreground">
+                {code}
+              </span>
+              <Badge variant={isTreeBool ? "secondary" : "outline"}>
+                {isTreeBool ? "树形" : "平铺"}
+              </Badge>
             </div>
-            {canCreate && (
-              <Button
-                size="sm"
-                className="h-8 gap-1.5 text-xs"
-                onClick={() => setItemDialog({ kind: "create" })}
-              >
-                <Plus className="size-3.5" />
-                新增字典项
-              </Button>
-            )}
           </div>
-
-          {/* Table */}
-          <div className="px-2 pt-4 sm:px-3">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>标签</TableHead>
-                  <TableHead>键值</TableHead>
-                  <TableHead>排序</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {itemsQuery.isLoading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-12 text-center text-muted-foreground"
-                    >
-                      <LoaderCircle className="mx-auto mb-2 size-5 animate-spin" />
-                      加载中…
-                    </TableCell>
-                  </TableRow>
-                ) : (itemsQuery.data?.length ?? 0) === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-12 text-center text-muted-foreground"
-                    >
-                      <BookOpen className="mx-auto mb-2 size-6 opacity-30" />
-                      暂无字典项
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  renderItemRows(itemsQuery.data!, 0)
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          {canCreate && (
+            <Button onClick={() => setItemDialog({ kind: "create" })}>
+              <Plus className="mr-1 size-4" />
+              新增字典项
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={columns}
+            data={rows}
+            loading={itemsQuery.isLoading}
+            empty={(itemsQuery.data?.length ?? 0) === 0 && !itemsQuery.isLoading}
+            emptyTitle="暂无字典项"
+          />
         </CardContent>
       </Card>
 

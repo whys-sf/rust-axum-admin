@@ -6,17 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { PagePagination } from '@/components/common/page-pagination'
 import { ManagementPage } from '@/components/common/management-page'
+import {
+  DataTable,
+  type DataTableColumnDef,
+} from '@/components/common/data-table'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
   paramApi,
@@ -78,6 +73,71 @@ export function ParamsPage() {
   })
 
   const list = query.data?.list ?? []
+  const columns: DataTableColumnDef<Param>[] = [
+    {
+      accessorKey: 'name',
+      header: '参数名称',
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.name}</span>
+      ),
+    },
+    {
+      accessorKey: 'param_key',
+      header: '键名',
+      meta: { cellClassName: 'font-mono text-muted-foreground' },
+    },
+    {
+      accessorKey: 'param_value',
+      header: '键值',
+    },
+    {
+      accessorKey: 'param_type',
+      header: '类型',
+      cell: ({ row }) => {
+        const builtin = row.original.param_type === PARAM_TYPE_BUILTIN
+        return (
+          <Badge variant={builtin ? 'secondary' : 'outline'}>
+            {builtin ? '内置' : '自定义'}
+          </Badge>
+        )
+      },
+    },
+    {
+      id: 'actions',
+      header: '操作',
+      className: 'text-right',
+      meta: { cellClassName: 'text-right' },
+      cell: ({ row }) => {
+        const param = row.original
+        const builtin = param.param_type === PARAM_TYPE_BUILTIN
+        return (
+          <div className="flex justify-end gap-1">
+            {canUpdate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title="编辑"
+                onClick={() => setDialog({ kind: 'edit', param })}
+              >
+                <Pencil className="size-4" />
+              </Button>
+            )}
+            {canDelete && !builtin && (
+              <ConfirmDialog
+                description={`确定删除参数「${param.name}」吗？`}
+                onConfirm={() => removeMutation.mutateAsync(param.id)}
+                trigger={
+                  <Button variant="ghost" size="icon" title="删除">
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                }
+              />
+            )}
+          </div>
+        )
+      },
+    },
+  ]
 
   return (
     <ManagementPage title="参数配置控制台" description="统一管理系统运行参数与配置值。">
@@ -111,82 +171,18 @@ export function ParamsPage() {
             搜索
           </Button>
         </form>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>参数名称</TableHead>
-              <TableHead>键名</TableHead>
-              <TableHead>键值</TableHead>
-              <TableHead>类型</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {query.isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  加载中...
-                </TableCell>
-              </TableRow>
-            ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  暂无数据
-                </TableCell>
-              </TableRow>
-            ) : (
-              list.map((param) => {
-                const builtin = param.param_type === PARAM_TYPE_BUILTIN
-                return (
-                  <TableRow key={param.id}>
-                    <TableCell className="font-medium">{param.name}</TableCell>
-                    <TableCell className="font-mono text-muted-foreground">
-                      {param.param_key}
-                    </TableCell>
-                    <TableCell>{param.param_value}</TableCell>
-                    <TableCell>
-                      <Badge variant={builtin ? 'secondary' : 'outline'}>
-                        {builtin ? '内置' : '自定义'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {canUpdate && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="编辑"
-                            onClick={() => setDialog({ kind: 'edit', param })}
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-                        )}
-                        {canDelete && !builtin && (
-                          <ConfirmDialog
-                            description={`确定删除参数「${param.name}」吗？`}
-                            onConfirm={() =>
-                              removeMutation.mutateAsync(param.id)
-                            }
-                            trigger={
-                              <Button variant="ghost" size="icon" title="删除">
-                                <Trash2 className="size-4 text-destructive" />
-                              </Button>
-                            }
-                          />
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-        <PagePagination
-          page={page}
-          pageSize={PAGE_SIZE}
-          total={query.data?.total ?? 0}
-          onChange={setPage}
+        <DataTable
+          columns={columns}
+          data={list}
+          loading={query.isLoading}
+          error={query.isError}
+          onRetry={() => void query.refetch()}
+          pagination={{
+            page,
+            pageSize: PAGE_SIZE,
+            total: query.data?.total ?? 0,
+            onChange: setPage,
+          }}
         />
       </CardContent>
       {(dialog.kind === 'create' || dialog.kind === 'edit') && (

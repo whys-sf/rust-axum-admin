@@ -27,7 +27,7 @@ export function PagePagination({
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}
         >
-          <ChevronLeft className="size-4" />
+          <ChevronLeft data-icon="inline-start" />
           上一页
         </Button>
         <Button
@@ -37,7 +37,7 @@ export function PagePagination({
           onClick={() => onChange(page + 1)}
         >
           下一页
-          <ChevronRight className="size-4" />
+          <ChevronRight data-icon="inline-end" />
         </Button>
       </div>
     </div>

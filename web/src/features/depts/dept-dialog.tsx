@@ -224,7 +224,7 @@ export function DeptDialog({
                   {/* 02 基本信息 */}
                   <section className="space-y-4 border-t border-dashed pt-6">
                     <div className="flex items-center gap-3">
-                      <span className="grid size-6 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      <span className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                         02
                       </span>
                       <div>
@@ -274,7 +274,7 @@ export function DeptDialog({
                   {/* 03 联系方式 */}
                   <section className="space-y-4 border-t border-dashed pt-6">
                     <div className="flex items-center gap-3">
-                      <span className="grid size-6 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      <span className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                         03
                       </span>
                       <div>
@@ -322,7 +322,7 @@ export function DeptDialog({
                   {/* 04 显示设置 */}
                   <section className="space-y-4 border-t border-dashed pt-6">
                     <div className="flex items-center gap-3">
-                      <span className="grid size-6 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      <span className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                         04
                       </span>
                       <div>

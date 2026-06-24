@@ -14,16 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
-import { PagePagination } from "@/components/common/page-pagination";
 import { ManagementPage } from "@/components/common/management-page";
 import {
   roleApi,
@@ -133,7 +125,92 @@ export function RolesPage() {
     },
   });
 
-  const list = rolesQuery.data?.list ?? [];
+  const list = rolesQuery.data?.list ?? []
+
+  const columns: DataTableColumnDef<Role>[] = [
+    {
+      accessorKey: "name",
+      header: "角色名称",
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+    },
+    {
+      accessorKey: "code",
+      header: "编码",
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.original.code}</span>
+      ),
+    },
+    {
+      accessorKey: "data_scope",
+      header: "数据范围",
+      cell: ({ row }) => (
+        <Badge variant="outline">{dataScopeLabel(row.original.data_scope)}</Badge>
+      ),
+    },
+    {
+      accessorKey: "sort",
+      header: "排序",
+    },
+    {
+      accessorKey: "status",
+      header: "状态",
+      cell: ({ row }) => (
+        <Switch
+          checked={row.original.status === 1}
+          onCheckedChange={(c) =>
+            statusMutation.mutate({ id: row.original.id, status: c ? 1 : 0 })
+          }
+        />
+      ),
+    },
+    {
+      id: "actions",
+      header: "操作",
+      className: "text-right",
+      cell: ({ row }) => {
+        const role = row.original
+        return (
+          <div className="flex justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="编辑"
+              onClick={() => setDialog({ kind: "edit", role })}
+            >
+              <Pencil className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="分配菜单"
+              onClick={() => setDialog({ kind: "menus", role })}
+            >
+              <MenuIcon className="size-4" />
+            </Button>
+            {role.data_scope === DATA_SCOPE_CUSTOM && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title="分配数据范围"
+                onClick={() => setDialog({ kind: "depts", role })}
+              >
+                <ListTree className="size-4" />
+              </Button>
+            )}
+            <ConfirmDialog
+              description={`确定删除角色「${role.name}」吗？`}
+              onConfirm={() => removeMutation.mutateAsync(role.id)}
+              trigger={
+                <Button variant="ghost" size="icon" title="删除">
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              }
+            />
+          </div>
+        )
+      },
+    },
+  ];
 
   return (
     <ManagementPage
@@ -168,109 +245,13 @@ export function RolesPage() {
               搜索
             </Button>
           </form>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>角色名称</TableHead>
-                <TableHead>编码</TableHead>
-                <TableHead>数据范围</TableHead>
-                <TableHead>排序</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rolesQuery.isLoading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center text-muted-foreground"
-                  >
-                    加载中...
-                  </TableCell>
-                </TableRow>
-              ) : list.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center text-muted-foreground"
-                  >
-                    暂无数据
-                  </TableCell>
-                </TableRow>
-              ) : (
-                list.map((role) => (
-                  <TableRow key={role.id}>
-                    <TableCell className="font-medium">{role.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {role.code}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {dataScopeLabel(role.data_scope)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{role.sort}</TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={role.status === 1}
-                        onCheckedChange={(c) =>
-                          statusMutation.mutate({
-                            id: role.id,
-                            status: c ? 1 : 0,
-                          })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="编辑"
-                          onClick={() => setDialog({ kind: "edit", role })}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="分配菜单"
-                          onClick={() => setDialog({ kind: "menus", role })}
-                        >
-                          <MenuIcon className="size-4" />
-                        </Button>
-                        {role.data_scope === DATA_SCOPE_CUSTOM && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="分配数据范围"
-                            onClick={() => setDialog({ kind: "depts", role })}
-                          >
-                            <ListTree className="size-4" />
-                          </Button>
-                        )}
-                        <ConfirmDialog
-                          description={`确定删除角色「${role.name}」吗？`}
-                          onConfirm={() => removeMutation.mutateAsync(role.id)}
-                          trigger={
-                            <Button variant="ghost" size="icon" title="删除">
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          }
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          <PagePagination
-            page={page}
-            pageSize={PAGE_SIZE}
-            total={rolesQuery.data?.total ?? 0}
-            onChange={setPage}
+          <DataTable
+            columns={columns}
+            data={list}
+            loading={rolesQuery.isLoading}
+            error={rolesQuery.isError}
+            onRetry={() => void rolesQuery.refetch()}
+            pagination={{ page, pageSize: PAGE_SIZE, total: rolesQuery.data?.total ?? 0, onChange: setPage }}
           />
         </CardContent>
 

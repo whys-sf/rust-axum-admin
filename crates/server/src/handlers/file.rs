@@ -1,10 +1,12 @@
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::body::Body;
 use axum::extract::{Multipart, Path, Query, State};
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::{AppError, AppResult};
+use common::response::PageResult;
+use common::AppError;
 use serde::Deserialize;
 use service::dto::{CurrentUser, FileContent, FileQuery, FileView};
 
@@ -33,7 +35,7 @@ pub async fn upload(
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<UploadQuery>,
     mut multipart: Multipart,
-) -> AppResult<ApiResponse<FileView>> {
+) -> HttpResult<ApiResponse<FileView>> {
     while let Some(field) = multipart
         .next_field()
         .await
@@ -61,7 +63,7 @@ pub async fn upload(
             .await?;
         return Ok(ApiResponse::ok(view));
     }
-    Err(AppError::bad_request("缺少 file 字段"))
+    Err(AppError::bad_request("缺少 file 字段").into())
 }
 
 #[utoipa::path(
@@ -76,7 +78,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<FileQuery>,
-) -> AppResult<ApiResponse<PageResult<FileView>>> {
+) -> HttpResult<ApiResponse<PageResult<FileView>>> {
     let page = state.services.list_files(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -93,7 +95,7 @@ pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_file(&current, id).await?;
     Ok(ApiResponse::ok(()))
 }
@@ -127,7 +129,7 @@ pub async fn download(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<Response> {
+) -> HttpResult<Response> {
     let content = state.services.download_file(&current, id).await?;
     Ok(file_response(content, false))
 }
@@ -142,7 +144,7 @@ pub async fn download(
 pub async fn public_download(
     State(state): State<AppState>,
     Path(id): Path<i64>,
-) -> AppResult<Response> {
+) -> HttpResult<Response> {
     let content = state.services.public_file(id).await?;
     Ok(file_response(content, true))
 }

@@ -1,12 +1,13 @@
 use std::io::Write;
 
+use crate::error::HttpResult;
+use crate::response::ApiResponse;
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Extension;
-use common::response::{ApiResponse, PageResult};
-use common::AppResult;
+use common::response::PageResult;
 use service::dto::{
     CurrentUser, DbTableInfo, GenFile, GenTableDetail, GenTableQuery, ImportTablesReq,
     UpdateGenTableReq,
@@ -26,7 +27,7 @@ use crate::state::AppState;
 pub async fn db_tables(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
-) -> AppResult<ApiResponse<Vec<DbTableInfo>>> {
+) -> HttpResult<ApiResponse<Vec<DbTableInfo>>> {
     let data = state.services.list_db_tables(&current).await?;
     Ok(ApiResponse::ok(data))
 }
@@ -43,7 +44,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Query(query): Query<GenTableQuery>,
-) -> AppResult<ApiResponse<PageResult<entity::gen_table::Model>>> {
+) -> HttpResult<ApiResponse<PageResult<entity::gen_table::Model>>> {
     let page = state.services.list_gen_tables(&current, query).await?;
     Ok(ApiResponse::ok(page))
 }
@@ -60,7 +61,7 @@ pub async fn import(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     ValidatedJson(req): ValidatedJson<ImportTablesReq>,
-) -> AppResult<ApiResponse<u64>> {
+) -> HttpResult<ApiResponse<u64>> {
     let count = state.services.import_tables(&current, req).await?;
     Ok(ApiResponse::ok(count))
 }
@@ -77,7 +78,7 @@ pub async fn detail(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<GenTableDetail>> {
+) -> HttpResult<ApiResponse<GenTableDetail>> {
     let detail = state.services.get_gen_table(&current, id).await?;
     Ok(ApiResponse::ok(detail))
 }
@@ -96,7 +97,7 @@ pub async fn update(
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
     ValidatedJson(req): ValidatedJson<UpdateGenTableReq>,
-) -> AppResult<ApiResponse<GenTableDetail>> {
+) -> HttpResult<ApiResponse<GenTableDetail>> {
     let detail = state.services.update_gen_table(&current, id, req).await?;
     Ok(ApiResponse::ok(detail))
 }
@@ -113,7 +114,7 @@ pub async fn remove(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<()>> {
+) -> HttpResult<ApiResponse<()>> {
     state.services.delete_gen_table(&current, id).await?;
     Ok(ApiResponse::ok(()))
 }
@@ -130,7 +131,7 @@ pub async fn preview(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<ApiResponse<Vec<GenFile>>> {
+) -> HttpResult<ApiResponse<Vec<GenFile>>> {
     let files = state.services.generate_code(&current, id).await?;
     Ok(ApiResponse::ok(files))
 }
@@ -147,7 +148,7 @@ pub async fn download(
     State(state): State<AppState>,
     Extension(current): Extension<CurrentUser>,
     Path(id): Path<i64>,
-) -> AppResult<Response> {
+) -> HttpResult<Response> {
     let detail = state.services.get_gen_table(&current, id).await?;
     let files = state.services.generate_code(&current, id).await?;
 

@@ -16,10 +16,14 @@ async fn main() -> anyhow::Result<()> {
     let settings = Arc::new(Settings::load()?);
     let addr = settings.server.addr.clone();
 
-    let state = init_state(settings).await?;
+    let state = init_state(settings.clone()).await?;
 
-    // background cron scheduler for sys_job.
-    tokio::spawn(service::job::run_scheduler(state.services.clone()));
+    if settings.server.enable_scheduler {
+        // background cron scheduler for sys_job.
+        tokio::spawn(service::job::run_scheduler(state.services.clone()));
+    } else {
+        tracing::info!("job scheduler disabled because server.enable_scheduler=false");
+    }
 
     let app = build_app(state);
 

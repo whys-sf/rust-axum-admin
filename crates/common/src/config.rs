@@ -33,6 +33,12 @@ pub struct ServerConfig {
     /// Per-request timeout in seconds.
     #[serde(default = "default_request_timeout")]
     pub request_timeout_secs: u64,
+    /// Run database migrations during application startup.
+    #[serde(default = "default_true")]
+    pub auto_migrate: bool,
+    /// Start the in-process background job scheduler.
+    #[serde(default = "default_true")]
+    pub enable_scheduler: bool,
     /// Maximum accepted upload (multipart) body size in bytes. Larger than
     /// `request_body_limit` since attachments can be sizeable.
     #[serde(default = "default_upload_limit")]
@@ -202,6 +208,8 @@ mod tests {
                 trust_forwarded_for: false,
                 request_body_limit: default_body_limit(),
                 request_timeout_secs: default_request_timeout(),
+                auto_migrate: true,
+                enable_scheduler: true,
                 upload_body_limit: default_upload_limit(),
             },
             database: DatabaseConfig {

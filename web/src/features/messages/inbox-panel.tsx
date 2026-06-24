@@ -4,16 +4,11 @@ import { CheckCheck, Mail, MailOpen, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { PagePagination } from '@/components/common/page-pagination'
+import {
+  DataTable,
+  type DataTableColumnDef,
+} from '@/components/common/data-table'
 import { messageApi } from '@/lib/api/message'
 import type { InboxItem } from '@/lib/api/types'
 import { MessageViewDialog } from '@/features/messages/message-view-dialog'
@@ -55,6 +50,67 @@ export function InboxPanel() {
   })
 
   const list = query.data?.list ?? []
+  const columns: DataTableColumnDef<InboxItem>[] = [
+    {
+      id: 'read',
+      header: '',
+      className: 'w-10',
+      cell: ({ row }) =>
+        row.original.is_read ? (
+          <MailOpen className="size-4 text-muted-foreground" />
+        ) : (
+          <Mail className="size-4 text-primary" />
+        ),
+    },
+    {
+      accessorKey: 'title',
+      header: '标题',
+      cell: ({ row }) => (
+        <button
+          className="text-left hover:underline"
+          onClick={() => setViewing(row.original.message_id)}
+        >
+          {row.original.title}
+        </button>
+      ),
+    },
+    {
+      accessorKey: 'msg_type',
+      header: '类型',
+      cell: ({ row }) => (
+        <Badge variant="outline">{typeLabel(row.original.msg_type)}</Badge>
+      ),
+    },
+    {
+      accessorKey: 'sender_name',
+      header: '发件人',
+      meta: { cellClassName: 'text-muted-foreground' },
+      cell: ({ row }) => row.original.sender_name ?? '系统',
+    },
+    {
+      accessorKey: 'created_at',
+      header: '时间',
+      meta: { cellClassName: 'text-muted-foreground' },
+      cell: ({ row }) => new Date(row.original.created_at).toLocaleString(),
+    },
+    {
+      id: 'actions',
+      header: '操作',
+      className: 'text-right',
+      meta: { cellClassName: 'text-right' },
+      cell: ({ row }) => (
+        <ConfirmDialog
+          description={`确定删除消息「${row.original.title}」吗？`}
+          onConfirm={() => removeMutation.mutateAsync(row.original.message_id)}
+          trigger={
+            <Button variant="ghost" size="icon" title="删除">
+              <Trash2 className="size-4 text-destructive" />
+            </Button>
+          }
+        />
+      ),
+    },
+  ]
 
   return (
     <div>
@@ -68,81 +124,20 @@ export function InboxPanel() {
           全部已读
         </Button>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10" />
-            <TableHead>标题</TableHead>
-            <TableHead>类型</TableHead>
-            <TableHead>发件人</TableHead>
-            <TableHead>时间</TableHead>
-            <TableHead className="text-right">操作</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {query.isLoading ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
-                加载中...
-              </TableCell>
-            </TableRow>
-          ) : list.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
-                暂无消息
-              </TableCell>
-            </TableRow>
-          ) : (
-            list.map((m: InboxItem) => (
-              <TableRow
-                key={m.message_id}
-                className={m.is_read ? undefined : 'font-medium'}
-              >
-                <TableCell>
-                  {m.is_read ? (
-                    <MailOpen className="size-4 text-muted-foreground" />
-                  ) : (
-                    <Mail className="size-4 text-primary" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  <button
-                    className="text-left hover:underline"
-                    onClick={() => setViewing(m.message_id)}
-                  >
-                    {m.title}
-                  </button>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{typeLabel(m.msg_type)}</Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {m.sender_name ?? '系统'}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {new Date(m.created_at).toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right">
-                  <ConfirmDialog
-                    description={`确定删除消息「${m.title}」吗？`}
-                    onConfirm={() => removeMutation.mutateAsync(m.message_id)}
-                    trigger={
-                      <Button variant="ghost" size="icon" title="删除">
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
-                    }
-                  />
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-      <PagePagination
-        page={page}
-        pageSize={PAGE_SIZE}
-        total={query.data?.total ?? 0}
-        onChange={setPage}
+      <DataTable
+        columns={columns}
+        data={list}
+        loading={query.isLoading}
+        error={query.isError}
+        emptyTitle="暂无消息"
+        onRetry={() => void query.refetch()}
+        rowClassName={(row) => (row.original.is_read ? undefined : 'font-medium')}
+        pagination={{
+          page,
+          pageSize: PAGE_SIZE,
+          total: query.data?.total ?? 0,
+          onChange: setPage,
+        }}
       />
       {viewing && (
         <MessageViewDialog

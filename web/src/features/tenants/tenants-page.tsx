@@ -6,17 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { PagePagination } from '@/components/common/page-pagination'
 import { ManagementPage } from '@/components/common/management-page'
+import {
+  DataTable,
+  type DataTableColumnDef,
+} from '@/components/common/data-table'
 import {
   tenantApi,
   type CreateTenantPayload,
@@ -83,6 +78,74 @@ export function TenantsPage() {
   })
 
   const list = tenantsQuery.data?.list ?? []
+  const columns: DataTableColumnDef<Tenant>[] = [
+    {
+      accessorKey: 'name',
+      header: '租户名称',
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.name}</span>
+      ),
+    },
+    {
+      accessorKey: 'code',
+      header: '编码',
+      meta: { cellClassName: 'text-muted-foreground' },
+    },
+    {
+      accessorKey: 'contact_name',
+      header: '联系人',
+      cell: ({ row }) => row.original.contact_name || '—',
+    },
+    {
+      accessorKey: 'user_limit',
+      header: '用户上限',
+    },
+    {
+      accessorKey: 'status',
+      header: '状态',
+      cell: ({ row }) => (
+        <Switch
+          checked={row.original.status === 1}
+          onCheckedChange={(c) =>
+            statusMutation.mutate({
+              id: row.original.id,
+              status: c ? 1 : 0,
+            })
+          }
+        />
+      ),
+    },
+    {
+      id: 'actions',
+      header: '操作',
+      className: 'text-right',
+      meta: { cellClassName: 'text-right' },
+      cell: ({ row }) => {
+        const tenant = row.original
+        return (
+          <div className="flex justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="编辑"
+              onClick={() => setDialog({ kind: 'edit', tenant })}
+            >
+              <Pencil className="size-4" />
+            </Button>
+            <ConfirmDialog
+              description={`确定删除租户「${tenant.name}」吗？该操作会移除其全部数据。`}
+              onConfirm={() => removeMutation.mutateAsync(tenant.id)}
+              trigger={
+                <Button variant="ghost" size="icon" title="删除">
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              }
+            />
+          </div>
+        )
+      },
+    },
+  ]
 
   return (
     <ManagementPage title="租户运营控制台" description="管理租户生命周期、配额和服务状态。">
@@ -114,81 +177,18 @@ export function TenantsPage() {
             搜索
           </Button>
         </form>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>租户名称</TableHead>
-              <TableHead>编码</TableHead>
-              <TableHead>联系人</TableHead>
-              <TableHead>用户上限</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tenantsQuery.isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  加载中...
-                </TableCell>
-              </TableRow>
-            ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  暂无数据
-                </TableCell>
-              </TableRow>
-            ) : (
-              list.map((tenant) => (
-                <TableRow key={tenant.id}>
-                  <TableCell className="font-medium">{tenant.name}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {tenant.code}
-                  </TableCell>
-                  <TableCell>{tenant.contact_name || '—'}</TableCell>
-                  <TableCell>{tenant.user_limit}</TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={tenant.status === 1}
-                      onCheckedChange={(c) =>
-                        statusMutation.mutate({
-                          id: tenant.id,
-                          status: c ? 1 : 0,
-                        })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="编辑"
-                        onClick={() => setDialog({ kind: 'edit', tenant })}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <ConfirmDialog
-                        description={`确定删除租户「${tenant.name}」吗？该操作会移除其全部数据。`}
-                        onConfirm={() => removeMutation.mutateAsync(tenant.id)}
-                        trigger={
-                          <Button variant="ghost" size="icon" title="删除">
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        }
-                      />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        <PagePagination
-          page={page}
-          pageSize={PAGE_SIZE}
-          total={tenantsQuery.data?.total ?? 0}
-          onChange={setPage}
+        <DataTable
+          columns={columns}
+          data={list}
+          loading={tenantsQuery.isLoading}
+          error={tenantsQuery.isError}
+          onRetry={() => void tenantsQuery.refetch()}
+          pagination={{
+            page,
+            pageSize: PAGE_SIZE,
+            total: tenantsQuery.data?.total ?? 0,
+            onChange: setPage,
+          }}
         />
       </CardContent>
 
