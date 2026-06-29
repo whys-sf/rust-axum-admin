@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from "react";
+import { useForm } from "@tanstack/react-form";
 import {
   ArrowUpDown,
   Database,
@@ -46,41 +46,40 @@ export function RoleDialog({
   onCreate,
   onUpdate,
 }: RoleDialogProps) {
-  const [form, setForm] = useState({
-    name: editing?.name ?? "",
-    code: editing?.code ?? "",
-    sort: editing?.sort ?? 0,
-    status: editing?.status ?? 1,
-    data_scope: editing?.data_scope ?? 1,
-    remark: editing?.remark ?? "",
+  const form = useForm({
+    defaultValues: {
+      name: editing?.name ?? "",
+      code: editing?.code ?? "",
+      sort: editing?.sort ?? 0,
+      status: editing?.status ?? 1,
+      data_scope: editing?.data_scope ?? 1,
+      remark: editing?.remark ?? "",
+    },
+    onSubmit: ({ value }) => {
+      const valid = editing
+        ? value.name.trim().length > 0
+        : value.name.trim().length > 0 && value.code.trim().length > 0;
+      if (saving || !valid) return;
+      if (editing) {
+        onUpdate(editing.id, {
+          name: value.name,
+          sort: value.sort,
+          status: value.status,
+          data_scope: value.data_scope,
+          remark: value.remark || null,
+        });
+      } else {
+        onCreate({
+          name: value.name,
+          code: value.code,
+          sort: value.sort,
+          status: value.status,
+          data_scope: value.data_scope,
+          remark: value.remark || null,
+        });
+      }
+    },
   });
-
-  const valid = editing
-    ? form.name.trim().length > 0
-    : form.name.trim().length > 0 && form.code.trim().length > 0;
-
-  function submit(event?: SubmitEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    if (saving || !valid) return;
-    if (editing) {
-      onUpdate(editing.id, {
-        name: form.name,
-        sort: form.sort,
-        status: form.status,
-        data_scope: form.data_scope,
-        remark: form.remark || null,
-      });
-    } else {
-      onCreate({
-        name: form.name,
-        code: form.code,
-        sort: form.sort,
-        status: form.status,
-        data_scope: form.data_scope,
-        remark: form.remark || null,
-      });
-    }
-  }
 
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
@@ -88,7 +87,13 @@ export function RoleDialog({
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-2xl dark:ring-white/10"
       >
-        <form onSubmit={submit} className="flex min-h-0 flex-col">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            form.handleSubmit();
+          }}
+          className="flex min-h-0 flex-col"
+        >
           <div className="flex min-h-0 flex-col">
             <DialogHeroHeader
               icon={ShieldCheck}
@@ -100,14 +105,18 @@ export function RoleDialog({
                   : "创建新角色并配置数据权限范围。"
               }
               aside={(
-                <DialogStatusSwitch
-                  id="role-status"
-                  eyebrow="启用状态"
-                  checked={form.status === 1}
-                  checkedLabel="已启用"
-                  uncheckedLabel="已禁用"
-                  onCheckedChange={(checked) => setForm({ ...form, status: checked ? 1 : 0 })}
-                />
+                <form.Field name="status">
+                  {(field) => (
+                    <DialogStatusSwitch
+                      id="role-status"
+                      eyebrow="启用状态"
+                      checked={field.state.value === 1}
+                      checkedLabel="已启用"
+                      uncheckedLabel="已禁用"
+                      onCheckedChange={(checked) => field.handleChange(checked ? 1 : 0)}
+                    />
+                  )}
+                </form.Field>
                 )}
             />
 
@@ -128,42 +137,48 @@ export function RoleDialog({
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field
-                        icon={Tag}
-                        label="角色名称"
-                        htmlFor="role-name"
-                        required
-                      >
-                        <Input
-                          id="role-name"
-                          required
-                          autoFocus
-                          value={form.name}
-                          placeholder="输入角色显示名称"
-                          onChange={(e) =>
-                            setForm({ ...form, name: e.target.value })
-                          }
-                          className="h-10 bg-muted/25 px-3"
-                        />
-                      </Field>
-                      <Field
-                        icon={Hash}
-                        label="角色编码"
-                        htmlFor="role-code"
-                        required={!editing}
-                      >
-                        <Input
-                          id="role-code"
-                          required={!editing}
-                          value={form.code}
-                          disabled={!!editing}
-                          placeholder="如 admin"
-                          onChange={(e) =>
-                            setForm({ ...form, code: e.target.value })
-                          }
-                          className="h-10 bg-muted/25 px-3 font-mono text-sm"
-                        />
-                      </Field>
+                      <form.Field name="name">
+                        {(field) => (
+                          <Field
+                            icon={Tag}
+                            label="角色名称"
+                            htmlFor="role-name"
+                            required
+                          >
+                            <Input
+                              id="role-name"
+                              required
+                              autoFocus
+                              value={field.state.value}
+                              placeholder="输入角色显示名称"
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="h-10 bg-muted/25 px-3"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
+                      <form.Field name="code">
+                        {(field) => (
+                          <Field
+                            icon={Hash}
+                            label="角色编码"
+                            htmlFor="role-code"
+                            required={!editing}
+                          >
+                            <Input
+                              id="role-code"
+                              required={!editing}
+                              value={field.state.value}
+                              disabled={!!editing}
+                              placeholder="如 admin"
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="h-10 bg-muted/25 px-3 font-mono text-sm"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
                     </div>
                   </section>
 
@@ -181,47 +196,52 @@ export function RoleDialog({
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field
-                        icon={Database}
-                        label="数据范围"
-                        htmlFor="role-data-scope"
-                      >
-                        <Select
-                          value={String(form.data_scope)}
-                          onValueChange={(v) =>
-                            setForm({ ...form, data_scope: Number(v) })
-                          }
-                        >
-                          <SelectTrigger
-                            id="role-data-scope"
-                            className="w-full bg-muted/25 px-3 data-[size=default]:h-10"
+                      <form.Field name="data_scope">
+                        {(field) => (
+                          <Field
+                            icon={Database}
+                            label="数据范围"
+                            htmlFor="role-data-scope"
                           >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {DATA_SCOPE_OPTIONS.map((o) => (
-                              <SelectItem key={o.value} value={String(o.value)}>
-                                {o.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                      <Field
-                        icon={ArrowUpDown}
-                        label="排序权重"
-                        htmlFor="role-sort"
-                      >
-                        <Input
-                          id="role-sort"
-                          type="number"
-                          value={form.sort ?? 0}
-                          onChange={(e) =>
-                            setForm({ ...form, sort: Number(e.target.value) })
-                          }
-                          className="h-10 bg-muted/25 px-3 font-mono tabular-nums"
-                        />
-                      </Field>
+                            <Select
+                              value={String(field.state.value)}
+                              onValueChange={(v) => field.handleChange(Number(v))}
+                            >
+                              <SelectTrigger
+                                id="role-data-scope"
+                                className="w-full bg-muted/25 px-3 data-[size=default]:h-10"
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DATA_SCOPE_OPTIONS.map((o) => (
+                                  <SelectItem key={o.value} value={String(o.value)}>
+                                    {o.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </Field>
+                        )}
+                      </form.Field>
+                      <form.Field name="sort">
+                        {(field) => (
+                          <Field
+                            icon={ArrowUpDown}
+                            label="排序权重"
+                            htmlFor="role-sort"
+                          >
+                            <Input
+                              id="role-sort"
+                              type="number"
+                              value={field.state.value ?? 0}
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(Number(e.target.value))}
+                              className="h-10 bg-muted/25 px-3 font-mono tabular-nums"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
                     </div>
                   </section>
 
@@ -238,21 +258,24 @@ export function RoleDialog({
                         </p>
                       </div>
                     </div>
-                    <Field
-                      icon={FileText}
-                      label="备注"
-                      htmlFor="role-remark"
-                    >
-                      <Input
-                        id="role-remark"
-                        value={form.remark ?? ""}
-                        placeholder="可选备注信息"
-                        onChange={(e) =>
-                          setForm({ ...form, remark: e.target.value })
-                        }
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
+                    <form.Field name="remark">
+                      {(field) => (
+                        <Field
+                          icon={FileText}
+                          label="备注"
+                          htmlFor="role-remark"
+                        >
+                          <Input
+                            id="role-remark"
+                            value={field.state.value ?? ""}
+                            placeholder="可选备注信息"
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
                   </section>
                 </div>
               </div>
@@ -267,23 +290,32 @@ export function RoleDialog({
               >
                 取消
               </Button>
-              <Button
-                type="submit"
-                disabled={saving || !valid}
-                className="min-w-24"
-              >
-                {saving ? (
-                  <>
-                    <LoaderCircle className="animate-spin" />
-                    保存中
-                  </>
-                ) : (
-                  <>
-                    <Users />
-                    {editing ? "更新角色" : "创建角色"}
-                  </>
-                )}
-              </Button>
+              <form.Subscribe selector={(state) => state.values}>
+                {(values) => {
+                  const valid = editing
+                    ? values.name.trim().length > 0
+                    : values.name.trim().length > 0 && values.code.trim().length > 0;
+                  return (
+                    <Button
+                      type="submit"
+                      disabled={saving || !valid}
+                      className="min-w-24"
+                    >
+                      {saving ? (
+                        <>
+                          <LoaderCircle className="animate-spin" />
+                          保存中
+                        </>
+                      ) : (
+                        <>
+                          <Users />
+                          {editing ? "更新角色" : "创建角色"}
+                        </>
+                      )}
+                    </Button>
+                  );
+                }}
+              </form.Subscribe>
             </div>
           </div>
         </form>

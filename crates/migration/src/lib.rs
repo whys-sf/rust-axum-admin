@@ -20,6 +20,8 @@ mod m20240101_000017_file_folder;
 mod m20240101_000018_tenant_config;
 mod m20240101_000019_package_feature;
 mod m20240101_000020_package_menu;
+mod m20240101_000021_split_menu_list_permissions;
+mod m20240101_000022_split_remaining_parent_permissions;
 
 pub struct Migrator;
 
@@ -47,6 +49,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20240101_000018_tenant_config::Migration),
             Box::new(m20240101_000019_package_feature::Migration),
             Box::new(m20240101_000020_package_menu::Migration),
+            Box::new(m20240101_000021_split_menu_list_permissions::Migration),
+            Box::new(m20240101_000022_split_remaining_parent_permissions::Migration),
         ]
     }
 }

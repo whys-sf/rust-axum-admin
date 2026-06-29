@@ -24,9 +24,8 @@ pub async fn resolve(
         .cloned()
         .ok_or(AppError::Unauthorized)?;
 
-    if state.services.settings.tenant.is_single() {
+    if state.services.settings.tenant.is_single() && !current.is_platform {
         current.tenant_id = state.services.settings.tenant.default_tenant_id;
-        current.is_platform = false;
     } else if current.is_platform {
         // platform admin acting on behalf of another tenant
         if let Some(raw) = req

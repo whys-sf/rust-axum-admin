@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useForm } from '@tanstack/react-form'
 import {
   BadgeCheck,
   Hash,
@@ -29,17 +29,18 @@ export function ParamDialog({
   onCancel,
   onSubmit,
 }: ParamDialogProps) {
-  const [form, setForm] = useState<CreateParamPayload>({
-    name: editing?.name ?? '',
-    param_key: editing?.param_key ?? '',
-    param_value: editing?.param_value ?? '',
-    remark: editing?.remark ?? '',
+  const form = useForm({
+    defaultValues: {
+      name: editing?.name ?? '',
+      param_key: editing?.param_key ?? '',
+      param_value: editing?.param_value ?? '',
+      remark: editing?.remark ?? '',
+    } satisfies CreateParamPayload,
+    onSubmit: ({ value }) => {
+      if (saving || !value.name.trim() || !value.param_key.trim()) return
+      onSubmit(editing?.id, { ...value, remark: value.remark?.trim() || null })
+    },
   })
-
-  function submit() {
-    if (saving || !form.name.trim() || !form.param_key.trim()) return
-    onSubmit(editing?.id, { ...form, remark: form.remark?.trim() || null })
-  }
 
   return (
     <Dialog open onOpenChange={(o) => !o && onCancel()}>
@@ -47,7 +48,7 @@ export function ParamDialog({
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
-        <form onSubmit={(event) => { event.preventDefault(); submit() }} className="flex min-h-0 flex-col">
+        <form onSubmit={(event) => { event.preventDefault(); form.handleSubmit() }} className="flex min-h-0 flex-col">
           <DialogHeroHeader
             icon={ShieldCheck}
             eyebrow={editing ? '参数更新' : '新增参数'}
@@ -58,9 +59,13 @@ export function ParamDialog({
                 <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
                   参数键
                 </p>
-                <p className="mt-0.5 max-w-32 truncate font-mono text-xs font-bold text-foreground">
-                  {form.param_key || '待配置'}
-                </p>
+                <form.Subscribe selector={(state) => state.values.param_key}>
+                  {(paramKey) => (
+                    <p className="mt-0.5 max-w-32 truncate font-mono text-xs font-bold text-foreground">
+                      {paramKey || '待配置'}
+                    </p>
+                  )}
+                </form.Subscribe>
               </div>
             )}
           />
@@ -79,24 +84,34 @@ export function ParamDialog({
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field icon={BadgeCheck} label="参数名称" htmlFor="param-name" required>
-                      <Input
-                        id="param-name"
-                        value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
-                    <Field icon={Hash} label="键名" htmlFor="param-key" required>
-                      <Input
-                        id="param-key"
-                        value={form.param_key}
-                        disabled={!!editing}
-                        placeholder="如 sys.account.captcha"
-                        onChange={(e) => setForm({ ...form, param_key: e.target.value })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
+                    <form.Field name="name">
+                      {(field) => (
+                        <Field icon={BadgeCheck} label="参数名称" htmlFor="param-name" required>
+                          <Input
+                            id="param-name"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
+                    <form.Field name="param_key">
+                      {(field) => (
+                        <Field icon={Hash} label="键名" htmlFor="param-key" required>
+                          <Input
+                            id="param-key"
+                            value={field.state.value}
+                            disabled={!!editing}
+                            placeholder="如 sys.account.captcha"
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
                   </div>
                 </section>
 
@@ -111,22 +126,32 @@ export function ParamDialog({
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <Field icon={KeyRound} label="键值" htmlFor="param-value">
-                      <Input
-                        id="param-value"
-                        value={form.param_value}
-                        onChange={(e) => setForm({ ...form, param_value: e.target.value })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
-                    <Field icon={BadgeCheck} label="备注" htmlFor="param-remark">
-                      <Input
-                        id="param-remark"
-                        value={form.remark ?? ''}
-                        onChange={(e) => setForm({ ...form, remark: e.target.value })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
+                    <form.Field name="param_value">
+                      {(field) => (
+                        <Field icon={KeyRound} label="键值" htmlFor="param-value">
+                          <Input
+                            id="param-value"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
+                    <form.Field name="remark">
+                      {(field) => (
+                        <Field icon={BadgeCheck} label="备注" htmlFor="param-remark">
+                          <Input
+                            id="param-remark"
+                            value={field.state.value ?? ''}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
                   </div>
                 </section>
               </div>
@@ -138,19 +163,23 @@ export function ParamDialog({
               <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
                 取消
               </Button>
-              <Button type="submit" disabled={saving || !form.name.trim() || !form.param_key.trim()} className="min-w-24">
-                {saving ? (
-                  <>
-                    <LoaderCircle className="animate-spin" />
-                    保存中
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck />
-                    {editing ? '更新参数' : '创建参数'}
-                  </>
+              <form.Subscribe selector={(state) => state.values}>
+                {(values) => (
+                  <Button type="submit" disabled={saving || !values.name.trim() || !values.param_key.trim()} className="min-w-24">
+                    {saving ? (
+                      <>
+                        <LoaderCircle className="animate-spin" />
+                        保存中
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck />
+                        {editing ? '更新参数' : '创建参数'}
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </form.Subscribe>
             </div>
           </DialogFooter>
         </form>

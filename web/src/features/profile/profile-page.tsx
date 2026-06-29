@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useForm } from '@tanstack/react-form'
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -19,11 +19,10 @@ export function ProfilePage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const clear = useAuthStore((s) => s.clear)
-  const [form, setForm] = useState({ old_password: '', new_password: '' })
-  const [confirm, setConfirm] = useState('')
 
   const mutation = useMutation({
-    mutationFn: () => authApi.changePassword(form),
+    mutationFn: (values: { old_password: string; new_password: string }) =>
+      authApi.changePassword(values),
     onSuccess: () => {
       toast.success('密码已修改，请重新登录')
       clear()
@@ -31,18 +30,27 @@ export function ProfilePage() {
     },
   })
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault()
-    if (form.new_password.length < 6) {
-      toast.error('新密码至少 6 位')
-      return
-    }
-    if (form.new_password !== confirm) {
-      toast.error('两次输入的新密码不一致')
-      return
-    }
-    mutation.mutate()
-  }
+  const form = useForm({
+    defaultValues: {
+      old_password: '',
+      new_password: '',
+      confirm_password: '',
+    },
+    onSubmit: ({ value }) => {
+      if (value.new_password.length < 6) {
+        toast.error('新密码至少 6 位')
+        return
+      }
+      if (value.new_password !== value.confirm_password) {
+        toast.error('两次输入的新密码不一致')
+        return
+      }
+      mutation.mutate({
+        old_password: value.old_password,
+        new_password: value.new_password,
+      })
+    },
+  })
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -64,34 +72,45 @@ export function ProfilePage() {
           <CardDescription>修改后需要重新登录</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={submit} className="space-y-3">
+          <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit() }} className="space-y-3">
             <div className="space-y-1.5">
               <Label>当前密码</Label>
-              <Input
-                type="password"
-                value={form.old_password}
-                onChange={(e) =>
-                  setForm({ ...form, old_password: e.target.value })
-                }
-              />
+              <form.Field name="old_password">
+                {(field) => (
+                  <Input
+                    type="password"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                )}
+              </form.Field>
             </div>
             <div className="space-y-1.5">
               <Label>新密码</Label>
-              <Input
-                type="password"
-                value={form.new_password}
-                onChange={(e) =>
-                  setForm({ ...form, new_password: e.target.value })
-                }
-              />
+              <form.Field name="new_password">
+                {(field) => (
+                  <Input
+                    type="password"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                )}
+              </form.Field>
             </div>
             <div className="space-y-1.5">
               <Label>确认新密码</Label>
-              <Input
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-              />
+              <form.Field name="confirm_password">
+                {(field) => (
+                  <Input
+                    type="password"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                )}
+              </form.Field>
             </div>
             <Button type="submit" disabled={mutation.isPending}>
               保存修改

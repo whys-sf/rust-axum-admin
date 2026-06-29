@@ -17,7 +17,7 @@ url = "redis://127.0.0.1:6379"
 [jwt]
 secret = "change_me_to_a_long_random_secret_string_at_least_32_chars"
 # seconds
-access_ttl = 1440
+access_ttl = 86400
 refresh_ttl = 604800
 
 [snowflake]

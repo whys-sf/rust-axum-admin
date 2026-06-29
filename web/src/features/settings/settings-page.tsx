@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -33,10 +34,21 @@ type EditableSettingKey =
   | "login_background"
   | "logo_url";
 
+type SettingsFormValues = Record<EditableSettingKey, string>;
+
+function settingsFormValues(settings?: AppSettings): SettingsFormValues {
+  return {
+    site_name: settings?.site_name ?? "",
+    login_title: settings?.login_title ?? "",
+    login_subtitle: settings?.login_subtitle ?? "",
+    login_background: settings?.login_background ?? "",
+    logo_url: settings?.logo_url ?? "",
+  };
+}
+
 export function SettingsPage() {
   const queryClient = useQueryClient();
   const canEdit = usePermission(PERM.configEdit);
-  const [edits, setEdits] = useState<Partial<AppSettings>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ["settings"],
@@ -44,28 +56,30 @@ export function SettingsPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: () => settingsApi.update(edits),
+    mutationFn: (values: SettingsFormValues) => settingsApi.update(values),
     onSuccess: () => {
-      setEdits({});
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       queryClient.invalidateQueries({ queryKey: ["public-settings"] });
       toast.success("设置已保存");
     },
   });
 
-  function value(key: EditableSettingKey): string {
-    return edits[key] ?? data?.[key] ?? "";
-  }
+  const form = useForm({
+    defaultValues: settingsFormValues(data),
+    onSubmit: ({ value }) => {
+      mutation.mutate(value);
+    },
+  });
 
-  function set(key: EditableSettingKey, v: string) {
-    setEdits((e) => ({ ...e, [key]: v }));
-  }
+  useEffect(() => {
+    if (data) {
+      form.reset(settingsFormValues(data));
+    }
+  }, [data, form]);
 
   if (isLoading) {
     return <Skeleton className="h-96 w-full" />;
   }
-
-  const dirty = Object.keys(edits).length > 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -144,7 +158,7 @@ export function SettingsPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                mutation.mutate();
+                form.handleSubmit();
               }}
             >
               {/* 01 站点标识 */}
@@ -161,25 +175,34 @@ export function SettingsPage() {
                   </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field icon={Type} label="站点名称" htmlFor="s-site-name" required>
-                    <Input
-                      id="s-site-name"
-                      value={value("site_name")}
-                      placeholder="Rust Axum Admin"
-                      disabled={!canEdit}
-                      onChange={(e) => set("site_name", e.target.value)}
-                      className="h-10 bg-muted/25 px-3"
-                    />
-                  </Field>
-                  <Field icon={Image} label="Logo 图片地址" htmlFor="s-logo-url">
-                    <ImageUploadInput
-                      id="s-logo-url"
-                      value={value("logo_url")}
-                      placeholder="https://… (留空使用默认图标)"
-                      disabled={!canEdit}
-                      onChange={(v) => set("logo_url", v)}
-                    />
-                  </Field>
+                  <form.Field name="site_name">
+                    {(field) => (
+                      <Field icon={Type} label="站点名称" htmlFor="s-site-name" required>
+                        <Input
+                          id="s-site-name"
+                          value={field.state.value}
+                          placeholder="Rust Axum Admin"
+                          disabled={!canEdit}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          className="h-10 bg-muted/25 px-3"
+                        />
+                      </Field>
+                    )}
+                  </form.Field>
+                  <form.Field name="logo_url">
+                    {(field) => (
+                      <Field icon={Image} label="Logo 图片地址" htmlFor="s-logo-url">
+                        <ImageUploadInput
+                          id="s-logo-url"
+                          value={field.state.value}
+                          placeholder="https://... (留空使用默认图标)"
+                          disabled={!canEdit}
+                          onChange={field.handleChange}
+                        />
+                      </Field>
+                    )}
+                  </form.Field>
                 </div>
               </section>
 
@@ -197,40 +220,54 @@ export function SettingsPage() {
                   </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field icon={Type} label="登录页标题" htmlFor="s-login-title" required>
-                    <Input
-                      id="s-login-title"
-                      value={value("login_title")}
-                      placeholder="Rust Axum Admin"
-                      disabled={!canEdit}
-                      onChange={(e) => set("login_title", e.target.value)}
-                      className="h-10 bg-muted/25 px-3"
-                    />
-                  </Field>
-                  <Field icon={Monitor} label="登录页副标题" htmlFor="s-login-subtitle">
-                    <Input
-                      id="s-login-subtitle"
-                      value={value("login_subtitle")}
-                      placeholder="多租户管理后台"
-                      disabled={!canEdit}
-                      onChange={(e) => set("login_subtitle", e.target.value)}
-                      className="h-10 bg-muted/25 px-3"
-                    />
-                  </Field>
+                  <form.Field name="login_title">
+                    {(field) => (
+                      <Field icon={Type} label="登录页标题" htmlFor="s-login-title" required>
+                        <Input
+                          id="s-login-title"
+                          value={field.state.value}
+                          placeholder="Rust Axum Admin"
+                          disabled={!canEdit}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          className="h-10 bg-muted/25 px-3"
+                        />
+                      </Field>
+                    )}
+                  </form.Field>
+                  <form.Field name="login_subtitle">
+                    {(field) => (
+                      <Field icon={Monitor} label="登录页副标题" htmlFor="s-login-subtitle">
+                        <Input
+                          id="s-login-subtitle"
+                          value={field.state.value}
+                          placeholder="多租户管理后台"
+                          disabled={!canEdit}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          className="h-10 bg-muted/25 px-3"
+                        />
+                      </Field>
+                    )}
+                  </form.Field>
                 </div>
-                <Field
-                  icon={Paintbrush}
-                  label="登录页背景图地址"
-                  htmlFor="s-login-bg"
-                >
-                  <ImageUploadInput
-                    id="s-login-bg"
-                    value={value("login_background")}
-                    placeholder="https://… (留空使用默认背景)"
-                    disabled={!canEdit}
-                    onChange={(v) => set("login_background", v)}
-                  />
-                </Field>
+                <form.Field name="login_background">
+                  {(field) => (
+                    <Field
+                      icon={Paintbrush}
+                      label="登录页背景图地址"
+                      htmlFor="s-login-bg"
+                    >
+                      <ImageUploadInput
+                        id="s-login-bg"
+                        value={field.state.value}
+                        placeholder="https://... (留空使用默认背景)"
+                        disabled={!canEdit}
+                        onChange={field.handleChange}
+                      />
+                    </Field>
+                  )}
+                </form.Field>
               </section>
 
               {/* Footer */}
@@ -241,23 +278,27 @@ export function SettingsPage() {
                   </p>
                 )}
                 {canEdit && <span />}
-                <Button
-                  type="submit"
-                  disabled={!canEdit || !dirty || mutation.isPending}
-                  className="min-w-24"
-                >
-                  {mutation.isPending ? (
-                    <>
-                      <LoaderCircle className="animate-spin" />
-                      保存中
-                    </>
-                  ) : (
-                    <>
-                      <Save />
-                      保存设置
-                    </>
+                <form.Subscribe selector={(state) => state.isDirty}>
+                  {(dirty) => (
+                    <Button
+                      type="submit"
+                      disabled={!canEdit || !dirty || mutation.isPending}
+                      className="min-w-24"
+                    >
+                      {mutation.isPending ? (
+                        <>
+                          <LoaderCircle className="animate-spin" />
+                          保存中
+                        </>
+                      ) : (
+                        <>
+                          <Save />
+                          保存设置
+                        </>
+                      )}
+                    </Button>
                   )}
-                </Button>
+                </form.Subscribe>
               </div>
             </form>
           </CardContent>
@@ -272,62 +313,85 @@ export function SettingsPage() {
             </div>
 
             {/* Background preview */}
-            <div>
-              <Label className="text-xs text-muted-foreground">登录页背景</Label>
-              <div className="mt-2 flex h-44 items-center justify-center overflow-hidden rounded-lg border bg-muted/30 ring-1 ring-foreground/5">
-                {value("login_background") ? (
-                  <img
-                    src={value("login_background")}
-                    alt="背景预览"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-1.5 text-muted-foreground/60">
-                    <Paintbrush className="size-5" />
-                    <span className="text-xs">默认背景</span>
+            <form.Subscribe selector={(state) => state.values.login_background}>
+              {(loginBackground) => (
+                <div>
+                  <Label className="text-xs text-muted-foreground">登录页背景</Label>
+                  <div className="mt-2 flex h-44 items-center justify-center overflow-hidden rounded-lg border bg-muted/30 ring-1 ring-foreground/5">
+                    {loginBackground ? (
+                      <img
+                        src={loginBackground}
+                        alt="背景预览"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1.5 text-muted-foreground/60">
+                        <Paintbrush className="size-5" />
+                        <span className="text-xs">默认背景</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )}
+            </form.Subscribe>
 
             {/* Logo + Site name preview */}
-            <div>
-              <Label className="text-xs text-muted-foreground">Logo 与站点名</Label>
-              <div className="mt-2 flex h-20 items-center gap-4 rounded-lg border bg-muted/30 px-4 ring-1 ring-foreground/5">
-                {value("logo_url") ? (
-                  <img
-                    src={value("logo_url")}
-                    alt="Logo 预览"
-                    className="h-10 w-10 rounded-md object-cover ring-1 ring-foreground/10"
-                  />
-                ) : (
-                  <div className="grid size-10 place-items-center rounded-md bg-primary/10 ring-1 ring-primary/20">
-                    <Globe className="size-5 text-primary/60" />
+            <form.Subscribe
+              selector={(state) => ({
+                logoUrl: state.values.logo_url,
+                siteName: state.values.site_name,
+                loginSubtitle: state.values.login_subtitle,
+              })}
+            >
+              {({ logoUrl, siteName, loginSubtitle }) => (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Logo 与站点名</Label>
+                  <div className="mt-2 flex h-20 items-center gap-4 rounded-lg border bg-muted/30 px-4 ring-1 ring-foreground/5">
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt="Logo 预览"
+                        className="h-10 w-10 rounded-md object-cover ring-1 ring-foreground/10"
+                      />
+                    ) : (
+                      <div className="grid size-10 place-items-center rounded-md bg-primary/10 ring-1 ring-primary/20">
+                        <Globe className="size-5 text-primary/60" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">
+                        {siteName || "站点名称"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {loginSubtitle || "管理后台"}
+                      </p>
+                    </div>
                   </div>
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">
-                    {value("site_name") || "站点名称"}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {value("login_subtitle") || "管理后台"}
-                  </p>
                 </div>
-              </div>
-            </div>
+              )}
+            </form.Subscribe>
 
             {/* Login title preview */}
-            <div>
-              <Label className="text-xs text-muted-foreground">登录页标题</Label>
-              <div className="mt-2 rounded-lg border bg-muted/30 px-4 py-3 ring-1 ring-foreground/5">
-                <p className="text-sm font-medium">
-                  {value("login_title") || "登录页标题"}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {value("login_subtitle") || "登录页副标题"}
-                </p>
-              </div>
-            </div>
+            <form.Subscribe
+              selector={(state) => ({
+                loginTitle: state.values.login_title,
+                loginSubtitle: state.values.login_subtitle,
+              })}
+            >
+              {({ loginTitle, loginSubtitle }) => (
+                <div>
+                  <Label className="text-xs text-muted-foreground">登录页标题</Label>
+                  <div className="mt-2 rounded-lg border bg-muted/30 px-4 py-3 ring-1 ring-foreground/5">
+                    <p className="text-sm font-medium">
+                      {loginTitle || "登录页标题"}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {loginSubtitle || "登录页副标题"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </form.Subscribe>
           </CardContent>
         </Card>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useForm } from '@tanstack/react-form'
 import {
   BadgeCheck,
   Hash,
@@ -30,18 +30,19 @@ export function PostDialog({
   onCancel,
   onSubmit,
 }: PostDialogProps) {
-  const [form, setForm] = useState<CreatePostPayload>({
-    code: editing?.code ?? '',
-    name: editing?.name ?? '',
-    sort: editing?.sort ?? 0,
-    status: editing?.status ?? 1,
-    remark: editing?.remark ?? '',
+  const form = useForm({
+    defaultValues: {
+      code: editing?.code ?? '',
+      name: editing?.name ?? '',
+      sort: editing?.sort ?? 0,
+      status: editing?.status ?? 1,
+      remark: editing?.remark ?? '',
+    } satisfies CreatePostPayload,
+    onSubmit: ({ value }) => {
+      if (saving || !value.code.trim() || !value.name.trim()) return
+      onSubmit(editing?.id, { ...value, remark: value.remark?.trim() || null })
+    },
   })
-
-  function submit() {
-    if (saving || !form.code.trim() || !form.name.trim()) return
-    onSubmit(editing?.id, { ...form, remark: form.remark?.trim() || null })
-  }
 
   return (
     <Dialog open onOpenChange={(o) => !o && onCancel()}>
@@ -49,21 +50,25 @@ export function PostDialog({
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
-        <form onSubmit={(event) => { event.preventDefault(); submit() }} className="flex min-h-0 flex-col">
+        <form onSubmit={(event) => { event.preventDefault(); form.handleSubmit() }} className="flex min-h-0 flex-col">
           <DialogHeroHeader
             icon={ShieldCheck}
             eyebrow={editing ? '岗位更新' : '新增岗位'}
             title={editing ? '编辑岗位档案' : '登记岗位档案'}
             description="维护岗位编码、名称、排序和启用状态。"
             aside={(
-                <DialogStatusSwitch
-                  id="post-status"
-                  eyebrow="岗位状态"
-                  checked={form.status === 1}
-                  checkedLabel="启用"
-                  uncheckedLabel="停用"
-                  onCheckedChange={(checked) => setForm({ ...form, status: checked ? 1 : 0 })}
-                />
+                <form.Field name="status">
+                  {(field) => (
+                    <DialogStatusSwitch
+                      id="post-status"
+                      eyebrow="岗位状态"
+                      checked={field.state.value === 1}
+                      checkedLabel="启用"
+                      uncheckedLabel="停用"
+                      onCheckedChange={(checked) => field.handleChange(checked ? 1 : 0)}
+                    />
+                  )}
+                </form.Field>
               )}
           />
 
@@ -81,24 +86,34 @@ export function PostDialog({
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field icon={Hash} label="岗位编码" htmlFor="post-code" required>
-                      <Input
-                        id="post-code"
-                        value={form.code}
-                        disabled={!!editing}
-                        placeholder="如 ceo"
-                        onChange={(e) => setForm({ ...form, code: e.target.value })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
-                    <Field icon={BadgeCheck} label="岗位名称" htmlFor="post-name" required>
-                      <Input
-                        id="post-name"
-                        value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
+                    <form.Field name="code">
+                      {(field) => (
+                        <Field icon={Hash} label="岗位编码" htmlFor="post-code" required>
+                          <Input
+                            id="post-code"
+                            value={field.state.value}
+                            disabled={!!editing}
+                            placeholder="如 ceo"
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
+                    <form.Field name="name">
+                      {(field) => (
+                        <Field icon={BadgeCheck} label="岗位名称" htmlFor="post-name" required>
+                          <Input
+                            id="post-name"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
                   </div>
                 </section>
 
@@ -113,23 +128,33 @@ export function PostDialog({
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field icon={SlidersHorizontal} label="排序" htmlFor="post-sort">
-                      <Input
-                        id="post-sort"
-                        type="number"
-                        value={form.sort ?? 0}
-                        onChange={(e) => setForm({ ...form, sort: Number(e.target.value) })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
-                    <Field icon={BadgeCheck} label="备注" htmlFor="post-remark">
-                      <Input
-                        id="post-remark"
-                        value={form.remark ?? ''}
-                        onChange={(e) => setForm({ ...form, remark: e.target.value })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
+                    <form.Field name="sort">
+                      {(field) => (
+                        <Field icon={SlidersHorizontal} label="排序" htmlFor="post-sort">
+                          <Input
+                            id="post-sort"
+                            type="number"
+                            value={field.state.value ?? 0}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
+                    <form.Field name="remark">
+                      {(field) => (
+                        <Field icon={BadgeCheck} label="备注" htmlFor="post-remark">
+                          <Input
+                            id="post-remark"
+                            value={field.state.value ?? ''}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
                   </div>
                 </section>
               </div>
@@ -141,19 +166,23 @@ export function PostDialog({
               <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
                 取消
               </Button>
-              <Button type="submit" disabled={saving || !form.code.trim() || !form.name.trim()} className="min-w-24">
-                {saving ? (
-                  <>
-                    <LoaderCircle className="animate-spin" />
-                    保存中
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck />
-                    {editing ? '更新岗位' : '创建岗位'}
-                  </>
+              <form.Subscribe selector={(state) => state.values}>
+                {(values) => (
+                  <Button type="submit" disabled={saving || !values.code.trim() || !values.name.trim()} className="min-w-24">
+                    {saving ? (
+                      <>
+                        <LoaderCircle className="animate-spin" />
+                        保存中
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck />
+                        {editing ? '更新岗位' : '创建岗位'}
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </form.Subscribe>
             </div>
           </DialogFooter>
         </form>

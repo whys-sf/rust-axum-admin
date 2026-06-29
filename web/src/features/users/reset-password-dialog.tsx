@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
 import { KeyRound, LoaderCircle, ShieldCheck } from 'lucide-react'
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,14 +19,15 @@ export function ResetPasswordDialog({
   onCancel,
   onSubmit,
 }: ResetPasswordDialogProps) {
-  const [password, setPassword] = useState("");
-  const passwordValid = password.length >= 6;
-
-  function submit(event?: React.FormEvent) {
-    event?.preventDefault();
-    if (!passwordValid || saving) return;
-    onSubmit(password);
-  }
+  const form = useForm({
+    defaultValues: {
+      password: "",
+    },
+    onSubmit: ({ value }) => {
+      if (saving || value.password.length < 6) return;
+      onSubmit(value.password);
+    },
+  });
 
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
@@ -34,7 +35,13 @@ export function ResetPasswordDialog({
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
-        <form onSubmit={submit} className="flex min-h-0 flex-col">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            form.handleSubmit();
+          }}
+          className="flex min-h-0 flex-col"
+        >
           <DialogHeroHeader
             icon={KeyRound}
             eyebrow="凭证更新"
@@ -73,22 +80,32 @@ export function ResetPasswordDialog({
                     </span>
                   </span>
                 </Label>
-                <Input
-                  id="reset-password"
-                  autoFocus
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="至少 6 个字符"
-                  value={password}
-                  aria-invalid={password.length > 0 && !passwordValid}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="h-10 bg-muted/25 px-3"
-                />
-                {password.length > 0 && !passwordValid && (
-                  <p className="text-xs text-destructive">
-                    密码至少需要 6 个字符
-                  </p>
-                )}
+                <form.Field name="password">
+                  {(field) => {
+                    const passwordValid = field.state.value.length >= 6;
+                    return (
+                      <>
+                        <Input
+                          id="reset-password"
+                          autoFocus
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder="至少 6 个字符"
+                          value={field.state.value}
+                          aria-invalid={field.state.value.length > 0 && !passwordValid}
+                          onBlur={field.handleBlur}
+                          onChange={(event) => field.handleChange(event.target.value)}
+                          className="h-10 bg-muted/25 px-3"
+                        />
+                        {field.state.value.length > 0 && !passwordValid && (
+                          <p className="text-xs text-destructive">
+                            密码至少需要 6 个字符
+                          </p>
+                        )}
+                      </>
+                    );
+                  }}
+                </form.Field>
               </div>
             </section>
           </div>
@@ -103,23 +120,27 @@ export function ResetPasswordDialog({
               >
                 取消
               </Button>
-              <Button
-                type="submit"
-                disabled={saving || !passwordValid}
-                className="min-w-24"
-              >
-                {saving ? (
-                  <>
-                    <LoaderCircle className="animate-spin" />
-                    保存中
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck />
-                    重置密码
-                  </>
+              <form.Subscribe selector={(state) => state.values.password}>
+                {(password) => (
+                  <Button
+                    type="submit"
+                    disabled={saving || password.length < 6}
+                    className="min-w-24"
+                  >
+                    {saving ? (
+                      <>
+                        <LoaderCircle className="animate-spin" />
+                        保存中
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck />
+                        重置密码
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </form.Subscribe>
             </div>
           </DialogFooter>
         </form>

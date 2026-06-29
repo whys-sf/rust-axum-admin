@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useForm } from '@tanstack/react-form'
 import {
   BadgeCheck,
   FileText,
@@ -38,17 +38,18 @@ export function NoticeDialog({
   onCancel,
   onSubmit,
 }: NoticeDialogProps) {
-  const [form, setForm] = useState<CreateNoticePayload>({
-    title: editing?.title ?? '',
-    notice_type: editing?.notice_type ?? 1,
-    content: editing?.content ?? '',
-    status: editing?.status ?? 1,
+  const form = useForm({
+    defaultValues: {
+      title: editing?.title ?? '',
+      notice_type: editing?.notice_type ?? 1,
+      content: editing?.content ?? '',
+      status: editing?.status ?? 1,
+    } satisfies CreateNoticePayload,
+    onSubmit: ({ value }) => {
+      if (saving || !value.title.trim()) return
+      onSubmit(editing?.id, value)
+    },
   })
-
-  function submit() {
-    if (saving || !form.title.trim()) return
-    onSubmit(editing?.id, form)
-  }
 
   return (
     <Dialog open onOpenChange={(o) => !o && onCancel()}>
@@ -56,21 +57,25 @@ export function NoticeDialog({
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
-        <form onSubmit={(event) => { event.preventDefault(); submit() }} className="flex min-h-0 flex-col">
+        <form onSubmit={(event) => { event.preventDefault(); form.handleSubmit() }} className="flex min-h-0 flex-col">
           <DialogHeroHeader
             icon={ShieldCheck}
             eyebrow={editing ? '公告更新' : '新增公告'}
             title={editing ? '编辑通知公告' : '编写通知公告'}
             description="维护通知公告的标题、类型、内容和发布状态。"
             aside={(
-                <DialogStatusSwitch
-                  id="notice-status"
-                  eyebrow="发布状态"
-                  checked={form.status === 1}
-                  checkedLabel="发布"
-                  uncheckedLabel="草稿"
-                  onCheckedChange={(checked) => setForm({ ...form, status: checked ? 1 : 0 })}
-                />
+                <form.Field name="status">
+                  {(field) => (
+                    <DialogStatusSwitch
+                      id="notice-status"
+                      eyebrow="发布状态"
+                      checked={field.state.value === 1}
+                      checkedLabel="发布"
+                      uncheckedLabel="草稿"
+                      onCheckedChange={(checked) => field.handleChange(checked ? 1 : 0)}
+                    />
+                  )}
+                </form.Field>
               )}
           />
 
@@ -88,28 +93,37 @@ export function NoticeDialog({
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field icon={Megaphone} label="标题" htmlFor="notice-title" required>
-                      <Input
-                        id="notice-title"
-                        value={form.title}
-                        onChange={(e) => setForm({ ...form, title: e.target.value })}
-                        className="h-10 bg-muted/25 px-3"
-                      />
-                    </Field>
-                    <Field icon={BadgeCheck} label="类型" htmlFor="notice-type">
-                      <Select
-                        value={String(form.notice_type ?? 1)}
-                        onValueChange={(v) => setForm({ ...form, notice_type: Number(v) })}
-                      >
-                        <SelectTrigger id="notice-type" className="w-full bg-muted/25 px-3 data-[size=default]:h-10">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">通知</SelectItem>
-                          <SelectItem value="2">公告</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </Field>
+                    <form.Field name="title">
+                      {(field) => (
+                        <Field icon={Megaphone} label="标题" htmlFor="notice-title" required>
+                          <Input
+                            id="notice-title"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="h-10 bg-muted/25 px-3"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
+                    <form.Field name="notice_type">
+                      {(field) => (
+                        <Field icon={BadgeCheck} label="类型" htmlFor="notice-type">
+                          <Select
+                            value={String(field.state.value ?? 1)}
+                            onValueChange={(v) => field.handleChange(Number(v))}
+                          >
+                            <SelectTrigger id="notice-type" className="w-full bg-muted/25 px-3 data-[size=default]:h-10">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">通知</SelectItem>
+                              <SelectItem value="2">公告</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      )}
+                    </form.Field>
                   </div>
                 </section>
 
@@ -123,15 +137,20 @@ export function NoticeDialog({
                       <p className="text-xs text-muted-foreground">填写面向用户展示的公告正文</p>
                     </div>
                   </div>
-                  <Field icon={FileText} label="内容" htmlFor="notice-content">
-                    <Textarea
-                      id="notice-content"
-                      rows={5}
-                      value={form.content ?? ''}
-                      onChange={(e) => setForm({ ...form, content: e.target.value })}
-                      className="min-h-32 resize-none bg-muted/25 px-3"
-                    />
-                  </Field>
+                  <form.Field name="content">
+                    {(field) => (
+                      <Field icon={FileText} label="内容" htmlFor="notice-content">
+                        <Textarea
+                          id="notice-content"
+                          rows={5}
+                          value={field.state.value ?? ''}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          className="min-h-32 resize-none bg-muted/25 px-3"
+                        />
+                      </Field>
+                    )}
+                  </form.Field>
                 </section>
               </div>
             </div>
@@ -142,19 +161,23 @@ export function NoticeDialog({
               <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
                 取消
               </Button>
-              <Button type="submit" disabled={saving || !form.title.trim()} className="min-w-24">
-                {saving ? (
-                  <>
-                    <LoaderCircle className="animate-spin" />
-                    保存中
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck />
-                    {editing ? '更新公告' : '创建公告'}
-                  </>
+              <form.Subscribe selector={(state) => state.values.title}>
+                {(title) => (
+                  <Button type="submit" disabled={saving || !title.trim()} className="min-w-24">
+                    {saving ? (
+                      <>
+                        <LoaderCircle className="animate-spin" />
+                        保存中
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck />
+                        {editing ? '更新公告' : '创建公告'}
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </form.Subscribe>
             </div>
           </DialogFooter>
         </form>

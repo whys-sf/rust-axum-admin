@@ -11,6 +11,8 @@ const MAX_LOGIN_FAILS: i64 = 5;
 const LOGIN_LOCK_WINDOW_SECS: i64 = 900;
 /// Max login attempts (success or failure) per source IP within the window.
 const MAX_LOGIN_PER_IP: i64 = 30;
+const PLATFORM_TENANT_CODE: &str = "platform";
+const PLATFORM_SUPERADMIN_USERNAME: &str = "superadmin";
 
 impl Services {
     /// Resolve a tenant by login code, validating status and expiry.
@@ -27,6 +29,9 @@ impl Services {
 
     fn login_tenant_code(&self, req: &LoginReq) -> AppResult<String> {
         if self.settings.tenant.is_single() {
+            if req.username.trim() == PLATFORM_SUPERADMIN_USERNAME {
+                return Ok(PLATFORM_TENANT_CODE.to_string());
+            }
             return Ok(self.settings.tenant.default_tenant_code.clone());
         }
 
@@ -371,11 +376,16 @@ impl Services {
 }
 
 /// Platform-only menus live under the `/platform` route space (perm prefix
-/// `platform:`); tenant users must never see them in their menu tree.
+/// `platform:` or platform components); tenant users must never see them in
+/// their menu tree.
 fn is_platform_menu(menu: &entity::menu::Model) -> bool {
     menu.path
         .as_deref()
         .is_some_and(|p| p.starts_with("/platform"))
+        || menu
+            .component
+            .as_deref()
+            .is_some_and(|c| c.starts_with("platform/"))
         || menu
             .perm
             .as_deref()

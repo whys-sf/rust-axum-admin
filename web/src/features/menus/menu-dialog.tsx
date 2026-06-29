@@ -90,9 +90,9 @@ export function MenuDialog({
       name: form.name.trim(),
       path: isButton ? null : cleanOptional(form.path),
       component: null,
-      perm: cleanOptional(form.perm),
-      api_path: cleanOptional(form.api_path),
-      api_method: cleanOptional(form.api_method),
+      perm: isButton ? cleanOptional(form.perm) : null,
+      api_path: isButton ? cleanOptional(form.api_path) : null,
+      api_method: isButton ? cleanOptional(form.api_method) : null,
       icon: isButton ? null : cleanOptional(form.icon),
     };
     onSubmit(editing?.id, payload);
@@ -207,9 +207,18 @@ export function MenuDialog({
                       <Field icon={Layers} label="资源类型" htmlFor="menu-type">
                         <Select
                           value={String(form.type)}
-                          onValueChange={(v) =>
-                            setForm({ ...form, type: Number(v) })
-                          }
+                          onValueChange={(v) => {
+                            const type = Number(v);
+                            setForm({
+                              ...form,
+                              type,
+                              path: type === 3 ? "" : form.path,
+                              icon: type === 3 ? "" : form.icon,
+                              perm: type === 3 ? form.perm : "",
+                              api_path: type === 3 ? form.api_path : "",
+                              api_method: type === 3 ? form.api_method : "",
+                            });
+                          }}
                         >
                           <SelectTrigger
                             id="menu-type"
@@ -306,73 +315,75 @@ export function MenuDialog({
                   </section>
 
                   {/* 03 权限与接口 */}
-                  <section className="space-y-4 border-t border-dashed pt-6">
-                    <div className="flex items-center gap-3">
-                      <span className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        03
-                      </span>
-                      <div>
-                        <h3 className="text-sm font-semibold">权限与接口</h3>
-                        <p className="text-xs text-muted-foreground">
-                          权限标识与后端接口绑定
-                        </p>
+                  {isButton && (
+                    <section className="space-y-4 border-t border-dashed pt-6">
+                      <div className="flex items-center gap-3">
+                        <span className="grid size-6 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                          03
+                        </span>
+                        <div>
+                          <h3 className="text-sm font-semibold">权限与接口</h3>
+                          <p className="text-xs text-muted-foreground">
+                            权限标识与后端接口绑定
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <Field icon={Lock} label="权限标识" htmlFor="menu-perm">
-                      <Input
-                        id="menu-perm"
-                        value={form.perm ?? ""}
-                        placeholder="system:user:list"
-                        onChange={(e) =>
-                          setForm({ ...form, perm: e.target.value })
-                        }
-                        className="h-10 bg-muted/25 px-3 font-mono text-sm"
-                      />
-                    </Field>
-                    <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
-                      <Field
-                        icon={Globe}
-                        label="接口路径"
-                        htmlFor="menu-api-path"
-                      >
+                      <Field icon={Lock} label="权限标识" htmlFor="menu-perm">
                         <Input
-                          id="menu-api-path"
-                          value={form.api_path ?? ""}
-                          placeholder="/api/v1/users"
+                          id="menu-perm"
+                          value={form.perm ?? ""}
+                          placeholder="system:user:list"
                           onChange={(e) =>
-                            setForm({ ...form, api_path: e.target.value })
+                            setForm({ ...form, perm: e.target.value })
                           }
                           className="h-10 bg-muted/25 px-3 font-mono text-sm"
                         />
                       </Field>
-                      <Field
-                        icon={Cable}
-                        label="接口方法"
-                        htmlFor="menu-api-method"
-                      >
-                        <Select
-                          value={form.api_method || undefined}
-                          onValueChange={(v) =>
-                            setForm({ ...form, api_method: v })
-                          }
+                      <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
+                        <Field
+                          icon={Globe}
+                          label="接口路径"
+                          htmlFor="menu-api-path"
                         >
-                          <SelectTrigger
-                            id="menu-api-method"
-                            className="w-full bg-muted/25 px-3 font-mono text-sm data-[size=default]:h-10"
+                          <Input
+                            id="menu-api-path"
+                            value={form.api_path ?? ""}
+                            placeholder="/api/v1/users"
+                            onChange={(e) =>
+                              setForm({ ...form, api_path: e.target.value })
+                            }
+                            className="h-10 bg-muted/25 px-3 font-mono text-sm"
+                          />
+                        </Field>
+                        <Field
+                          icon={Cable}
+                          label="接口方法"
+                          htmlFor="menu-api-method"
+                        >
+                          <Select
+                            value={form.api_method || undefined}
+                            onValueChange={(v) =>
+                              setForm({ ...form, api_method: v })
+                            }
                           >
-                            <SelectValue placeholder="选择" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="GET">GET</SelectItem>
-                            <SelectItem value="POST">POST</SelectItem>
-                            <SelectItem value="PUT">PUT</SelectItem>
-                            <SelectItem value="PATCH">PATCH</SelectItem>
-                            <SelectItem value="DELETE">DELETE</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                    </div>
-                  </section>
+                            <SelectTrigger
+                              id="menu-api-method"
+                              className="w-full bg-muted/25 px-3 font-mono text-sm data-[size=default]:h-10"
+                            >
+                              <SelectValue placeholder="选择" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="GET">GET</SelectItem>
+                              <SelectItem value="POST">POST</SelectItem>
+                              <SelectItem value="PUT">PUT</SelectItem>
+                              <SelectItem value="PATCH">PATCH</SelectItem>
+                              <SelectItem value="DELETE">DELETE</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      </div>
+                    </section>
+                  )}
 
                   {/* 04 显示设置 */}
                   <section className="space-y-4 border-t border-dashed pt-6">

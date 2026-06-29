@@ -1,7 +1,7 @@
 import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { z } from "zod";
+import { useForm } from "@tanstack/react-form";
 import {
   Building2,
   Cpu,
@@ -24,16 +24,8 @@ import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { authApi } from "@/lib/api/auth";
 import { settingsApi } from "@/lib/api/settings";
+import { fieldError } from "@/lib/form";
 import { useAuthStore } from "@/stores/auth";
-
-const baseSchema = z.object({
-  username: z.string().min(1, "请输入用户名"),
-  password: z.string().min(6, "密码至少 6 位"),
-});
-
-const tenantLoginSchema = baseSchema.extend({
-  tenant_code: z.string().min(2, "请输入租户编码"),
-});
 
 function loginReasonMessage(reason: string | null): string {
   switch (reason) {
@@ -48,26 +40,41 @@ function loginReasonMessage(reason: string | null): string {
   }
 }
 
+function loginErrorMessage(error: unknown): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof (error as { response?: { status?: number } }).response?.status ===
+      "number"
+  ) {
+    const response = (error as {
+      response?: { status?: number; data?: { message?: string } };
+    }).response;
+    if (response?.status === 401) return "用户名或密码错误，请重新输入。";
+    return response?.data?.message ?? "登录失败，请稍后再试。";
+  }
+  return "登录失败，请稍后再试。";
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const setTokens = useAuthStore((s) => s.setTokens);
   const setUser = useAuthStore((s) => s.setUser);
-  const [form, setForm] = useState({
-    tenant_code: "",
-    username: "admin",
-    password: "Admin@123456",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loginError, setLoginError] = useState("");
 
   const { data: settings } = useQuery({
     queryKey: ["public-settings"],
     queryFn: settingsApi.public,
   });
+  const showTenantLogin = settings?.show_tenant_login === true;
 
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (values: LoginFormValues) => {
       const resp = await authApi.login(
-        showTenantLogin ? form : { username: form.username, password: form.password },
+        showTenantLogin
+          ? values
+          : { username: values.username, password: values.password },
       );
       setTokens(resp.access_token, resp.refresh_token);
       const info = await authApi.userinfo();
@@ -75,35 +82,37 @@ export function LoginPage() {
       return info;
     },
     onSuccess: (info) => {
+      setLoginError("");
       toast.success(`欢迎回来，${info.nickname || info.username}`);
       navigate({ to: "/" });
+    },
+    onError: (error) => {
+      setLoginError(loginErrorMessage(error));
+    },
+  });
+
+  const bg = settings?.login_background;
+  const title = settings?.login_title || "Rust Axum Admin";
+  const subtitle = settings?.login_subtitle || "多租户管理后台";
+  const reasonMessage = loginReasonMessage(
+    new URLSearchParams(window.location.search).get("reason"),
+  );
+  const form = useForm({
+    defaultValues: {
+      tenant_code: "",
+      username: "admin",
+      password: "Admin@123456",
+    } satisfies LoginFormValues,
+    onSubmit: ({ value }) => {
+      setLoginError("");
+      mutation.mutate(value);
     },
   });
 
   function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    const showTenantLogin = settings?.show_tenant_login === true;
-    const schema = showTenantLogin ? tenantLoginSchema : baseSchema;
-    const parsed = schema.safeParse(form);
-    if (!parsed.success) {
-      const fieldErrors: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        fieldErrors[String(issue.path[0])] = issue.message;
-      }
-      setErrors(fieldErrors);
-      return;
-    }
-    setErrors({});
-    mutation.mutate();
+    form.handleSubmit();
   }
-
-  const bg = settings?.login_background;
-  const title = settings?.login_title || "Rust Axum Admin";
-  const subtitle = settings?.login_subtitle || "多租户管理后台";
-  const showTenantLogin = settings?.show_tenant_login === true;
-  const reasonMessage = loginReasonMessage(
-    new URLSearchParams(window.location.search).get("reason"),
-  );
 
   return (
     <div className="relative flex min-h-svh overflow-hidden">
@@ -377,44 +386,79 @@ export function LoginPage() {
                   {reasonMessage}
                 </div>
               )}
+              {loginError && (
+                <div role="alert" className="rounded-md border border-destructive/20 bg-destructive/8 px-3 py-2 text-xs text-destructive">
+                  {loginError}
+                </div>
+              )}
 
               {showTenantLogin && (
                 <div className="login-anim-up-d2">
-                  <Field
-                    id="tenant_code"
-                    label="租户编码"
-                    icon={<Building2 className="size-3.5" />}
-                    value={form.tenant_code}
-                    placeholder="如 demo / platform"
-                    error={errors.tenant_code}
-                    onChange={(v) => setForm({ ...form, tenant_code: v })}
-                  />
+                  <form.Field
+                    name="tenant_code"
+                    validators={{
+                      onSubmit: ({ value }) =>
+                        value.trim().length >= 2 ? undefined : "请输入租户编码",
+                    }}
+                  >
+                    {(field) => (
+                      <Field
+                        id={field.name}
+                        label="租户编码"
+                        icon={<Building2 className="size-3.5" />}
+                        value={field.state.value}
+                        placeholder="如 demo / platform"
+                        error={fieldError(field.state.meta)}
+                        onChange={(v) => field.handleChange(v)}
+                      />
+                    )}
+                  </form.Field>
                 </div>
               )}
 
               <div className="login-anim-up-d3">
-                <Field
-                  id="username"
-                  label="用户名"
-                  icon={<User className="size-3.5" />}
-                  value={form.username}
-                  placeholder="用户名"
-                  error={errors.username}
-                  onChange={(v) => setForm({ ...form, username: v })}
-                />
+                <form.Field
+                  name="username"
+                  validators={{
+                    onSubmit: ({ value }) =>
+                      value.trim() ? undefined : "请输入用户名",
+                  }}
+                >
+                  {(field) => (
+                    <Field
+                      id={field.name}
+                      label="用户名"
+                      icon={<User className="size-3.5" />}
+                      value={field.state.value}
+                      placeholder="用户名"
+                      error={fieldError(field.state.meta)}
+                      onChange={(v) => field.handleChange(v)}
+                    />
+                  )}
+                </form.Field>
               </div>
 
               <div className="login-anim-up-d4">
-                <Field
-                  id="password"
-                  label="密码"
-                  type="password"
-                  icon={<KeyRound className="size-3.5" />}
-                  value={form.password}
-                  placeholder="密码"
-                  error={errors.password}
-                  onChange={(v) => setForm({ ...form, password: v })}
-                />
+                <form.Field
+                  name="password"
+                  validators={{
+                    onSubmit: ({ value }) =>
+                      value.length >= 6 ? undefined : "密码至少 6 位",
+                  }}
+                >
+                  {(field) => (
+                    <Field
+                      id={field.name}
+                      label="密码"
+                      type="password"
+                      icon={<KeyRound className="size-3.5" />}
+                      value={field.state.value}
+                      placeholder="密码"
+                      error={fieldError(field.state.meta)}
+                      onChange={(v) => field.handleChange(v)}
+                    />
+                  )}
+                </form.Field>
               </div>
 
               <div className="login-anim-up-d5 pt-1">
@@ -446,6 +490,12 @@ export function LoginPage() {
       <div className="fixed inset-x-0 bottom-0 h-1 bg-linear-to-r from-primary/0 via-primary/40 to-primary/0 lg:hidden" />
     </div>
   );
+}
+
+interface LoginFormValues {
+  tenant_code: string;
+  username: string;
+  password: string;
 }
 
 /* ──────────────────────────────────────────────

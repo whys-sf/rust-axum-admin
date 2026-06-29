@@ -6,6 +6,22 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrde
 use crate::dto::{CreateMenuReq, CurrentUser, MenuNode, UpdateMenuReq};
 use crate::{Services, PLATFORM_TENANT_ID};
 
+fn route_value(menu_type: i16, value: Option<String>) -> Option<String> {
+    if menu_type == 3 {
+        None
+    } else {
+        value
+    }
+}
+
+fn api_value(menu_type: i16, value: Option<String>) -> Option<String> {
+    if menu_type == 3 {
+        value
+    } else {
+        None
+    }
+}
+
 /// Assemble a flat menu list into a tree rooted at `parent_id`.
 pub fn build_tree(all: Vec<entity::menu::Model>, parent_id: i64) -> Vec<MenuNode> {
     let mut nodes: Vec<MenuNode> = all
@@ -64,18 +80,19 @@ impl Services {
         req: CreateMenuReq,
     ) -> AppResult<entity::menu::Model> {
         let now = Utc::now();
+        let menu_type = req.r#type;
         let model = entity::menu::ActiveModel {
             id: Set(self.next_id()),
             tenant_id: Set(self.menu_write_tenant(current)),
             parent_id: Set(req.parent_id),
             name: Set(req.name),
-            r#type: Set(req.r#type),
-            path: Set(req.path),
-            component: Set(req.component),
-            perm: Set(req.perm),
-            api_path: Set(req.api_path),
-            api_method: Set(req.api_method),
-            icon: Set(req.icon),
+            r#type: Set(menu_type),
+            path: Set(route_value(menu_type, req.path)),
+            component: Set(route_value(menu_type, req.component)),
+            perm: Set(api_value(menu_type, req.perm)),
+            api_path: Set(api_value(menu_type, req.api_path)),
+            api_method: Set(api_value(menu_type, req.api_method)),
+            icon: Set(route_value(menu_type, req.icon)),
             sort: Set(req.sort.unwrap_or(0)),
             visible: Set(req.visible.unwrap_or(1)),
             status: Set(req.status.unwrap_or(1)),
@@ -125,6 +142,7 @@ impl Services {
         if !current.is_platform && menu.tenant_id == PLATFORM_TENANT_ID {
             return Err(AppError::Forbidden);
         }
+        let final_type = req.r#type.unwrap_or(menu.r#type);
         let mut active: entity::menu::ActiveModel = menu.into();
         if let Some(v) = req.parent_id {
             active.parent_id = Set(v);
@@ -135,23 +153,32 @@ impl Services {
         if let Some(v) = req.r#type {
             active.r#type = Set(v);
         }
-        if req.path.is_some() {
-            active.path = Set(req.path);
-        }
-        if req.component.is_some() {
-            active.component = Set(req.component);
-        }
-        if req.perm.is_some() {
-            active.perm = Set(req.perm);
-        }
-        if req.api_path.is_some() {
-            active.api_path = Set(req.api_path);
-        }
-        if req.api_method.is_some() {
-            active.api_method = Set(req.api_method);
-        }
-        if let Some(v) = req.icon {
-            active.icon = Set(v);
+        if final_type == 3 {
+            active.path = Set(None);
+            active.component = Set(None);
+            active.icon = Set(None);
+            if req.perm.is_some() {
+                active.perm = Set(req.perm);
+            }
+            if req.api_path.is_some() {
+                active.api_path = Set(req.api_path);
+            }
+            if req.api_method.is_some() {
+                active.api_method = Set(req.api_method);
+            }
+        } else {
+            active.perm = Set(None);
+            active.api_path = Set(None);
+            active.api_method = Set(None);
+            if req.path.is_some() {
+                active.path = Set(req.path);
+            }
+            if req.component.is_some() {
+                active.component = Set(req.component);
+            }
+            if let Some(v) = req.icon {
+                active.icon = Set(v);
+            }
         }
         if let Some(v) = req.sort {
             active.sort = Set(v);

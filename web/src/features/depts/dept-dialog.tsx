@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from "react";
+import { useForm } from "@tanstack/react-form";
 import {
   ArrowUpDown,
   Building2,
@@ -47,26 +47,26 @@ export function DeptDialog({
   onCancel,
   onSubmit,
 }: DeptDialogProps) {
-  const [form, setForm] = useState<CreateDeptPayload>({
-    parent_id: editing?.parent_id ?? parentId ?? "0",
-    name: editing?.name ?? "",
-    leader: editing?.leader ?? "",
-    phone: editing?.phone ?? "",
-    email: editing?.email ?? "",
-    sort: editing?.sort ?? 0,
-    status: editing?.status ?? 1,
+  const form = useForm({
+    defaultValues: {
+      parent_id: editing?.parent_id ?? parentId ?? "0",
+      name: editing?.name ?? "",
+      leader: editing?.leader ?? "",
+      phone: editing?.phone ?? "",
+      email: editing?.email ?? "",
+      sort: editing?.sort ?? 0,
+      status: editing?.status ?? 1,
+    } satisfies CreateDeptPayload,
+    onSubmit: ({ value }) => {
+      if (saving || !value.name.trim()) return;
+      onSubmit(editing?.id, {
+        ...value,
+        leader: value.leader?.trim() || null,
+        phone: value.phone?.trim() || null,
+        email: value.email?.trim() || null,
+      });
+    },
   });
-
-  function submit(event?: SubmitEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    if (saving || !form.name.trim()) return;
-    onSubmit(editing?.id, {
-      ...form,
-      leader: form.leader?.trim() || null,
-      phone: form.phone?.trim() || null,
-      email: form.email?.trim() || null,
-    });
-  }
 
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
@@ -74,7 +74,13 @@ export function DeptDialog({
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-2xl dark:ring-white/10"
       >
-        <form onSubmit={submit} className="flex min-h-0 flex-col">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            form.handleSubmit();
+          }}
+          className="flex min-h-0 flex-col"
+        >
           <div className="flex min-h-0 flex-col">
             <DialogHeroHeader
               icon={ShieldCheck}
@@ -86,14 +92,18 @@ export function DeptDialog({
                   : "创建新部门并挂载到正确的组织层级。"
               }
               aside={(
-                <DialogStatusSwitch
-                  id="dept-status"
-                  eyebrow="启用状态"
-                  checked={form.status === 1}
-                  checkedLabel="已启用"
-                  uncheckedLabel="已禁用"
-                  onCheckedChange={(checked) => setForm({ ...form, status: checked ? 1 : 0 })}
-                />
+                <form.Field name="status">
+                  {(field) => (
+                    <DialogStatusSwitch
+                      id="dept-status"
+                      eyebrow="启用状态"
+                      checked={field.state.value === 1}
+                      checkedLabel="已启用"
+                      uncheckedLabel="已禁用"
+                      onCheckedChange={(checked) => field.handleChange(checked ? 1 : 0)}
+                    />
+                  )}
+                </form.Field>
                 )}
             />
 
@@ -118,47 +128,49 @@ export function DeptDialog({
                       label="上级部门"
                       htmlFor="dept-parent"
                     >
-                      <Select
-                        value={form.parent_id}
-                        onValueChange={(v) =>
-                          setForm({ ...form, parent_id: v })
-                        }
-                      >
-                        <SelectTrigger
-                          id="dept-parent"
-                          className="w-full bg-muted/25 px-3 data-[size=default]:h-10"
-                        >
-                          <SelectValue placeholder="顶级部门" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">
-                            <span className="flex items-center gap-1.5">
-                              <FolderOpen className="size-3.5 text-primary/70" />
-                              顶级部门
-                            </span>
-                          </SelectItem>
-                          {options
-                            .filter((o) => o.id !== editing?.id)
-                            .map((o) => {
-                              const isDir = o.type === 1;
-                              return (
-                                <SelectItem key={o.id} value={o.id}>
-                                  <span
-                                    className="flex items-center gap-1.5"
-                                    style={{ paddingLeft: o.depth * 16 }}
-                                  >
-                                    {isDir ? (
-                                      <FolderTree className="size-3.5 shrink-0 text-amber-500/80" />
-                                    ) : (
-                                      <Building2 className="size-3.5 shrink-0 text-primary/70" />
-                                    )}
-                                    {o.name}
-                                  </span>
-                                </SelectItem>
-                              );
-                            })}
-                        </SelectContent>
-                      </Select>
+                      <form.Field name="parent_id">
+                        {(field) => (
+                          <Select
+                            value={field.state.value}
+                            onValueChange={field.handleChange}
+                          >
+                            <SelectTrigger
+                              id="dept-parent"
+                              className="w-full bg-muted/25 px-3 data-[size=default]:h-10"
+                            >
+                              <SelectValue placeholder="顶级部门" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">
+                                <span className="flex items-center gap-1.5">
+                                  <FolderOpen className="size-3.5 text-primary/70" />
+                                  顶级部门
+                                </span>
+                              </SelectItem>
+                              {options
+                                .filter((o) => o.id !== editing?.id)
+                                .map((o) => {
+                                  const isDir = o.type === 1;
+                                  return (
+                                    <SelectItem key={o.id} value={o.id}>
+                                      <span
+                                        className="flex items-center gap-1.5"
+                                        style={{ paddingLeft: o.depth * 16 }}
+                                      >
+                                        {isDir ? (
+                                          <FolderTree className="size-3.5 shrink-0 text-amber-500/80" />
+                                        ) : (
+                                          <Building2 className="size-3.5 shrink-0 text-primary/70" />
+                                        )}
+                                        {o.name}
+                                      </span>
+                                    </SelectItem>
+                                  );
+                                })}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </form.Field>
                     </Field>
                   </section>
 
@@ -176,39 +188,45 @@ export function DeptDialog({
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field
-                        icon={Tag}
-                        label="部门名称"
-                        htmlFor="dept-name"
-                        required
-                      >
-                        <Input
-                          id="dept-name"
-                          required
-                          autoFocus
-                          value={form.name}
-                          placeholder="输入部门显示名称"
-                          onChange={(e) =>
-                            setForm({ ...form, name: e.target.value })
-                          }
-                          className="h-10 bg-muted/25 px-3"
-                        />
-                      </Field>
-                      <Field
-                        icon={UserCircle}
-                        label="负责人"
-                        htmlFor="dept-leader"
-                      >
-                        <Input
-                          id="dept-leader"
-                          value={form.leader ?? ""}
-                          placeholder="负责人姓名"
-                          onChange={(e) =>
-                            setForm({ ...form, leader: e.target.value })
-                          }
-                          className="h-10 bg-muted/25 px-3"
-                        />
-                      </Field>
+                      <form.Field name="name">
+                        {(field) => (
+                          <Field
+                            icon={Tag}
+                            label="部门名称"
+                            htmlFor="dept-name"
+                            required
+                          >
+                            <Input
+                              id="dept-name"
+                              required
+                              autoFocus
+                              value={field.state.value}
+                              placeholder="输入部门显示名称"
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="h-10 bg-muted/25 px-3"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
+                      <form.Field name="leader">
+                        {(field) => (
+                          <Field
+                            icon={UserCircle}
+                            label="负责人"
+                            htmlFor="dept-leader"
+                          >
+                            <Input
+                              id="dept-leader"
+                              value={field.state.value ?? ""}
+                              placeholder="负责人姓名"
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="h-10 bg-muted/25 px-3"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
                     </div>
                   </section>
 
@@ -226,37 +244,43 @@ export function DeptDialog({
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field
-                        icon={Phone}
-                        label="联系电话"
-                        htmlFor="dept-phone"
-                      >
-                        <Input
-                          id="dept-phone"
-                          value={form.phone ?? ""}
-                          placeholder="联系电话"
-                          onChange={(e) =>
-                            setForm({ ...form, phone: e.target.value })
-                          }
-                          className="h-10 bg-muted/25 px-3"
-                        />
-                      </Field>
-                      <Field
-                        icon={Mail}
-                        label="邮箱"
-                        htmlFor="dept-email"
-                      >
-                        <Input
-                          id="dept-email"
-                          type="email"
-                          value={form.email ?? ""}
-                          placeholder="email@example.com"
-                          onChange={(e) =>
-                            setForm({ ...form, email: e.target.value })
-                          }
-                          className="h-10 bg-muted/25 px-3"
-                        />
-                      </Field>
+                      <form.Field name="phone">
+                        {(field) => (
+                          <Field
+                            icon={Phone}
+                            label="联系电话"
+                            htmlFor="dept-phone"
+                          >
+                            <Input
+                              id="dept-phone"
+                              value={field.state.value ?? ""}
+                              placeholder="联系电话"
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="h-10 bg-muted/25 px-3"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
+                      <form.Field name="email">
+                        {(field) => (
+                          <Field
+                            icon={Mail}
+                            label="邮箱"
+                            htmlFor="dept-email"
+                          >
+                            <Input
+                              id="dept-email"
+                              type="email"
+                              value={field.state.value ?? ""}
+                              placeholder="email@example.com"
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="h-10 bg-muted/25 px-3"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
                     </div>
                   </section>
 
@@ -278,15 +302,18 @@ export function DeptDialog({
                       label="排序权重"
                       htmlFor="dept-sort"
                     >
-                      <Input
-                        id="dept-sort"
-                        type="number"
-                        value={form.sort ?? 0}
-                        onChange={(e) =>
-                          setForm({ ...form, sort: Number(e.target.value) })
-                        }
-                        className="h-10 bg-muted/25 px-3 font-mono tabular-nums"
-                      />
+                      <form.Field name="sort">
+                        {(field) => (
+                          <Input
+                            id="dept-sort"
+                            type="number"
+                            value={field.state.value ?? 0}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                            className="h-10 bg-muted/25 px-3 font-mono tabular-nums"
+                          />
+                        )}
+                      </form.Field>
                     </Field>
                   </section>
                 </div>
@@ -302,23 +329,27 @@ export function DeptDialog({
               >
                 取消
               </Button>
-              <Button
-                type="submit"
-                disabled={saving || !form.name.trim()}
-                className="min-w-24"
-              >
-                {saving ? (
-                  <>
-                    <LoaderCircle className="animate-spin" />
-                    保存中
-                  </>
-                ) : (
-                  <>
-                    <Building2 />
-                    {editing ? "更新部门" : "创建部门"}
-                  </>
+              <form.Subscribe selector={(state) => state.values.name}>
+                {(name) => (
+                  <Button
+                    type="submit"
+                    disabled={saving || !name.trim()}
+                    className="min-w-24"
+                  >
+                    {saving ? (
+                      <>
+                        <LoaderCircle className="animate-spin" />
+                        保存中
+                      </>
+                    ) : (
+                      <>
+                        <Building2 />
+                        {editing ? "更新部门" : "创建部门"}
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </form.Subscribe>
             </div>
           </div>
         </form>

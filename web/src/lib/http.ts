@@ -33,6 +33,10 @@ instance.interceptors.response.use(
     const code = error.response?.data?.code
     const message =
       error.response?.data?.message ?? error.message ?? '请求失败，请稍后再试'
+    const requestUrl = error.config?.url ?? ''
+    if (status === 401 && requestUrl.includes('/auth/login')) {
+      return Promise.reject(error)
+    }
     if (status === 401) {
       redirectToLogin('expired')
     } else if (status === 403 && (code === 40301 || code === 40302)) {

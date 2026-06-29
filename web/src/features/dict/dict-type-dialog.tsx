@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from "react";
+import { useForm } from "@tanstack/react-form";
 import {
   BookOpen,
   Hash,
@@ -34,24 +34,22 @@ export function DictTypeDialog({
   onCancel,
   onSubmit,
 }: DictTypeDialogProps) {
-  const [form, setForm] = useState<CreateDictTypePayload>({
-    code: editing?.code ?? "",
-    name: editing?.name ?? "",
-    is_tree: editing?.is_tree ?? false,
-    status: editing?.status ?? 1,
-    remark: editing?.remark ?? "",
+  const form = useForm({
+    defaultValues: {
+      code: editing?.code ?? "",
+      name: editing?.name ?? "",
+      is_tree: editing?.is_tree ?? false,
+      status: editing?.status ?? 1,
+      remark: editing?.remark ?? "",
+    } satisfies CreateDictTypePayload,
+    onSubmit: ({ value }) => {
+      if (saving || !value.code.trim() || !value.name.trim()) return;
+      onSubmit(editing?.id, {
+        ...value,
+        remark: value.remark?.trim() || null,
+      });
+    },
   });
-
-  const valid = form.code.trim().length > 0 && form.name.trim().length > 0;
-
-  function submit(event?: SubmitEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    if (saving || !valid) return;
-    onSubmit(editing?.id, {
-      ...form,
-      remark: form.remark?.trim() || null,
-    });
-  }
 
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
@@ -59,7 +57,13 @@ export function DictTypeDialog({
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-2xl dark:ring-white/10"
       >
-        <form onSubmit={submit} className="flex min-h-0 flex-col">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            form.handleSubmit();
+          }}
+          className="flex min-h-0 flex-col"
+        >
           <div className="flex min-h-0 flex-col">
             <DialogHeroHeader
               icon={ShieldCheck}
@@ -71,14 +75,18 @@ export function DictTypeDialog({
                   : "字典编码唯一，保存后不可修改。"
               }
               aside={(
-                <DialogStatusSwitch
-                  id="dtype-status"
-                  eyebrow="启用状态"
-                  checked={form.status === 1}
-                  checkedLabel="已启用"
-                  uncheckedLabel="已禁用"
-                  onCheckedChange={(checked) => setForm({ ...form, status: checked ? 1 : 0 })}
-                />
+                <form.Field name="status">
+                  {(field) => (
+                    <DialogStatusSwitch
+                      id="dtype-status"
+                      eyebrow="启用状态"
+                      checked={field.state.value === 1}
+                      checkedLabel="已启用"
+                      uncheckedLabel="已禁用"
+                      onCheckedChange={(checked) => field.handleChange(checked ? 1 : 0)}
+                    />
+                  )}
+                </form.Field>
                 )}
             />
 
@@ -99,42 +107,48 @@ export function DictTypeDialog({
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field
-                        icon={Hash}
-                        label="字典编码"
-                        htmlFor="dtype-code"
-                        required
-                      >
-                        <Input
-                          id="dtype-code"
-                          required
-                          autoFocus
-                          value={form.code}
-                          disabled={!!editing}
-                          placeholder="如 sys_user_status"
-                          onChange={(e) =>
-                            setForm({ ...form, code: e.target.value })
-                          }
-                          className="h-10 bg-muted/25 px-3 font-mono text-sm"
-                        />
-                      </Field>
-                      <Field
-                        icon={Tag}
-                        label="字典名称"
-                        htmlFor="dtype-name"
-                        required
-                      >
-                        <Input
-                          id="dtype-name"
-                          required
-                          value={form.name}
-                          placeholder="如 用户状态"
-                          onChange={(e) =>
-                            setForm({ ...form, name: e.target.value })
-                          }
-                          className="h-10 bg-muted/25 px-3"
-                        />
-                      </Field>
+                      <form.Field name="code">
+                        {(field) => (
+                          <Field
+                            icon={Hash}
+                            label="字典编码"
+                            htmlFor="dtype-code"
+                            required
+                          >
+                            <Input
+                              id="dtype-code"
+                              required
+                              autoFocus
+                              value={field.state.value}
+                              disabled={!!editing}
+                              placeholder="如 sys_user_status"
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="h-10 bg-muted/25 px-3 font-mono text-sm"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
+                      <form.Field name="name">
+                        {(field) => (
+                          <Field
+                            icon={Tag}
+                            label="字典名称"
+                            htmlFor="dtype-name"
+                            required
+                          >
+                            <Input
+                              id="dtype-name"
+                              required
+                              value={field.state.value}
+                              placeholder="如 用户状态"
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              className="h-10 bg-muted/25 px-3"
+                            />
+                          </Field>
+                        )}
+                      </form.Field>
                     </div>
                   </section>
 
@@ -166,14 +180,16 @@ export function DictTypeDialog({
                           </p>
                         </div>
                       </div>
-                      <Switch
-                        id="dtype-tree"
-                        checked={form.is_tree}
-                        disabled={!!editing}
-                        onCheckedChange={(c) =>
-                          setForm({ ...form, is_tree: c })
-                        }
-                      />
+                      <form.Field name="is_tree">
+                        {(field) => (
+                          <Switch
+                            id="dtype-tree"
+                            checked={field.state.value}
+                            disabled={!!editing}
+                            onCheckedChange={field.handleChange}
+                          />
+                        )}
+                      </form.Field>
                     </div>
                   </section>
 
@@ -190,20 +206,23 @@ export function DictTypeDialog({
                         </p>
                       </div>
                     </div>
-                    <Field
-                      icon={BookOpen}
-                      label="备注"
-                      htmlFor="dtype-remark"
-                    >
-                      <Textarea
-                        id="dtype-remark"
-                        value={form.remark ?? ""}
-                        onChange={(e) =>
-                          setForm({ ...form, remark: e.target.value })
-                        }
-                        className="min-h-20 bg-muted/25 px-3 py-2"
-                      />
-                    </Field>
+                    <form.Field name="remark">
+                      {(field) => (
+                        <Field
+                          icon={BookOpen}
+                          label="备注"
+                          htmlFor="dtype-remark"
+                        >
+                          <Textarea
+                            id="dtype-remark"
+                            value={field.state.value ?? ""}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            className="min-h-20 bg-muted/25 px-3 py-2"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
                   </section>
                 </div>
               </div>
@@ -218,23 +237,27 @@ export function DictTypeDialog({
               >
                 取消
               </Button>
-              <Button
-                type="submit"
-                disabled={saving || !valid}
-                className="min-w-24"
-              >
-                {saving ? (
-                  <>
-                    <LoaderCircle className="animate-spin" />
-                    保存中
-                  </>
-                ) : (
-                  <>
-                    <BookOpen />
-                    {editing ? "更新类型" : "创建类型"}
-                  </>
+              <form.Subscribe selector={(state) => state.values}>
+                {(values) => (
+                  <Button
+                    type="submit"
+                    disabled={saving || !values.code.trim() || !values.name.trim()}
+                    className="min-w-24"
+                  >
+                    {saving ? (
+                      <>
+                        <LoaderCircle className="animate-spin" />
+                        保存中
+                      </>
+                    ) : (
+                      <>
+                        <BookOpen />
+                        {editing ? "更新类型" : "创建类型"}
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </form.Subscribe>
             </div>
           </div>
         </form>
