@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCheck, Mail, MailOpen, Trash2 } from 'lucide-react'
+import {
+  CheckCheck,
+  Mail,
+  MailOpen,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import {
-  DataTable,
-  type DataTableColumnDef,
-} from '@/components/common/data-table'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
 import { messageApi } from '@/lib/api/message'
 import type { InboxItem } from '@/lib/api/types'
 import { MessageViewDialog } from '@/features/messages/message-view-dialog'
@@ -99,8 +101,11 @@ export function InboxPanel() {
       className: 'text-right',
       meta: { cellClassName: 'text-right' },
       cell: ({ row }) => (
-        <ConfirmDialog
-          description={`确定删除消息「${row.original.title}」吗？`}
+        <DeleteConfirmDialog
+          title="删除收件消息"
+          description="此操作只会从当前收件箱移除该消息。"
+          targetLabel="目标消息"
+          targetName={row.original.title}
           onConfirm={() => removeMutation.mutateAsync(row.original.message_id)}
           trigger={
             <Button variant="ghost" size="icon" title="删除">

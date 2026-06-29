@@ -25,6 +25,16 @@ impl IntoResponse for HttpError {
                 "未认证或登录已过期".to_string(),
             ),
             AppError::Forbidden => (StatusCode::FORBIDDEN, 403, "无权限访问".to_string()),
+            AppError::TenantDisabled => (
+                StatusCode::FORBIDDEN,
+                40301,
+                "租户已被禁用，请联系平台管理员".to_string(),
+            ),
+            AppError::TenantExpired => (
+                StatusCode::FORBIDDEN,
+                40302,
+                "租户已过期，请联系平台管理员".to_string(),
+            ),
             AppError::NotFound(m) => (StatusCode::NOT_FOUND, 404, m.clone()),
             AppError::Conflict(m) => (StatusCode::CONFLICT, 409, m.clone()),
             AppError::Db(e) => {

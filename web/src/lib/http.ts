@@ -11,6 +11,13 @@ export interface ApiEnvelope<T> {
 
 const instance = axios.create({ baseURL: '/api/v1', timeout: 15000 })
 
+function redirectToLogin(reason: string) {
+  useAuthStore.getState().clear()
+  if (window.location.pathname !== '/login') {
+    window.location.href = `/login?reason=${encodeURIComponent(reason)}`
+  }
+}
+
 instance.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token
   if (token) config.headers.Authorization = `Bearer ${token}`
@@ -23,13 +30,13 @@ instance.interceptors.response.use(
   (resp) => resp,
   (error) => {
     const status = error.response?.status
+    const code = error.response?.data?.code
     const message =
       error.response?.data?.message ?? error.message ?? '请求失败，请稍后再试'
     if (status === 401) {
-      useAuthStore.getState().clear()
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
-      }
+      redirectToLogin('expired')
+    } else if (status === 403 && (code === 40301 || code === 40302)) {
+      redirectToLogin(code === 40301 ? 'tenant_disabled' : 'tenant_expired')
     } else {
       toast.error(message)
     }

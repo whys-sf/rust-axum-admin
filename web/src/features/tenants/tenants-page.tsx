@@ -1,22 +1,25 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { ManagementPage } from '@/components/common/management-page'
 import {
-  DataTable,
-  type DataTableColumnDef,
-} from '@/components/common/data-table'
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
+import { ManagementPage } from '@/components/common/management-page'
+import { TableToolbar } from '@/components/common/table-toolbar'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
 import {
   tenantApi,
   type CreateTenantPayload,
   type UpdateTenantPayload,
 } from '@/lib/api/tenant'
+import { packageApi } from '@/lib/api/package'
 import type { Tenant } from '@/lib/api/types'
 import { TenantDialog } from '@/features/tenants/tenant-dialog'
 
@@ -38,6 +41,10 @@ export function TenantsPage() {
     queryKey: ['tenants', { page, name: search }],
     queryFn: () =>
       tenantApi.list({ page, page_size: PAGE_SIZE, name: search || undefined }),
+  })
+  const packagesQuery = useQuery({
+    queryKey: ['packages'],
+    queryFn: packageApi.list,
   })
 
   function invalidate() {
@@ -78,6 +85,9 @@ export function TenantsPage() {
   })
 
   const list = tenantsQuery.data?.list ?? []
+  const packageName = new Map(
+    (packagesQuery.data ?? []).map((item) => [item.id, item.name]),
+  )
   const columns: DataTableColumnDef<Tenant>[] = [
     {
       accessorKey: 'name',
@@ -99,6 +109,14 @@ export function TenantsPage() {
     {
       accessorKey: 'user_limit',
       header: '用户上限',
+    },
+    {
+      accessorKey: 'package_id',
+      header: '套餐',
+      cell: ({ row }) =>
+        row.original.package_id
+          ? (packageName.get(row.original.package_id) ?? '未知套餐')
+          : '未绑定',
     },
     {
       accessorKey: 'status',
@@ -132,8 +150,11 @@ export function TenantsPage() {
             >
               <Pencil className="size-4" />
             </Button>
-            <ConfirmDialog
-              description={`确定删除租户「${tenant.name}」吗？该操作会移除其全部数据。`}
+            <DeleteConfirmDialog
+              title="删除租户档案"
+              description="该操作会移除租户相关数据，且不可撤销。"
+              targetLabel="目标租户"
+              targetName={tenant.name}
               onConfirm={() => removeMutation.mutateAsync(tenant.id)}
               trigger={
                 <Button variant="ghost" size="icon" title="删除">
@@ -158,25 +179,15 @@ export function TenantsPage() {
         </Button>
       </CardHeader>
       <CardContent>
-        <form
-          className="mb-4 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault()
+        <TableToolbar
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          onSearch={() => {
             setPage(1)
             setSearch(keyword.trim())
           }}
-        >
-          <Input
-            placeholder="按租户名称搜索"
-            value={keyword}
-            className="max-w-xs"
-            onChange={(e) => setKeyword(e.target.value)}
-          />
-          <Button type="submit" variant="secondary">
-            <Search className="mr-1 size-4" />
-            搜索
-          </Button>
-        </form>
+          placeholder="按租户名称搜索"
+        />
         <DataTable
           columns={columns}
           data={list}
@@ -195,6 +206,7 @@ export function TenantsPage() {
       {(dialog.kind === 'create' || dialog.kind === 'edit') && (
         <TenantDialog
           editing={dialog.kind === 'edit' ? dialog.tenant : undefined}
+          packages={packagesQuery.data ?? []}
           saving={createMutation.isPending || updateMutation.isPending}
           onCancel={() => setDialog({ kind: 'none' })}
           onCreate={(payload) => createMutation.mutate(payload)}

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { PERM, usePermission } from '@/lib/permissions'
 import { messageApi } from '@/lib/api/message'
 import type { SentMessage } from '@/lib/api/types'
@@ -88,8 +88,11 @@ export function SentPanel() {
       cell: ({ row }) => {
         const m = row.original
         return canDelete ? (
-          <ConfirmDialog
-            description={`确定删除消息「${m.title}」吗？此操作会同时删除所有收件箱副本。`}
+          <DeleteConfirmDialog
+            title="删除已发消息"
+            description="此操作会同时删除所有收件箱副本，且不可撤销。"
+            targetLabel="目标消息"
+            targetName={m.title}
             onConfirm={() => removeMutation.mutateAsync(m.id)}
             trigger={
               <Button variant="ghost" size="icon" title="删除">

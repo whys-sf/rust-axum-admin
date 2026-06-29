@@ -1,14 +1,22 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  DataTable,
-  type DataTableColumnDef,
-} from '@/components/common/data-table'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { StatusBadge } from '@/components/common/status-badge'
 import { ManagementPage } from '@/components/common/management-page'
 import { deptApi, type CreateDeptPayload } from '@/lib/api/dept'
@@ -155,8 +163,11 @@ export function DeptsPage() {
               >
                 <Pencil className="size-4" />
               </Button>
-              <ConfirmDialog
-                description={`确定删除部门「${node.name}」吗？`}
+              <DeleteConfirmDialog
+                title="删除部门"
+                description="此操作不可撤销，请确认后继续。"
+                targetLabel="目标部门"
+                targetName={node.name}
                 onConfirm={() => removeMutation.mutateAsync(node.id)}
                 trigger={
                   <Button variant="ghost" size="icon" title="删除">

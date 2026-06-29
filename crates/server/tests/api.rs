@@ -16,7 +16,7 @@ use axum::http::{Request, StatusCode};
 use axum::Router;
 use common::config::{
     CasbinConfig, DatabaseConfig, JwtConfig, RedisConfig, ServerConfig, Settings, SnowflakeConfig,
-    StorageConfig,
+    StorageConfig, TenantConfig, TenantMode,
 };
 use http_body_util::BodyExt;
 use serde_json::{json, Value};
@@ -69,6 +69,13 @@ fn test_settings() -> Settings {
             datacenter_id: 1,
         },
         casbin: CasbinConfig { model_path },
+        tenant: TenantConfig {
+            mode: TenantMode::Multi,
+            default_tenant_id: 1000,
+            default_tenant_code: "demo".into(),
+            show_tenant_login: true,
+            enable_platform_console: true,
+        },
         storage: StorageConfig {
             endpoint: std::env::var("STORAGE__ENDPOINT")
                 .unwrap_or_else(|_| "http://localhost:9000".into()),
@@ -743,9 +750,13 @@ fn settings_public_and_admin_update() {
         assert_eq!(status, StatusCode::OK, "{body}");
         assert!(body["data"]["site_name"].is_string());
 
-        // demo admin holds system:config:* and may read + update settings
+        // tenant admins may read platform settings for display, but cannot
+        // change shared login branding.
         let token = login("demo", "admin", "Admin@123456").await;
         let name = format!("站点-{}", uniq());
+        let (status, body) = send("GET", "/api/v1/settings", Some(&token), None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+
         let (status, body) = send(
             "PUT",
             "/api/v1/settings",
@@ -753,14 +764,28 @@ fn settings_public_and_admin_update() {
             Some(json!({ "site_name": name, "login_subtitle": "欢迎" })),
         )
         .await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{body}");
+
+        // platform superadmin owns shared login settings.
+        let platform_token = login("platform", "superadmin", "Admin@123456").await;
+        let (status, body) = send(
+            "PUT",
+            "/api/v1/settings",
+            Some(&platform_token),
+            Some(json!({ "site_name": name, "login_subtitle": "欢迎" })),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["data"]["site_name"], name);
 
-        // the update is visible through the public endpoint
-        let (status, body) = send("GET", "/api/v1/public/settings", None, None).await;
+        let (status, body) = send("GET", "/api/v1/settings", Some(&platform_token), None).await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["data"]["site_name"], name);
         assert_eq!(body["data"]["login_subtitle"], "欢迎");
+
+        let (status, body) = send("GET", "/api/v1/public/settings", None, None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["site_name"], name);
     });
 }
 

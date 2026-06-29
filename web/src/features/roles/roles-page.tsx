@@ -13,15 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
-import { ConfirmDialog } from "@/components/common/confirm-dialog";
-import { ManagementPage } from "@/components/common/management-page";
 import {
-  roleApi,
-  type CreateRolePayload,
-  type UpdateRolePayload,
-} from "@/lib/api/role";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
+import { ManagementPage } from "@/components/common/management-page";
+import { roleApi, type CreateRolePayload, type UpdateRolePayload } from "@/lib/api/role";
 import { menuApi } from "@/lib/api/menu";
 import { deptApi } from "@/lib/api/dept";
 import { DATA_SCOPE_CUSTOM, dataScopeLabel } from "@/lib/constants";
@@ -197,8 +198,11 @@ export function RolesPage() {
                 <ListTree className="size-4" />
               </Button>
             )}
-            <ConfirmDialog
-              description={`确定删除角色「${role.name}」吗？`}
+            <DeleteConfirmDialog
+              title="删除角色"
+              description="此操作不可撤销，请确认后继续。"
+              targetLabel="目标角色"
+              targetName={role.name}
               onConfirm={() => removeMutation.mutateAsync(role.id)}
               trigger={
                 <Button variant="ghost" size="icon" title="删除">

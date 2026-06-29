@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-/// Site-wide settings. Publicly readable (login page) and editable by admins
-/// with `system:config:edit`.
+/// Branding/settings resolved from platform defaults plus tenant overrides.
+/// Public reads use platform defaults; authenticated reads use the acting tenant.
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct AppSettings {
     pub site_name: String,
@@ -12,6 +12,12 @@ pub struct AppSettings {
     pub login_background: String,
     /// Sidebar / login logo image URL (empty = default icon).
     pub logo_url: String,
+    /// Runtime tenant mode exposed to the frontend: "single" or "multi".
+    pub tenant_mode: String,
+    /// Whether the login form should ask for a tenant code.
+    pub show_tenant_login: bool,
+    /// Whether platform management pages are enabled for this deployment.
+    pub enable_platform_console: bool,
 }
 
 /// Partial update: only the provided fields are written.

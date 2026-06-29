@@ -1,11 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Code2, Files } from 'lucide-react'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { DialogHeroHeader } from '@/components/common/dialog-hero-header'
 import { Button } from '@/components/ui/button'
 import { genApi } from '@/lib/api/gen'
 
@@ -26,11 +23,30 @@ export function PreviewDialog({ tableId, onClose }: PreviewDialogProps) {
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex h-[80vh] max-w-5xl flex-col">
-        <DialogHeader>
-          <DialogTitle>代码预览</DialogTitle>
-        </DialogHeader>
-        <div className="flex min-h-0 flex-1 gap-3">
+      <DialogContent
+        showCloseButton={false}
+        className="flex h-[80vh] gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-5xl dark:ring-white/10"
+      >
+        <DialogHeroHeader
+          icon={Code2}
+          eyebrow="代码生成"
+          title="代码预览"
+          description="预览当前表配置生成的文件内容。"
+          aside={(
+            <div className="relative flex shrink-0 items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
+              <Files className="size-5 text-primary" />
+              <div>
+                <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
+                  文件数
+                </p>
+                <p className="mt-0.5 text-xs font-bold text-foreground">
+                  {files.length} 个
+                </p>
+              </div>
+            </div>
+          )}
+        />
+        <div className="flex min-h-0 flex-1 gap-3 px-5 py-5 sm:px-7">
           <div className="w-64 shrink-0 space-y-1 overflow-auto border-r pr-2">
             {files.map((f, i) => (
               <button
@@ -59,7 +75,7 @@ export function PreviewDialog({ tableId, onClose }: PreviewDialogProps) {
             )}
           </div>
         </div>
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 border-t px-5 py-4 sm:px-7">
           {current && (
             <Button
               variant="secondary"

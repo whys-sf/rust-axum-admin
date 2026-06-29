@@ -1,19 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Eye,
-  Search,
-} from "lucide-react";
+import { Eye, FileSearch, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DialogHeroHeader } from "@/components/common/dialog-hero-header";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
@@ -74,14 +71,23 @@ function LogDetailDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>审计记录详情</DialogTitle>
-          <DialogDescription>
-            LOG-{log.id} · {formatDate(log.created_at)}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        showCloseButton={false}
+        className="max-h-[85vh] gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-2xl dark:ring-white/10"
+      >
+        <DialogHeroHeader
+          icon={FileSearch}
+          eyebrow="审计日志"
+          title="审计记录详情"
+          description={<>LOG-{log.id} · {formatDate(log.created_at)}</>}
+          aside={(
+            <Badge variant={isSuccess(status) ? "outline" : "destructive"}>
+              {status ? String(status) : "—"}
+            </Badge>
+          )}
+        />
 
+        <div className="max-h-[calc(85vh-132px)] overflow-y-auto px-5 py-7 sm:px-7">
         <div className="grid gap-4 sm:grid-cols-2">
           <DetailField label="操作用户" value={log.username || "匿名用户"} />
           <DetailField label="来源 IP" value={log.ip || "未记录"} />
@@ -122,6 +128,7 @@ function LogDetailDialog({
             </pre>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

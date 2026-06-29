@@ -21,6 +21,9 @@ pub struct Model {
     pub object_key: String,
     pub content_type: String,
     pub size: i64,
+    #[serde(with = "crate::id::string_opt")]
+    #[schema(value_type = Option<String>)]
+    pub folder_id: Option<i64>,
     /// Public files are reachable without authentication (used for logos /
     /// login backgrounds); private files require an authenticated download.
     pub is_public: bool,

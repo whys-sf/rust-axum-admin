@@ -12,6 +12,8 @@ export interface CreateTenantPayload {
   code: string
   contact_name?: string | null
   contact_phone?: string | null
+  domain?: string | null
+  package_id?: string | null
   user_limit?: number | null
   expire_at?: string | null
   admin_username: string
@@ -22,6 +24,8 @@ export interface UpdateTenantPayload {
   name?: string
   contact_name?: string | null
   contact_phone?: string | null
+  domain?: string | null
+  package_id?: string | null
   user_limit?: number | null
   expire_at?: string | null
   remark?: string | null

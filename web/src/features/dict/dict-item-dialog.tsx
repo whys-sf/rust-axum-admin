@@ -9,19 +9,14 @@ import {
   Paintbrush,
   ShieldCheck,
   Tag,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+} from 'lucide-react'
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DialogHeroHeader } from "@/components/common/dialog-hero-header";
+import { FormField as Field } from '@/components/common/form-field'
+import { DialogStatusSwitch } from '@/components/common/dialog-status-switch'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -59,35 +54,6 @@ interface DictItemDialogProps {
   onSubmit: (id: string | undefined, payload: CreateDictItemPayload) => void;
 }
 
-interface FieldProps {
-  icon: typeof Tag;
-  label: string;
-  htmlFor: string;
-  required?: boolean;
-  children: React.ReactNode;
-}
-
-function Field({ icon: Icon, label, htmlFor, required, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/80"
-      >
-        <Icon className="size-3.5 text-primary" />
-        <span>
-          {label}
-          {required && (
-            <span aria-hidden="true" className="ml-0.5 text-destructive">
-              *
-            </span>
-          )}
-        </span>
-      </Label>
-      {children}
-    </div>
-  );
-}
 
 export function DictItemDialog({
   dictCode,
@@ -133,49 +99,22 @@ export function DictItemDialog({
       >
         <form onSubmit={submit} className="flex min-h-0 flex-col">
           <div className="flex min-h-0 flex-col">
-            <DialogHeader className="control-grid relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-7 sm:py-6">
-              <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-              <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-              <div className="relative flex items-start justify-between gap-5">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="size-3.5 text-primary-foreground/80" />
-                    <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                      {editing ? "记录更新" : "新增记录"}
-                    </span>
-                  </div>
-                  <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
-                    {editing ? "编辑字典项" : "注册字典项"}
-                  </DialogTitle>
-                  <DialogDescription className="mt-2 text-primary-foreground/75">
-                    字典「{dictCode}」
-                  </DialogDescription>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <div className="relative flex items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
-                    <div>
-                      <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
-                        启用状态
-                      </p>
-                      <Label
-                        htmlFor="ditem-status"
-                        className="mt-0.5 block cursor-pointer text-xs font-bold text-foreground"
-                      >
-                        {form.status === 1 ? "已启用" : "已禁用"}
-                      </Label>
-                    </div>
-                    <Switch
-                      id="ditem-status"
-                      checked={form.status === 1}
-                      onCheckedChange={(checked) =>
-                        setForm({ ...form, status: checked ? 1 : 0 })
-                      }
-                      className="scale-110 data-checked:bg-primary data-unchecked:bg-muted-foreground/40 **:data-[slot=switch-thumb]:bg-primary-foreground"
-                    />
-                  </div>
-                </div>
-              </div>
-            </DialogHeader>
+            <DialogHeroHeader
+              icon={ShieldCheck}
+              eyebrow={editing ? "记录更新" : "新增记录"}
+              title={editing ? "编辑字典项" : "注册字典项"}
+              description={<>字典「{dictCode}」</>}
+              aside={(
+                <DialogStatusSwitch
+                  id="ditem-status"
+                  eyebrow="启用状态"
+                  checked={form.status === 1}
+                  checkedLabel="已启用"
+                  uncheckedLabel="已禁用"
+                  onCheckedChange={(checked) => setForm({ ...form, status: checked ? 1 : 0 })}
+                />
+                )}
+            />
 
             <ScrollArea className="max-h-[60vh]">
               <div className="px-5 pt-7 sm:px-7">

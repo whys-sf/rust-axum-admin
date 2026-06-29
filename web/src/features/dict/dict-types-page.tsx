@@ -12,14 +12,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { StatusBadge } from "@/components/common/status-badge";
 import { ManagementPage } from "@/components/common/management-page";
-import {
-  DataTable,
-  type DataTableColumnDef,
-} from "@/components/common/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
 import { PERM, usePermission } from "@/lib/permissions";
 import {
   dictApi,
@@ -142,8 +144,11 @@ export function DictTypesPage() {
                 </Button>
               )}
               {canDelete && (
-                <ConfirmDialog
-                  description={`确定删除字典「${type.name}」及其所有字典项吗？`}
+                <DeleteConfirmDialog
+                  title="删除字典类型"
+                  description="此操作会同时删除该字典下的所有字典项，且不可撤销。"
+                  targetLabel="目标字典"
+                  targetName={type.name}
                   onConfirm={() => removeMutation.mutateAsync(type.id)}
                   trigger={
                     <Button variant="ghost" size="icon" title="删除">

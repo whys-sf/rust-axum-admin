@@ -189,8 +189,20 @@ fn gen_routes() -> Router<AppState> {
 fn file_routes() -> Router<AppState> {
     Router::new()
         .route(
+            "/file-folders",
+            get(handlers::file::list_folders).post(handlers::file::create_folder),
+        )
+        .route(
+            "/file-folders/{id}",
+            axum::routing::put(handlers::file::update_folder).delete(handlers::file::delete_folder),
+        )
+        .route(
             "/files",
             get(handlers::file::list).post(handlers::file::upload),
+        )
+        .route(
+            "/files/{id}/move",
+            axum::routing::put(handlers::file::move_file),
         )
         .route("/files/{id}", axum::routing::delete(handlers::file::remove))
         .route("/files/{id}/download", get(handlers::file::download))
@@ -268,6 +280,19 @@ fn tenant_routes() -> Router<AppState> {
         )
 }
 
+fn package_routes() -> Router<AppState> {
+    Router::new()
+        .route("/platform/features", get(handlers::package::features))
+        .route(
+            "/platform/packages",
+            get(handlers::package::list).post(handlers::package::create),
+        )
+        .route(
+            "/platform/packages/{id}",
+            put(handlers::package::update).delete(handlers::package::remove),
+        )
+}
+
 pub fn api_router(state: AppState) -> Router {
     let body_limit = state.services.settings.server.request_body_limit;
 
@@ -317,6 +342,7 @@ pub fn api_router(state: AppState) -> Router {
 
     // platform-admin-only routes (no tenant/casbin layer)
     let platform = tenant_routes()
+        .merge(package_routes())
         .layer(axum::middleware::from_fn(mw::auth::platform_only))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
@@ -326,12 +352,13 @@ pub fn api_router(state: AppState) -> Router {
     // All non-upload routes share a strict request-body limit; multipart file
     // uploads need a larger ceiling, so the file group is merged separately
     // (it inherits the larger global limit applied in `build_app`).
-    let standard = Router::new()
-        .merge(public)
-        .merge(identity)
-        .merge(rbac)
-        .merge(platform)
-        .layer(RequestBodyLimitLayer::new(body_limit));
+    let mut standard_routes = Router::new().merge(public).merge(identity).merge(rbac);
+
+    if state.services.settings.tenant.enable_platform_console {
+        standard_routes = standard_routes.merge(platform);
+    }
+
+    let standard = standard_routes.layer(RequestBodyLimitLayer::new(body_limit));
 
     let files = rbac_layers(file_routes(), &state);
 

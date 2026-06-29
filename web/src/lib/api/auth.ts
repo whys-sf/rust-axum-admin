@@ -2,7 +2,7 @@ import { http } from '@/lib/http'
 import type { LoginResp, MenuNode, UserInfo } from '@/lib/api/types'
 
 export interface LoginPayload {
-  tenant_code: string
+  tenant_code?: string
   username: string
   password: string
 }

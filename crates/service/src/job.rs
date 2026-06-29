@@ -2,6 +2,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
+use common::redis;
 use common::response::PageResult;
 use common::{AppError, AppResult};
 use cron::Schedule;
@@ -12,6 +13,9 @@ use sea_orm::{
 
 use crate::dto::{CreateJobReq, CurrentUser, JobLogQuery, JobQuery, SetJobStatusReq, UpdateJobReq};
 use crate::Services;
+
+const SCHEDULER_LOCK: &str = "job_scheduler";
+const SCHEDULER_LOCK_TTL_SECS: usize = 30;
 
 /// Execute a named job handler. Returns a human-readable result on success or an
 /// error message on failure. Extend this registry to wire real background work.
@@ -268,8 +272,23 @@ pub async fn run_scheduler(services: Services) {
     let mut interval = tokio::time::interval(Duration::from_secs(5));
     loop {
         interval.tick().await;
+        let token =
+            match redis::try_acquire_lock(&services.redis, SCHEDULER_LOCK, SCHEDULER_LOCK_TTL_SECS)
+                .await
+            {
+                Ok(Some(token)) => token,
+                Ok(None) => continue,
+                Err(err) => {
+                    tracing::warn!(error = %err, "failed to acquire scheduler lock");
+                    continue;
+                }
+            };
+
         if let Err(err) = services.tick_due_jobs().await {
             tracing::error!(error = %err, "scheduler tick failed");
+        }
+        if let Err(err) = redis::release_lock(&services.redis, SCHEDULER_LOCK, &token).await {
+            tracing::warn!(error = %err, "failed to release scheduler lock");
         }
     }
 }

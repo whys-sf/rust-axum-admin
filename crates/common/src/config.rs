@@ -9,6 +9,8 @@ pub struct Settings {
     pub snowflake: SnowflakeConfig,
     pub casbin: CasbinConfig,
     #[serde(default)]
+    pub tenant: TenantConfig,
+    #[serde(default)]
     pub storage: StorageConfig,
 }
 
@@ -146,6 +148,63 @@ pub struct CasbinConfig {
     pub model_path: String,
 }
 
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum TenantMode {
+    Single,
+    Multi,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct TenantConfig {
+    #[serde(default)]
+    pub mode: TenantMode,
+    #[serde(default = "default_tenant_id")]
+    pub default_tenant_id: i64,
+    #[serde(default = "default_tenant_code")]
+    pub default_tenant_code: String,
+    #[serde(default)]
+    pub show_tenant_login: bool,
+    #[serde(default)]
+    pub enable_platform_console: bool,
+}
+
+impl TenantConfig {
+    pub fn is_single(&self) -> bool {
+        self.mode == TenantMode::Single
+    }
+
+    pub fn is_multi(&self) -> bool {
+        self.mode == TenantMode::Multi
+    }
+}
+
+impl Default for TenantMode {
+    fn default() -> Self {
+        Self::Single
+    }
+}
+
+impl Default for TenantConfig {
+    fn default() -> Self {
+        Self {
+            mode: TenantMode::Single,
+            default_tenant_id: default_tenant_id(),
+            default_tenant_code: default_tenant_code(),
+            show_tenant_login: false,
+            enable_platform_console: false,
+        }
+    }
+}
+
+fn default_tenant_id() -> i64 {
+    1000
+}
+
+fn default_tenant_code() -> String {
+    "demo".to_string()
+}
+
 /// The placeholder secret shipped in `config/default.toml`. Refusing it forces
 /// every real deployment to supply its own.
 pub const DEFAULT_JWT_SECRET: &str = "change_me_to_a_long_random_secret_string_at_least_32_chars";
@@ -191,6 +250,12 @@ impl Settings {
                 self.jwt.secret.len()
             );
         }
+        if self.tenant.is_single() && self.tenant.default_tenant_id == 0 {
+            anyhow::bail!("tenant.default_tenant_id must not be 0 in single-tenant mode");
+        }
+        if self.tenant.is_single() && self.tenant.default_tenant_code.trim().is_empty() {
+            anyhow::bail!("tenant.default_tenant_code is required in single-tenant mode");
+        }
         Ok(())
     }
 }
@@ -231,6 +296,7 @@ mod tests {
             casbin: CasbinConfig {
                 model_path: "rbac_model.conf".into(),
             },
+            tenant: TenantConfig::default(),
             storage: StorageConfig::default(),
         }
     }

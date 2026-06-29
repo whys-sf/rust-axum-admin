@@ -68,6 +68,22 @@ pub mod string_opt {
     }
 }
 
+/// Optional update field for `Option<i64>` values. It distinguishes:
+/// - absent field: `None` (leave unchanged)
+/// - explicit `null`: `Some(None)` (clear value)
+/// - string/number id: `Some(Some(id))` (set value)
+pub mod string_opt_update {
+    use super::StrOrInt;
+    use serde::{Deserialize, Deserializer};
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Option<Option<i64>>, D::Error> {
+        match Option::<StrOrInt>::deserialize(d)? {
+            Some(v) => v.into_i64().map(Some).map(Some),
+            None => Ok(Some(None)),
+        }
+    }
+}
+
 /// `Vec<i64>` <-> JSON array of strings.
 pub mod string_vec {
     use super::StrOrInt;

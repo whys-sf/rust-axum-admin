@@ -14,14 +14,10 @@ import {
   Route,
   ShieldCheck,
   Tag,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+} from 'lucide-react'
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DialogHeroHeader } from "@/components/common/dialog-hero-header";
+import { FormField as Field } from '@/components/common/form-field'
 import { Button } from "@/components/ui/button";
 import { LucideIconPicker } from "@/components/common/lucide-icon-picker";
 import { Input } from "@/components/ui/input";
@@ -48,35 +44,6 @@ interface MenuDialogProps {
   onSubmit: (id: string | undefined, payload: CreateMenuPayload) => void;
 }
 
-interface FieldProps {
-  icon: typeof Tag;
-  label: string;
-  htmlFor: string;
-  required?: boolean;
-  children: React.ReactNode;
-}
-
-function Field({ icon: Icon, label, htmlFor, required, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/80"
-      >
-        <Icon className="size-3.5 text-primary" />
-        <span>
-          {label}
-          {required && (
-            <span aria-hidden="true" className="ml-0.5 text-destructive">
-              *
-            </span>
-          )}
-        </span>
-      </Label>
-      {children}
-    </div>
-  );
-}
 
 const MENU_TYPES: Record<number, { label: string; desc: string }> = {
   1: { label: "目录", desc: "作为路由分组的容器" },
@@ -139,27 +106,16 @@ export function MenuDialog({
       >
         <form onSubmit={submit} className="flex min-h-0 flex-col">
           <div className="flex min-h-0 flex-col">
-            <DialogHeader className="control-grid relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-7 sm:py-6">
-              <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-              <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-              <div className="relative flex items-start justify-between gap-5">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="size-3.5 text-primary-foreground/80" />
-                    <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                      {editing ? "记录更新" : "新增记录"}
-                    </span>
-                  </div>
-                  <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
-                    {editing ? "编辑菜单项" : "注册菜单资源"}
-                  </DialogTitle>
-                  <DialogDescription className="mt-2 text-primary-foreground/75">
-                    {editing
-                      ? "更新菜单的层级归属、路由配置与权限绑定。"
-                      : "创建新的目录、菜单或按钮，并挂载到正确的层级。"}
-                  </DialogDescription>
-                </div>
-                <div className="flex shrink-0 gap-2">
+            <DialogHeroHeader
+              icon={ShieldCheck}
+              eyebrow={editing ? "记录更新" : "新增记录"}
+              title={editing ? "编辑菜单项" : "注册菜单资源"}
+              description={
+                editing
+                  ? "更新菜单的层级归属、路由配置与权限绑定。"
+                  : "创建新的目录、菜单或按钮，并挂载到正确的层级。"
+              }
+              aside={(
                   <div className="relative flex items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
                     <div>
                       <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
@@ -181,9 +137,8 @@ export function MenuDialog({
                       className="scale-110 data-checked:bg-primary data-unchecked:bg-muted-foreground/40 **:data-[slot=switch-thumb]:bg-primary-foreground"
                     />
                   </div>
-                </div>
-              </div>
-            </DialogHeader>
+                )}
+            />
 
             <ScrollArea className="max-h-[60vh]">
               <div className="px-5 pt-7 sm:px-7">

@@ -25,6 +25,19 @@ impl Services {
         Ok(tenant)
     }
 
+    fn login_tenant_code(&self, req: &LoginReq) -> AppResult<String> {
+        if self.settings.tenant.is_single() {
+            return Ok(self.settings.tenant.default_tenant_code.clone());
+        }
+
+        req.tenant_code
+            .as_deref()
+            .map(str::trim)
+            .filter(|code| !code.is_empty())
+            .map(ToOwned::to_owned)
+            .ok_or_else(|| AppError::bad_request("请输入租户编码"))
+    }
+
     /// Validate a tenant is enabled and not expired (the platform tenant is
     /// always considered active).
     fn assert_tenant_active(&self, tenant: &entity::tenant::Model) -> AppResult<()> {
@@ -53,7 +66,8 @@ impl Services {
             }
         }
 
-        let tenant = self.resolve_active_tenant(&req.tenant_code).await?;
+        let tenant_code = self.login_tenant_code(&req)?;
+        let tenant = self.resolve_active_tenant(&tenant_code).await?;
 
         let user = User::find()
             .filter(entity::user::Column::TenantId.eq(tenant.id))
@@ -266,6 +280,7 @@ impl Services {
             .ok_or(AppError::Unauthorized)?;
 
         let permissions = self.user_permissions(current).await?;
+        let features = self.tenant_feature_codes(current).await?;
 
         Ok(UserInfoResp {
             id: user.id,
@@ -277,6 +292,7 @@ impl Services {
             is_platform: current.is_platform,
             roles: current.roles.clone(),
             permissions,
+            features,
         })
     }
 
@@ -347,7 +363,7 @@ impl Services {
         menus.retain(|m| m.r#type == 1 || m.r#type == 2);
         // platform-only entries must never surface for tenant users, even if a
         // tenant role happens to be granted them.
-        if !current.is_platform {
+        if !current.is_platform || !self.settings.tenant.enable_platform_console {
             menus.retain(|m| !is_platform_menu(m));
         }
         Ok(menu::build_tree(menus, 0))

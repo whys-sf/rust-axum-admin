@@ -26,18 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { ManagementPage } from "@/components/common/management-page";
-import {
-  DataTable,
-  type DataTableColumnDef,
-} from "@/components/common/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
 import { StatusBadge } from "@/components/common/status-badge";
-import {
-  userApi,
-  type CreateUserPayload,
-  type UpdateUserPayload,
-} from "@/lib/api/user";
+import { userApi, type CreateUserPayload, type UpdateUserPayload } from "@/lib/api/user";
 import { roleApi } from "@/lib/api/role";
 import { deptApi } from "@/lib/api/dept";
 import { flattenTree } from "@/lib/tree";
@@ -46,6 +38,7 @@ import type { User } from "@/lib/api/types";
 import { UserDialog } from "@/features/users/user-dialog";
 import { AssignRolesDialog } from "@/features/users/assign-roles-dialog";
 import { ResetPasswordDialog } from "@/features/users/reset-password-dialog";
+import { DeleteUserDialog } from "@/features/users/delete-user-dialog";
 
 const PAGE_SIZE = 10;
 
@@ -54,7 +47,8 @@ type DialogState =
   | { kind: "create" }
   | { kind: "edit"; user: User }
   | { kind: "roles"; user: User }
-  | { kind: "reset"; user: User };
+  | { kind: "reset"; user: User }
+  | { kind: "delete"; user: User };
 
 export function UsersPage() {
   const qc = useQueryClient();
@@ -129,6 +123,7 @@ export function UsersPage() {
     onSuccess: () => {
       toast.success("已删除");
       invalidate();
+      setDialog({ kind: "none" });
     },
   });
   const statusMutation = useMutation({
@@ -250,20 +245,15 @@ export function UsersPage() {
             >
               <KeyRound className="size-4" />
             </Button>
-            <ConfirmDialog
-              description={`确定删除用户「${user.username}」吗？此操作不可撤销。`}
-              onConfirm={() => removeMutation.mutateAsync(user.id)}
-              trigger={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="删除"
-                  aria-label={`删除用户 ${user.username}`}
-                >
-                  <Trash2 className="size-4 text-destructive" />
-                </Button>
-              }
-            />
+            <Button
+              variant="ghost"
+              size="icon"
+              title="删除"
+              aria-label={`删除用户 ${user.username}`}
+              onClick={() => setDialog({ kind: "delete", user })}
+            >
+              <Trash2 className="size-4 text-destructive" />
+            </Button>
           </div>
         );
       },
@@ -373,6 +363,14 @@ export function UsersPage() {
             onSubmit={(password) =>
               resetMutation.mutate({ id: dialog.user.id, password })
             }
+          />
+        )}
+        {dialog.kind === "delete" && (
+          <DeleteUserDialog
+            user={dialog.user}
+            saving={removeMutation.isPending}
+            onCancel={() => setDialog({ kind: "none" })}
+            onConfirm={() => removeMutation.mutate(dialog.user.id)}
           />
         )}
       </Card>

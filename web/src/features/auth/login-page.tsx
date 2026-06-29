@@ -26,18 +26,34 @@ import { authApi } from "@/lib/api/auth";
 import { settingsApi } from "@/lib/api/settings";
 import { useAuthStore } from "@/stores/auth";
 
-const schema = z.object({
-  tenant_code: z.string().min(2, "请输入租户编码"),
+const baseSchema = z.object({
   username: z.string().min(1, "请输入用户名"),
   password: z.string().min(6, "密码至少 6 位"),
 });
+
+const tenantLoginSchema = baseSchema.extend({
+  tenant_code: z.string().min(2, "请输入租户编码"),
+});
+
+function loginReasonMessage(reason: string | null): string {
+  switch (reason) {
+    case "tenant_disabled":
+      return "租户已被禁用，请联系平台管理员。";
+    case "tenant_expired":
+      return "租户已过期，请联系平台管理员。";
+    case "expired":
+      return "登录已过期，请重新登录。";
+    default:
+      return "";
+  }
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
   const setTokens = useAuthStore((s) => s.setTokens);
   const setUser = useAuthStore((s) => s.setUser);
   const [form, setForm] = useState({
-    tenant_code: "demo",
+    tenant_code: "",
     username: "admin",
     password: "Admin@123456",
   });
@@ -50,7 +66,9 @@ export function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const resp = await authApi.login(form);
+      const resp = await authApi.login(
+        showTenantLogin ? form : { username: form.username, password: form.password },
+      );
       setTokens(resp.access_token, resp.refresh_token);
       const info = await authApi.userinfo();
       setUser(info);
@@ -64,6 +82,8 @@ export function LoginPage() {
 
   function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    const showTenantLogin = settings?.show_tenant_login === true;
+    const schema = showTenantLogin ? tenantLoginSchema : baseSchema;
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       const fieldErrors: Record<string, string> = {};
@@ -80,6 +100,10 @@ export function LoginPage() {
   const bg = settings?.login_background;
   const title = settings?.login_title || "Rust Axum Admin";
   const subtitle = settings?.login_subtitle || "多租户管理后台";
+  const showTenantLogin = settings?.show_tenant_login === true;
+  const reasonMessage = loginReasonMessage(
+    new URLSearchParams(window.location.search).get("reason"),
+  );
 
   return (
     <div className="relative flex min-h-svh overflow-hidden">
@@ -213,8 +237,8 @@ export function LoginPage() {
           <div className="grid grid-cols-2 gap-3 login-anim-up-d2">
             <FeatureCard
               icon={<Layers className="size-4" />}
-              title="多租户隔离"
-              desc="数据完全隔离，独立命名空间"
+              title={showTenantLogin ? "多租户隔离" : "数据隔离"}
+              desc={showTenantLogin ? "数据完全隔离，独立命名空间" : "默认租户上下文，访问边界清晰"}
             />
             <FeatureCard
               icon={<Fingerprint className="size-4" />}
@@ -348,17 +372,25 @@ export function LoginPage() {
 
             {/* Form */}
             <form onSubmit={onSubmit} className="space-y-5">
-              <div className="login-anim-up-d2">
-                <Field
-                  id="tenant_code"
-                  label="租户编码"
-                  icon={<Building2 className="size-3.5" />}
-                  value={form.tenant_code}
-                  placeholder="如 demo / platform"
-                  error={errors.tenant_code}
-                  onChange={(v) => setForm({ ...form, tenant_code: v })}
-                />
-              </div>
+              {reasonMessage && (
+                <div className="rounded-md border border-destructive/20 bg-destructive/8 px-3 py-2 text-xs text-destructive">
+                  {reasonMessage}
+                </div>
+              )}
+
+              {showTenantLogin && (
+                <div className="login-anim-up-d2">
+                  <Field
+                    id="tenant_code"
+                    label="租户编码"
+                    icon={<Building2 className="size-3.5" />}
+                    value={form.tenant_code}
+                    placeholder="如 demo / platform"
+                    error={errors.tenant_code}
+                    onChange={(v) => setForm({ ...form, tenant_code: v })}
+                  />
+                </div>
+              )}
 
               <div className="login-anim-up-d3">
                 <Field
@@ -400,7 +432,9 @@ export function LoginPage() {
 
               <div className="login-anim-up-d6 pt-1">
                 <p className="text-center text-[11px] text-muted-foreground/70">
-                  演示账号：demo / admin / Admin@123456
+                  {showTenantLogin
+                    ? "演示账号：demo / admin / Admin@123456"
+                    : "演示账号：admin / Admin@123456"}
                 </p>
               </div>
             </form>

@@ -24,8 +24,11 @@ pub async fn resolve(
         .cloned()
         .ok_or(AppError::Unauthorized)?;
 
-    // platform admin acting on behalf of another tenant
-    if current.is_platform {
+    if state.services.settings.tenant.is_single() {
+        current.tenant_id = state.services.settings.tenant.default_tenant_id;
+        current.is_platform = false;
+    } else if current.is_platform {
+        // platform admin acting on behalf of another tenant
         if let Some(raw) = req
             .headers()
             .get(TENANT_HEADER)
@@ -43,11 +46,11 @@ pub async fn resolve(
     if acting != PLATFORM_TENANT_ID {
         let tenant = state.services.get_tenant(acting).await?;
         if tenant.status != 1 {
-            return Err(AppError::Forbidden.into());
+            return Err(AppError::TenantDisabled.into());
         }
         if let Some(expire) = tenant.expire_at {
             if expire < chrono::Utc::now() {
-                return Err(AppError::Forbidden.into());
+                return Err(AppError::TenantExpired.into());
             }
         }
     }

@@ -1,19 +1,18 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
-import { BadgeCheck, Hash, LoaderCircle, ShieldCheck, SlidersHorizontal } from 'lucide-react'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  BadgeCheck,
+  Hash,
+  LoaderCircle,
+  ShieldCheck,
+  SlidersHorizontal,
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
+import { DialogHeroHeader } from '@/components/common/dialog-hero-header'
+import { FormField as Field } from '@/components/common/form-field'
+import { DialogStatusSwitch } from '@/components/common/dialog-status-switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Switch } from '@/components/ui/switch'
 import type { CreatePostPayload } from '@/lib/api/post'
 import type { Post } from '@/lib/api/types'
 
@@ -24,35 +23,6 @@ interface PostDialogProps {
   onSubmit: (id: string | undefined, payload: CreatePostPayload) => void
 }
 
-interface FieldProps {
-  icon: typeof Hash
-  label: string
-  htmlFor: string
-  required?: boolean
-  children: ReactNode
-}
-
-function Field({ icon: Icon, label, htmlFor, required, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/80"
-      >
-        <Icon className="size-3.5 text-primary" />
-        <span>
-          {label}
-          {required && (
-            <span aria-hidden="true" className="ml-0.5 text-destructive">
-              *
-            </span>
-          )}
-        </span>
-      </Label>
-      {children}
-    </div>
-  )
-}
 
 export function PostDialog({
   editing,
@@ -80,42 +50,22 @@ export function PostDialog({
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
         <form onSubmit={(event) => { event.preventDefault(); submit() }} className="flex min-h-0 flex-col">
-          <DialogHeader className="control-grid relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-7 sm:py-6">
-            <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-            <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-            <div className="relative flex items-start justify-between gap-5">
-              <div>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-3.5 text-primary-foreground/80" />
-                  <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                    {editing ? '岗位更新' : '新增岗位'}
-                  </span>
-                </div>
-                <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
-                  {editing ? '编辑岗位档案' : '登记岗位档案'}
-                </DialogTitle>
-                <DialogDescription className="mt-2 text-primary-foreground/75">
-                  维护岗位编码、名称、排序和启用状态。
-                </DialogDescription>
-              </div>
-              <div className="relative flex shrink-0 items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
-                <div>
-                  <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
-                    岗位状态
-                  </p>
-                  <Label htmlFor="post-status" className="mt-0.5 block cursor-pointer text-xs font-bold text-foreground">
-                    {form.status === 1 ? '启用' : '停用'}
-                  </Label>
-                </div>
-                <Switch
+          <DialogHeroHeader
+            icon={ShieldCheck}
+            eyebrow={editing ? '岗位更新' : '新增岗位'}
+            title={editing ? '编辑岗位档案' : '登记岗位档案'}
+            description="维护岗位编码、名称、排序和启用状态。"
+            aside={(
+                <DialogStatusSwitch
                   id="post-status"
+                  eyebrow="岗位状态"
                   checked={form.status === 1}
-                  onCheckedChange={(c) => setForm({ ...form, status: c ? 1 : 0 })}
-                  className="scale-110 data-checked:bg-primary data-unchecked:bg-muted-foreground/40 **:data-[slot=switch-thumb]:bg-primary-foreground"
+                  checkedLabel="启用"
+                  uncheckedLabel="停用"
+                  onCheckedChange={(checked) => setForm({ ...form, status: checked ? 1 : 0 })}
                 />
-              </div>
-            </div>
-          </DialogHeader>
+              )}
+          />
 
           <ScrollArea className="max-h-[60vh]">
             <div className="px-5 pt-7 sm:px-7">

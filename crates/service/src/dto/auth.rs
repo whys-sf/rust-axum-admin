@@ -4,7 +4,7 @@ use validator::Validate;
 #[derive(Debug, Deserialize, Validate, utoipa::ToSchema)]
 pub struct LoginReq {
     #[validate(length(min = 2, max = 64))]
-    pub tenant_code: String,
+    pub tenant_code: Option<String>,
     #[validate(length(min = 1, max = 64))]
     pub username: String,
     #[validate(length(min = 6, max = 64))]
@@ -39,4 +39,5 @@ pub struct UserInfoResp {
     pub is_platform: bool,
     pub roles: Vec<String>,
     pub permissions: Vec<String>,
+    pub features: Vec<String>,
 }

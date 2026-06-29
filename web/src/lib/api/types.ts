@@ -25,6 +25,7 @@ export interface UserInfo {
   is_platform: boolean
   roles: string[]
   permissions: string[]
+  features: string[]
 }
 
 export interface User {
@@ -155,12 +156,39 @@ export interface Tenant {
   updated_at: string
 }
 
+export interface Feature {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  status: number
+  sort: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Package {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  status: number
+  sort: number
+  default_user_limit: number
+  feature_codes: string[]
+  created_at: string
+  updated_at: string
+}
+
 export interface AppSettings {
   site_name: string
   login_title: string
   login_subtitle: string
   login_background: string
   logo_url: string
+  tenant_mode: 'single' | 'multi'
+  show_tenant_login: boolean
+  enable_platform_console: boolean
 }
 
 export interface OperationLog {
@@ -323,11 +351,23 @@ export interface FileItem {
   object_key: string
   content_type: string
   size: number
+  folder_id?: string | null
   is_public: boolean
   created_by: string
   created_at: string
   /** Resolved access URL (public proxy or authenticated download endpoint). */
   url: string
+}
+
+export interface FileFolder {
+  id: string
+  tenant_id: string
+  name: string
+  sort: number
+  created_by: string
+  created_at: string
+  updated_at: string
+  file_count: number
 }
 
 export interface OnlineUser {

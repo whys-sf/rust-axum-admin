@@ -8,14 +8,10 @@ import {
   Radio,
   Type,
   Users,
-} from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+} from 'lucide-react'
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { DialogHeroHeader } from "@/components/common/dialog-hero-header"
+import { FormField as Field } from '@/components/common/form-field'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,35 +35,6 @@ interface ComposeDialogProps {
   onSubmit: (payload: SendMessagePayload) => void
 }
 
-interface FieldProps {
-  icon: typeof Type
-  label: string
-  htmlFor: string
-  required?: boolean
-  children: React.ReactNode
-}
-
-function Field({ icon: Icon, label, htmlFor, required, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/80"
-      >
-        <Icon className="size-3.5 text-primary" />
-        <span>
-          {label}
-          {required && (
-            <span aria-hidden="true" className="ml-0.5 text-destructive">
-              *
-            </span>
-          )}
-        </span>
-      </Label>
-      {children}
-    </div>
-  )
-}
 
 const MSG_TYPES: Record<number, { label: string; desc: string }> = {
   1: { label: "系统通知", desc: "全局性公告，适合全员推送" },
@@ -121,47 +88,33 @@ export function ComposeDialog({
       >
         <form onSubmit={submit} className="flex min-h-0 flex-col">
           <div className="flex min-h-0 flex-col">
-            <DialogHeader className="control-grid relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-7 sm:py-6">
-              <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-              <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-              <div className="relative flex items-start justify-between gap-5">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <MailPlus className="size-3.5 text-primary-foreground/80" />
-                    <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                      消息中心
-                    </span>
+            <DialogHeroHeader
+              icon={MailPlus}
+              eyebrow="消息中心"
+              title="发送消息"
+              description="撰写通知或站内信，推送给指定的用户群体。"
+              aside={(
+                <div className="relative flex items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
+                  <div>
+                    <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
+                      投递范围
+                    </p>
+                    <Label
+                      htmlFor="msg-broadcast"
+                      className="mt-0.5 block cursor-pointer text-xs font-bold text-foreground"
+                    >
+                      {broadcast ? "全部用户" : "指定用户"}
+                    </Label>
                   </div>
-                  <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
-                    发送消息
-                  </DialogTitle>
-                  <DialogDescription className="mt-2 text-primary-foreground/75">
-                    撰写通知或站内信，推送给指定的用户群体。
-                  </DialogDescription>
+                  <Switch
+                    id="msg-broadcast"
+                    checked={broadcast}
+                    onCheckedChange={setBroadcast}
+                    className="scale-110 data-checked:bg-primary data-unchecked:bg-muted-foreground/40 **:data-[slot=switch-thumb]:bg-primary-foreground"
+                  />
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <div className="relative flex items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
-                    <div>
-                      <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
-                        投递范围
-                      </p>
-                      <Label
-                        htmlFor="msg-broadcast"
-                        className="mt-0.5 block cursor-pointer text-xs font-bold text-foreground"
-                      >
-                        {broadcast ? "全部用户" : "指定用户"}
-                      </Label>
-                    </div>
-                    <Switch
-                      id="msg-broadcast"
-                      checked={broadcast}
-                      onCheckedChange={setBroadcast}
-                      className="scale-110 data-checked:bg-primary data-unchecked:bg-muted-foreground/40 **:data-[slot=switch-thumb]:bg-primary-foreground"
-                    />
-                  </div>
-                </div>
-              </div>
-            </DialogHeader>
+              )}
+            />
 
             <ScrollArea className="max-h-[60vh]">
               <div className="px-5 pt-7 sm:px-7">

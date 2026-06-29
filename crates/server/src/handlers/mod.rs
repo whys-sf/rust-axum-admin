@@ -10,6 +10,7 @@ pub mod menu;
 pub mod message;
 pub mod monitor;
 pub mod notice;
+pub mod package;
 pub mod param;
 pub mod post;
 pub mod role;

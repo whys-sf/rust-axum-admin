@@ -97,6 +97,7 @@ interface NavLink {
   to: string;
   label: string;
   icon: LucideIcon;
+  feature?: string;
 }
 
 interface NavGroup {
@@ -174,26 +175,64 @@ function resolveIcon(icon?: string | null): LucideIcon {
   return value ? (ICON_BY_NAME[value] ?? DEFAULT_MENU_ICON) : DEFAULT_MENU_ICON;
 }
 
-function resolveLink(node: MenuNode): NavLink | null {
+const FEATURE_BY_PATH: Record<string, string> = {
+  "/users": "users",
+  "/roles": "roles",
+  "/menus": "menus",
+  "/depts": "depts",
+  "/dict": "dict",
+  "/posts": "posts",
+  "/params": "params",
+  "/notices": "notices",
+  "/messages": "messages",
+  "/jobs": "jobs",
+  "/gen": "gen",
+  "/files": "files",
+  "/online": "online",
+  "/monitor": "monitor",
+  "/logs": "logs",
+  "/settings": "settings",
+  "/packages": "packages",
+  "/tenants": "tenants",
+};
+
+function featureForPath(path: string) {
+  return FEATURE_BY_PATH[path] ?? null;
+}
+
+function resolveLink(
+  node: MenuNode,
+  featureSet: Set<string>,
+  isPlatform: boolean,
+): NavLink | null {
   if (node.visible !== 1 || node.status !== 1) return null;
   const to = normalizeRoutePath(node.path);
   if (!to) return null;
-  return { to, label: node.name, icon: resolveIcon(node.icon) };
+  const feature = featureForPath(to);
+  if (!isPlatform && feature && !featureSet.has(feature)) return null;
+  return {
+    to,
+    label: node.name,
+    icon: resolveIcon(node.icon),
+    feature: feature ?? undefined,
+  };
 }
 
 /** Build the sidebar nav from the backend menu tree. Directories (type 1)
  *  become groups; top-level menus (type 2) join the dashboard under 导航. */
-function buildNav(tree: MenuNode[]): NavGroup[] {
+function buildNav(tree: MenuNode[], current?: UserInfo | null): NavGroup[] {
+  const featureSet = new Set(current?.features ?? []);
+  const isPlatform = current?.is_platform === true;
   const topLinks: NavLink[] = [];
   const groups: NavGroup[] = [];
   for (const node of tree) {
     if (node.type === 1) {
       const links = node.children
-        .map(resolveLink)
+        .map((child) => resolveLink(child, featureSet, isPlatform))
         .filter((l): l is NavLink => l !== null);
       if (links.length) groups.push({ label: node.name, links });
     } else {
-      const link = resolveLink(node);
+      const link = resolveLink(node, featureSet, isPlatform);
       if (link) topLinks.push(link);
     }
   }
@@ -218,8 +257,8 @@ export function AppLayout() {
   });
 
   const { data: settings } = useQuery({
-    queryKey: ["public-settings"],
-    queryFn: settingsApi.public,
+    queryKey: ["settings"],
+    queryFn: settingsApi.get,
   });
 
   useEffect(() => {
@@ -227,7 +266,7 @@ export function AppLayout() {
   }, [info, setUser]);
 
   const current = info ?? user;
-  const groups = buildNav(menuTree ?? []);
+  const groups = buildNav(menuTree ?? [], current);
   const allLinks = groups.flatMap((g) => g.links);
   const displayName = current?.nickname || current?.username || "用户";
 

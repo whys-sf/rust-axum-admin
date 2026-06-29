@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { Building2, Network, ShieldCheck, Users } from 'lucide-react'
+import {
+  Building2,
+  Network,
+  ShieldCheck,
+  Users,
+} from 'lucide-react'
 import {
   Card,
   CardContent,

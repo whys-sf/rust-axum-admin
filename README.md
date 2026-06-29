@@ -1,3 +1,14 @@
+---
+AIGC:
+  ContentProducer: '001191110102MAD55U9H0F10002'
+  ContentPropagator: '001191110102MAD55U9H0F10002'
+  Label: '1'
+  ProduceID: 'c4374737-4179-4709-931c-d9b662d457d2'
+  PropagateID: 'c4374737-4179-4709-931c-d9b662d457d2'
+  ReservedCode1: 'c8aa7298-3dc3-43e8-a5f3-137857aca151'
+  ReservedCode2: 'c8aa7298-3dc3-43e8-a5f3-137857aca151'
+---
+
 # rust-axum-admin
 
 多租户管理后台，前后端一体。后端基于 **Rust + Axum 0.8 + SeaORM + Casbin**，前端基于 **React + TypeScript + Vite + shadcn/ui**。实现完整的 RBAC with domains 权限模型、`tenant_id` 行级租户隔离，以及一整套企业级后台常用模块（用户/角色/菜单/部门/数据权限/字典/岗位/参数/公告/消息/定时任务/代码生成/文件管理/在线用户/服务监控等）。
@@ -207,3 +218,15 @@ cd web && npm run lint && npm run build
 
 - `.github/workflows/ci.yml`：fmt + clippy + test（后端）。
 - `.github/workflows/integration.yml`：带 Postgres + Redis 服务容器，以 `--ignored` 跑端到端集成测试。
+
+
+
+# 思路
+
+租户-套餐管理
+
+套餐可以设置多少人，哪些功能菜单 可以使用一些 分组 比如基础功能，对应一些业务功能
+
+还需要一个门户，来展示整个系统的功能
+
+> AI生成

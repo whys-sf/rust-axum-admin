@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sys_config")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
+    pub tenant_id: i64,
+    #[sea_orm(primary_key, auto_increment = false)]
     pub config_key: String,
     pub config_value: String,
     pub updated_at: DateTime<Utc>,

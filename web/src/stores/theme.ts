@@ -63,8 +63,8 @@ export const COLOR_PRESETS: {
     value: 'orange',
     label: '橙色',
     swatch: 'oklch(0.66 0.18 50)',
-    light: { primary: 'oklch(0.66 0.18 50)', primaryForeground: 'oklch(0.205 0 0)' },
-    dark: { primary: 'oklch(0.7 0.16 50)', primaryForeground: 'oklch(0.205 0 0)' },
+    light: { primary: 'oklch(0.66 0.18 50)', primaryForeground: 'oklch(0.985 0 0)' },
+    dark: { primary: 'oklch(0.7 0.16 50)', primaryForeground: 'oklch(0.985 0 0)' },
   },
 ]
 

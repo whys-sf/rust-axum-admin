@@ -1,25 +1,22 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { BadgeCheck, Code2, LoaderCircle, Package, ShieldCheck, TableProperties } from 'lucide-react'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  BadgeCheck,
+  Code2,
+  LoaderCircle,
+  Package,
+  ShieldCheck,
+  TableProperties,
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
+import { DialogHeroHeader } from '@/components/common/dialog-hero-header'
+import { FormField as Field } from '@/components/common/form-field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  DataTable,
-  type DataTableColumnDef,
-} from '@/components/common/data-table'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
 import { genApi, type UpdateColumnPayload } from '@/lib/api/gen'
 import type { GenColumn } from '@/lib/api/types'
 
@@ -28,27 +25,6 @@ interface ConfigDialogProps {
   onClose: () => void
 }
 
-interface FieldProps {
-  icon: typeof Code2
-  label: string
-  htmlFor: string
-  children: ReactNode
-}
-
-function Field({ icon: Icon, label, htmlFor, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/80"
-      >
-        <Icon className="size-3.5 text-primary" />
-        <span>{label}</span>
-      </Label>
-      {children}
-    </div>
-  )
-}
 
 export function ConfigDialog({ tableId, onClose }: ConfigDialogProps) {
   const qc = useQueryClient()
@@ -191,24 +167,12 @@ export function ConfigDialog({ tableId, onClose }: ConfigDialogProps) {
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-4xl dark:ring-white/10"
       >
-        <DialogHeader className="control-grid relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-7 sm:py-6">
-          <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-          <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-          <div className="relative flex items-start justify-between gap-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="size-3.5 text-primary-foreground/80" />
-                <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                  生成配置
-                </span>
-              </div>
-              <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
-                配置代码生成规则
-              </DialogTitle>
-              <DialogDescription className="mt-2 text-primary-foreground/75">
-                配置生成类名、模块名、业务名称和字段显示规则。
-              </DialogDescription>
-            </div>
+        <DialogHeroHeader
+          icon={ShieldCheck}
+          eyebrow="生成配置"
+          title="配置代码生成规则"
+          description="配置生成类名、模块名、业务名称和字段显示规则。"
+          aside={(
             <div className="relative flex shrink-0 items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
               <TableProperties className="size-5 text-primary" />
               <div>
@@ -220,8 +184,8 @@ export function ConfigDialog({ tableId, onClose }: ConfigDialogProps) {
                 </p>
               </div>
             </div>
-          </div>
-        </DialogHeader>
+          )}
+        />
 
         <ScrollArea className="max-h-[68vh]">
           <div className="px-5 pt-7 sm:px-7">

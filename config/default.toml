@@ -27,6 +27,15 @@ datacenter_id = 1
 [casbin]
 model_path = "rbac_model.conf"
 
+[tenant]
+# Default product mode is single-tenant delivery: the login page does not ask
+# for a tenant code, while the backend still scopes data to this tenant.
+mode = "single"
+default_tenant_id = 1000
+default_tenant_code = "demo"
+show_tenant_login = false
+enable_platform_console = false
+
 [storage]
 # S3-compatible object storage (MinIO by default) for file attachments.
 # Override via STORAGE__ENDPOINT / STORAGE__BUCKET / STORAGE__ACCESS_KEY /

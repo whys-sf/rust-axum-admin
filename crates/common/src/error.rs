@@ -11,6 +11,12 @@ pub enum AppError {
     #[error("forbidden")]
     Forbidden,
 
+    #[error("tenant disabled")]
+    TenantDisabled,
+
+    #[error("tenant expired")]
+    TenantExpired,
+
     #[error("{0}")]
     NotFound(String),
 

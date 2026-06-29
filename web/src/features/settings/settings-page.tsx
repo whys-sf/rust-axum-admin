@@ -12,8 +12,9 @@ import {
   Sparkles,
   Type,
   Upload,
-} from "lucide-react";
+} from 'lucide-react'
 import { Button } from "@/components/ui/button";
+import { FormField as Field } from "@/components/common/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fileApi } from "@/lib/api/files";
@@ -24,6 +25,13 @@ import { PERM, usePermission } from "@/lib/permissions";
 import type { AppSettings } from "@/lib/api/types";
 
 /* ─── Page ──────────────────────────────────────────────────────── */
+
+type EditableSettingKey =
+  | "site_name"
+  | "login_title"
+  | "login_subtitle"
+  | "login_background"
+  | "logo_url";
 
 export function SettingsPage() {
   const queryClient = useQueryClient();
@@ -45,11 +53,11 @@ export function SettingsPage() {
     },
   });
 
-  function value(key: keyof AppSettings): string {
+  function value(key: EditableSettingKey): string {
     return edits[key] ?? data?.[key] ?? "";
   }
 
-  function set(key: keyof AppSettings, v: string) {
+  function set(key: EditableSettingKey, v: string) {
     setEdits((e) => ({ ...e, [key]: v }));
   }
 
@@ -329,35 +337,6 @@ export function SettingsPage() {
 
 /* ─── Field with icon ───────────────────────────────────────────── */
 
-interface FieldProps {
-  icon: typeof Type;
-  label: string;
-  htmlFor: string;
-  required?: boolean;
-  children: React.ReactNode;
-}
-
-function Field({ icon: Icon, label, htmlFor, required, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/80"
-      >
-        <Icon className="size-3.5 text-primary" />
-        <span>
-          {label}
-          {required && (
-            <span aria-hidden="true" className="ml-0.5 text-destructive">
-              *
-            </span>
-          )}
-        </span>
-      </Label>
-      {children}
-    </div>
-  );
-}
 
 /* ─── Image upload input ────────────────────────────────────────── */
 

@@ -1,19 +1,19 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
-import { BadgeCheck, Clock3, LoaderCircle, Play, ShieldCheck, Terminal } from 'lucide-react'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  BadgeCheck,
+  Clock3,
+  LoaderCircle,
+  Play,
+  ShieldCheck,
+  Terminal,
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
+import { DialogHeroHeader } from '@/components/common/dialog-hero-header'
+import { FormField as Field } from '@/components/common/form-field'
+import { DialogStatusSwitch } from '@/components/common/dialog-status-switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -31,35 +31,6 @@ interface JobDialogProps {
   onSubmit: (id: string | undefined, payload: CreateJobPayload) => void
 }
 
-interface FieldProps {
-  icon: typeof Play
-  label: string
-  htmlFor: string
-  required?: boolean
-  children: ReactNode
-}
-
-function Field({ icon: Icon, label, htmlFor, required, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/80"
-      >
-        <Icon className="size-3.5 text-primary" />
-        <span>
-          {label}
-          {required && (
-            <span aria-hidden="true" className="ml-0.5 text-destructive">
-              *
-            </span>
-          )}
-        </span>
-      </Label>
-      {children}
-    </div>
-  )
-}
 
 const HANDLERS = [
   { value: 'demo:heartbeat', label: '心跳示例 (demo:heartbeat)' },
@@ -92,42 +63,22 @@ export function JobDialog({
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
         <form onSubmit={(event) => { event.preventDefault(); submit() }} className="flex min-h-0 flex-col">
-          <DialogHeader className="control-grid relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-7 sm:py-6">
-            <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-            <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-            <div className="relative flex items-start justify-between gap-5">
-              <div>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-3.5 text-primary-foreground/80" />
-                  <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                    {editing ? '任务更新' : '新增任务'}
-                  </span>
-                </div>
-                <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
-                  {editing ? '编辑调度任务' : '登记调度任务'}
-                </DialogTitle>
-                <DialogDescription className="mt-2 text-primary-foreground/75">
-                  配置计划任务的调用目标、Cron 表达式和调度状态。
-                </DialogDescription>
-              </div>
-              <div className="relative flex shrink-0 items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
-                <div>
-                  <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
-                    调度状态
-                  </p>
-                  <Label htmlFor="job-status" className="mt-0.5 block cursor-pointer text-xs font-bold text-foreground">
-                    {form.status === 1 ? '运行中' : '暂停'}
-                  </Label>
-                </div>
-                <Switch
+          <DialogHeroHeader
+            icon={ShieldCheck}
+            eyebrow={editing ? '任务更新' : '新增任务'}
+            title={editing ? '编辑调度任务' : '登记调度任务'}
+            description="配置计划任务的调用目标、Cron 表达式和调度状态。"
+            aside={(
+                <DialogStatusSwitch
                   id="job-status"
+                  eyebrow="调度状态"
                   checked={form.status === 1}
-                  onCheckedChange={(c) => setForm({ ...form, status: c ? 1 : 0 })}
-                  className="scale-110 data-checked:bg-primary data-unchecked:bg-muted-foreground/40 **:data-[slot=switch-thumb]:bg-primary-foreground"
+                  checkedLabel="运行中"
+                  uncheckedLabel="暂停"
+                  onCheckedChange={(checked) => setForm({ ...form, status: checked ? 1 : 0 })}
                 />
-              </div>
-            </div>
-          </DialogHeader>
+              )}
+          />
 
           <ScrollArea className="max-h-[60vh]">
             <div className="px-5 pt-7 sm:px-7">

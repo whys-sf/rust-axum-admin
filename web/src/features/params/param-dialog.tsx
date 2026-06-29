@@ -1,17 +1,16 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
-import { BadgeCheck, Hash, KeyRound, LoaderCircle, ShieldCheck } from 'lucide-react'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  BadgeCheck,
+  Hash,
+  KeyRound,
+  LoaderCircle,
+  ShieldCheck,
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
+import { DialogHeroHeader } from '@/components/common/dialog-hero-header'
+import { FormField as Field } from '@/components/common/form-field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { CreateParamPayload } from '@/lib/api/param'
 import type { Param } from '@/lib/api/types'
@@ -23,35 +22,6 @@ interface ParamDialogProps {
   onSubmit: (id: string | undefined, payload: CreateParamPayload) => void
 }
 
-interface FieldProps {
-  icon: typeof Hash
-  label: string
-  htmlFor: string
-  required?: boolean
-  children: ReactNode
-}
-
-function Field({ icon: Icon, label, htmlFor, required, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={htmlFor}
-        className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground/80"
-      >
-        <Icon className="size-3.5 text-primary" />
-        <span>
-          {label}
-          {required && (
-            <span aria-hidden="true" className="ml-0.5 text-destructive">
-              *
-            </span>
-          )}
-        </span>
-      </Label>
-      {children}
-    </div>
-  )
-}
 
 export function ParamDialog({
   editing,
@@ -78,24 +48,12 @@ export function ParamDialog({
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
         <form onSubmit={(event) => { event.preventDefault(); submit() }} className="flex min-h-0 flex-col">
-          <DialogHeader className="control-grid relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-7 sm:py-6">
-            <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-            <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-            <div className="relative flex items-start justify-between gap-5">
-              <div>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-3.5 text-primary-foreground/80" />
-                  <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                    {editing ? '参数更新' : '新增参数'}
-                  </span>
-                </div>
-                <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
-                  {editing ? '编辑参数档案' : '登记系统参数'}
-                </DialogTitle>
-                <DialogDescription className="mt-2 text-primary-foreground/75">
-                  维护系统运行参数的键名、键值和备注。
-                </DialogDescription>
-              </div>
+          <DialogHeroHeader
+            icon={ShieldCheck}
+            eyebrow={editing ? '参数更新' : '新增参数'}
+            title={editing ? '编辑参数档案' : '登记系统参数'}
+            description="维护系统运行参数的键名、键值和备注。"
+            aside={(
               <div className="relative hidden shrink-0 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80 sm:block">
                 <p className="text-[9px] font-bold tracking-[0.16em] text-primary/70 uppercase">
                   参数键
@@ -104,8 +62,8 @@ export function ParamDialog({
                   {form.param_key || '待配置'}
                 </p>
               </div>
-            </div>
-          </DialogHeader>
+            )}
+          />
 
           <ScrollArea className="max-h-[60vh]">
             <div className="px-5 pt-7 sm:px-7">

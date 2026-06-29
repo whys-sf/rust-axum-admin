@@ -9,23 +9,14 @@ import {
   Mail,
   MailOpen,
   MessageSquare,
-} from "lucide-react";
+} from 'lucide-react'
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DialogHeroHeader } from "@/components/common/dialog-hero-header";
 import { messageApi } from "@/lib/api/message";
 import type { InboxItem } from "@/lib/api/types";
 
@@ -67,10 +58,15 @@ export function UnreadBell() {
     <>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative" title="消息中心">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            title="消息中心"
+          >
             <Bell className="size-4" />
             {count > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium leading-4 text-destructive-foreground">
+              <span className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium leading-4 text-white">
                 {count > 99 ? "99+" : count}
               </span>
             )}
@@ -244,30 +240,18 @@ function MessageDetailDialog({
         showCloseButton={true}
         className="gap-0 overflow-hidden rounded-2xl border-0 p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
-        <DialogHeader className="relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-6 sm:py-5">
-          <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-          <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <Mail className="size-3.5 text-primary-foreground/80" />
-              <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                {item
-                  ? item.msg_type === 1
-                    ? "系统通知"
-                    : "站内消息"
-                  : "加载中"}
-              </span>
-            </div>
-            <DialogTitle className="mt-2 text-lg font-semibold tracking-tight text-primary-foreground">
-              {item?.title ?? "消息详情"}
-            </DialogTitle>
-            <DialogDescription className="mt-1 text-primary-foreground/70">
-              {item
-                ? `${item.sender_name ?? "系统"} · ${new Date(item.created_at).toLocaleString()}`
-                : "加载中..."}
-            </DialogDescription>
-          </div>
-        </DialogHeader>
+        <DialogHeroHeader
+          icon={Mail}
+          eyebrow={
+            item ? (item.msg_type === 1 ? "系统通知" : "站内消息") : "加载中"
+          }
+          title={item?.title ?? "消息详情"}
+          description={
+            item
+              ? `${item.sender_name ?? "系统"} · ${new Date(item.created_at).toLocaleString()}`
+              : "加载中..."
+          }
+        />
 
         <ScrollArea className="max-h-[50vh]">
           <div className="px-5 py-5 sm:px-6 sm:py-5">

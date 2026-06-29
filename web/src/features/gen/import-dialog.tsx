@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Database, LoaderCircle, ShieldCheck, TableProperties } from 'lucide-react'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Database,
+  LoaderCircle,
+  ShieldCheck,
+  TableProperties,
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
+import { DialogHeroHeader } from '@/components/common/dialog-hero-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -49,24 +48,12 @@ export function ImportDialog({
         showCloseButton={false}
         className="gap-0 overflow-hidden rounded-2xl border-0 bg-background p-0 shadow-2xl ring-1 ring-black/8 sm:max-w-lg dark:ring-white/10"
       >
-        <DialogHeader className="control-grid relative overflow-hidden bg-primary px-5 py-5 text-left text-primary-foreground sm:px-7 sm:py-6">
-          <div className="absolute -top-14 -right-12 size-40 rounded-full border border-primary-foreground/10" />
-          <div className="absolute -top-6 -right-2 size-24 rounded-full border border-primary-foreground/10" />
-          <div className="relative flex items-start justify-between gap-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="size-3.5 text-primary-foreground/80" />
-                <span className="text-[10px] font-semibold tracking-[0.2em] text-primary-foreground/80 uppercase">
-                  数据导入
-                </span>
-              </div>
-              <DialogTitle className="mt-3 text-xl font-semibold tracking-tight text-primary-foreground sm:text-2xl">
-                导入数据库表
-              </DialogTitle>
-              <DialogDescription className="mt-2 text-primary-foreground/75">
-                选择未导入的数据表，生成对应的代码生成配置。
-              </DialogDescription>
-            </div>
+        <DialogHeroHeader
+          icon={ShieldCheck}
+          eyebrow="数据导入"
+          title="导入数据库表"
+          description="选择未导入的数据表，生成对应的代码生成配置。"
+          aside={(
             <div className="relative flex shrink-0 items-center gap-3 rounded-xl bg-background px-3.5 py-2.5 text-foreground shadow-lg shadow-black/20 ring-2 ring-background/80">
               <Database className="size-5 text-primary" />
               <div>
@@ -78,8 +65,8 @@ export function ImportDialog({
                 </p>
               </div>
             </div>
-          </div>
-        </DialogHeader>
+          )}
+        />
 
         <ScrollArea className="max-h-[55vh]">
           <div className="px-5 pt-7 sm:px-7">

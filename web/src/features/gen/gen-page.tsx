@@ -1,11 +1,23 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Code2, Download, Eye, Plus, Settings2, Trash2 } from 'lucide-react'
+import {
+  Code2,
+  Download,
+  Eye,
+  Plus,
+  Settings2,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { ManagementPage } from '@/components/common/management-page'
 import { PERM, usePermission } from '@/lib/permissions'
 import { genApi } from '@/lib/api/gen'
@@ -116,8 +128,11 @@ export function GenPage() {
               </Button>
             )}
             {canDelete && (
-              <ConfirmDialog
-                description={`确定删除「${t.table_name}」的生成配置吗？`}
+              <DeleteConfirmDialog
+                title="删除生成配置"
+                description="此操作只删除代码生成配置，不会删除数据库表。"
+                targetLabel="目标数据表"
+                targetName={t.table_name}
                 onConfirm={() => removeMutation.mutateAsync(t.id)}
                 trigger={
                   <Button variant="ghost" size="icon" title="删除">

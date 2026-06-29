@@ -15,6 +15,7 @@ const LOGIN_FAIL_PREFIX: &str = "auth:loginfail:";
 const LOGIN_IP_PREFIX: &str = "auth:loginip:";
 const PWD_EPOCH_PREFIX: &str = "auth:pwdepoch:";
 const SESSION_PREFIX: &str = "auth:session:";
+const LOCK_PREFIX: &str = "lock:";
 
 /// Add a token jti to the blacklist with a TTL (seconds).
 pub async fn blacklist_token(pool: &RedisPool, jti: &str, ttl_secs: i64) -> anyhow::Result<()> {
@@ -156,6 +157,50 @@ pub async fn list_sessions(pool: &RedisPool) -> anyhow::Result<Vec<(String, Stri
         }
     }
     Ok(out)
+}
+
+/// Try to acquire a short-lived distributed lock. Returns the lock token when
+/// acquired; callers must pass that token to `release_lock`.
+pub async fn try_acquire_lock(
+    pool: &RedisPool,
+    name: &str,
+    ttl_secs: usize,
+) -> anyhow::Result<Option<String>> {
+    if ttl_secs == 0 {
+        return Ok(None);
+    }
+    let mut conn = pool.get().await?;
+    let key = format!("{LOCK_PREFIX}{name}");
+    let token = uuid::Uuid::new_v4().to_string();
+    let result: Option<String> = deadpool_redis::redis::cmd("SET")
+        .arg(&key)
+        .arg(&token)
+        .arg("NX")
+        .arg("EX")
+        .arg(ttl_secs)
+        .query_async(&mut conn)
+        .await?;
+    Ok(result.map(|_| token))
+}
+
+/// Release a lock only when the stored token still belongs to this caller.
+pub async fn release_lock(pool: &RedisPool, name: &str, token: &str) -> anyhow::Result<()> {
+    let mut conn = pool.get().await?;
+    let key = format!("{LOCK_PREFIX}{name}");
+    let script = r#"
+        if redis.call("GET", KEYS[1]) == ARGV[1] then
+            return redis.call("DEL", KEYS[1])
+        end
+        return 0
+    "#;
+    let _: i64 = deadpool_redis::redis::cmd("EVAL")
+        .arg(script)
+        .arg(1)
+        .arg(key)
+        .arg(token)
+        .query_async(&mut conn)
+        .await?;
+    Ok(())
 }
 
 /// Raw `INFO` output plus the current `DBSIZE` for cache monitoring.

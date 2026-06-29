@@ -8,17 +8,19 @@ import {
   Pencil,
   Plus,
   Trash2,
-} from "lucide-react";
+} from 'lucide-react'
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import {
-  DataTable,
-  type DataTableColumnDef,
-} from "@/components/common/data-table";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
+import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
 import { StatusBadge } from "@/components/common/status-badge";
 import { ManagementPage } from "@/components/common/management-page";
 import { PERM, usePermission } from "@/lib/permissions";
@@ -28,10 +30,7 @@ import {
   type UpdateDictItemPayload,
 } from "@/lib/api/dict";
 import type { DictItem, DictItemNode } from "@/lib/api/types";
-import {
-  DictItemDialog,
-  type ItemOption,
-} from "@/features/dict/dict-item-dialog";
+import { DictItemDialog, type ItemOption } from "@/features/dict/dict-item-dialog";
 
 const TAG_CLASS: Record<string, string> = {
   success:
@@ -230,8 +229,11 @@ export function DictItemsPage() {
                 </Button>
               )}
               {canDelete && (
-                <ConfirmDialog
-                  description={`确定删除字典项「${node.label}」吗？`}
+                <DeleteConfirmDialog
+                  title="删除字典项"
+                  description="此操作不可撤销，请确认后继续。"
+                  targetLabel="目标字典项"
+                  targetName={node.label}
                   onConfirm={() => removeItemMutation.mutateAsync(node.id)}
                   trigger={
                     <Button variant="ghost" size="icon" title="删除">

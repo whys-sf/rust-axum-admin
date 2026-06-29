@@ -1,23 +1,21 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { StatusBadge } from '@/components/common/status-badge'
 import { ManagementPage } from '@/components/common/management-page'
-import {
-  DataTable,
-  type DataTableColumnDef,
-} from '@/components/common/data-table'
+import { TableToolbar } from '@/components/common/table-toolbar'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
 import { PERM, usePermission } from '@/lib/permissions'
-import {
-  postApi,
-  type CreatePostPayload,
-  type UpdatePostPayload,
-} from '@/lib/api/post'
+import { postApi, type CreatePostPayload, type UpdatePostPayload } from '@/lib/api/post'
 import type { Post } from '@/lib/api/types'
 import { PostDialog } from '@/features/posts/post-dialog'
 
@@ -114,8 +112,11 @@ export function PostsPage() {
               </Button>
             )}
             {canDelete && (
-              <ConfirmDialog
-                description={`确定删除岗位「${post.name}」吗？`}
+              <DeleteConfirmDialog
+                title="删除岗位档案"
+                description="此操作不可撤销，请确认后继续。"
+                targetLabel="目标岗位"
+                targetName={post.name}
                 onConfirm={() => removeMutation.mutateAsync(post.id)}
                 trigger={
                   <Button variant="ghost" size="icon" title="删除">
@@ -143,25 +144,15 @@ export function PostsPage() {
         )}
       </CardHeader>
       <CardContent>
-        <form
-          className="mb-4 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault()
+        <TableToolbar
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          onSearch={() => {
             setPage(1)
             setSearch(keyword.trim())
           }}
-        >
-          <Input
-            placeholder="按名称搜索"
-            value={keyword}
-            className="max-w-xs"
-            onChange={(e) => setKeyword(e.target.value)}
-          />
-          <Button type="submit" variant="secondary">
-            <Search className="mr-1 size-4" />
-            搜索
-          </Button>
-        </form>
+          placeholder="按名称搜索"
+        />
         <DataTable
           columns={columns}
           data={list}

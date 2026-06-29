@@ -8,7 +8,10 @@ use axum::Extension;
 use common::response::PageResult;
 use common::AppError;
 use serde::Deserialize;
-use service::dto::{CurrentUser, FileContent, FileQuery, FileView};
+use service::dto::{
+    CreateFileFolderReq, CurrentUser, FileContent, FileFolderView, FileQuery, FileView,
+    MoveFileReq, UpdateFileFolderReq,
+};
 
 use crate::state::AppState;
 
@@ -19,6 +22,8 @@ pub struct UploadQuery {
     /// backgrounds.
     #[serde(default)]
     pub is_public: bool,
+    /// Optional target folder id. Omit for root / unfiled uploads.
+    pub folder_id: Option<String>,
 }
 
 #[utoipa::path(
@@ -57,9 +62,25 @@ pub async fn upload(
             .await
             .map_err(|e| AppError::bad_request(format!("读取上传内容失败: {e}")))?
             .to_vec();
+        let folder_id = query
+            .folder_id
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| {
+                s.parse::<i64>()
+                    .map_err(|_| AppError::bad_request("文件夹ID格式错误"))
+            })
+            .transpose()?;
         let view = state
             .services
-            .upload_file(&current, original_name, content_type, data, query.is_public)
+            .upload_file(
+                &current,
+                original_name,
+                content_type,
+                data,
+                query.is_public,
+                folder_id,
+            )
             .await?;
         return Ok(ApiResponse::ok(view));
     }
@@ -81,6 +102,93 @@ pub async fn list(
 ) -> HttpResult<ApiResponse<PageResult<FileView>>> {
     let page = state.services.list_files(&current, query).await?;
     Ok(ApiResponse::ok(page))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/file-folders",
+    tag = "file",
+    security(("bearer" = [])),
+    responses((status = 200, description = "文件夹列表", body = Vec<FileFolderView>))
+)]
+pub async fn list_folders(
+    State(state): State<AppState>,
+    Extension(current): Extension<CurrentUser>,
+) -> HttpResult<ApiResponse<Vec<FileFolderView>>> {
+    let folders = state.services.list_file_folders(&current).await?;
+    Ok(ApiResponse::ok(folders))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/file-folders",
+    tag = "file",
+    request_body = CreateFileFolderReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "创建文件夹", body = FileFolderView))
+)]
+pub async fn create_folder(
+    State(state): State<AppState>,
+    Extension(current): Extension<CurrentUser>,
+    axum::Json(req): axum::Json<CreateFileFolderReq>,
+) -> HttpResult<ApiResponse<FileFolderView>> {
+    let folder = state.services.create_file_folder(&current, req).await?;
+    Ok(ApiResponse::ok(folder))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/v1/file-folders/{id}",
+    tag = "file",
+    params(("id" = i64, Path, description = "文件夹 ID")),
+    request_body = UpdateFileFolderReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "更新文件夹", body = FileFolderView))
+)]
+pub async fn update_folder(
+    State(state): State<AppState>,
+    Extension(current): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+    axum::Json(req): axum::Json<UpdateFileFolderReq>,
+) -> HttpResult<ApiResponse<FileFolderView>> {
+    let folder = state.services.update_file_folder(&current, id, req).await?;
+    Ok(ApiResponse::ok(folder))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/v1/file-folders/{id}",
+    tag = "file",
+    params(("id" = i64, Path, description = "文件夹 ID")),
+    security(("bearer" = [])),
+    responses((status = 200, description = "删除空文件夹"))
+)]
+pub async fn delete_folder(
+    State(state): State<AppState>,
+    Extension(current): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+) -> HttpResult<ApiResponse<()>> {
+    state.services.delete_file_folder(&current, id).await?;
+    Ok(ApiResponse::ok(()))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/v1/files/{id}/move",
+    tag = "file",
+    params(("id" = i64, Path, description = "文件 ID")),
+    request_body = MoveFileReq,
+    security(("bearer" = [])),
+    responses((status = 200, description = "移动文件", body = FileView))
+)]
+pub async fn move_file(
+    State(state): State<AppState>,
+    Extension(current): Extension<CurrentUser>,
+    Path(id): Path<i64>,
+    axum::Json(req): axum::Json<MoveFileReq>,
+) -> HttpResult<ApiResponse<FileView>> {
+    let file = state.services.move_file(&current, id, req).await?;
+    Ok(ApiResponse::ok(file))
 }
 
 #[utoipa::path(

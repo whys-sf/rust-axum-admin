@@ -1,21 +1,28 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Play, Plus, ScrollText, Search, Trash2 } from 'lucide-react'
+import {
+  Pencil,
+  Play,
+  Plus,
+  ScrollText,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { ManagementPage } from '@/components/common/management-page'
-import { PERM, usePermission } from '@/lib/permissions'
 import {
-  jobApi,
-  type CreateJobPayload,
-  type UpdateJobPayload,
-} from '@/lib/api/job'
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
+import { ManagementPage } from '@/components/common/management-page'
+import { TableToolbar } from '@/components/common/table-toolbar'
+import { PERM, usePermission } from '@/lib/permissions'
+import { jobApi, type CreateJobPayload, type UpdateJobPayload } from '@/lib/api/job'
 import type { Job } from '@/lib/api/types'
 import { JobDialog } from '@/features/jobs/job-dialog'
 import { JobLogsDialog } from '@/features/jobs/job-logs-dialog'
@@ -182,8 +189,11 @@ export function JobsPage() {
               </Button>
             )}
             {canDelete && (
-              <ConfirmDialog
-                description={`确定删除任务「${job.name}」吗？`}
+              <DeleteConfirmDialog
+                title="删除调度任务"
+                description="此操作不可撤销，请确认后继续。"
+                targetLabel="目标任务"
+                targetName={job.name}
                 onConfirm={() => removeMutation.mutateAsync(job.id)}
                 trigger={
                   <Button variant="ghost" size="icon" title="删除">
@@ -211,25 +221,15 @@ export function JobsPage() {
         )}
       </CardHeader>
       <CardContent>
-        <form
-          className="mb-4 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault()
+        <TableToolbar
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          onSearch={() => {
             setPage(1)
             setSearch(keyword.trim())
           }}
-        >
-          <Input
-            placeholder="按名称搜索"
-            value={keyword}
-            className="max-w-xs"
-            onChange={(e) => setKeyword(e.target.value)}
-          />
-          <Button type="submit" variant="secondary">
-            <Search className="mr-1 size-4" />
-            搜索
-          </Button>
-        </form>
+          placeholder="按名称搜索"
+        />
         <DataTable
           columns={columns}
           data={list}

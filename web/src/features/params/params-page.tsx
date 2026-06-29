@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { ManagementPage } from '@/components/common/management-page'
 import {
-  DataTable,
-  type DataTableColumnDef,
-} from '@/components/common/data-table'
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
+import { ManagementPage } from '@/components/common/management-page'
+import { TableToolbar } from '@/components/common/table-toolbar'
+import { DataTable, type DataTableColumnDef } from '@/components/common/data-table'
 import { PERM, usePermission } from '@/lib/permissions'
 import {
   paramApi,
@@ -123,8 +125,11 @@ export function ParamsPage() {
               </Button>
             )}
             {canDelete && !builtin && (
-              <ConfirmDialog
-                description={`确定删除参数「${param.name}」吗？`}
+              <DeleteConfirmDialog
+                title="删除系统参数"
+                description="此操作不可撤销，请确认后继续。"
+                targetLabel="目标参数"
+                targetName={param.name}
                 onConfirm={() => removeMutation.mutateAsync(param.id)}
                 trigger={
                   <Button variant="ghost" size="icon" title="删除">
@@ -152,25 +157,15 @@ export function ParamsPage() {
         )}
       </CardHeader>
       <CardContent>
-        <form
-          className="mb-4 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault()
+        <TableToolbar
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          onSearch={() => {
             setPage(1)
             setSearch(keyword.trim())
           }}
-        >
-          <Input
-            placeholder="按名称搜索"
-            value={keyword}
-            className="max-w-xs"
-            onChange={(e) => setKeyword(e.target.value)}
-          />
-          <Button type="submit" variant="secondary">
-            <Search className="mr-1 size-4" />
-            搜索
-          </Button>
-        </form>
+          placeholder="按名称搜索"
+        />
         <DataTable
           columns={columns}
           data={list}

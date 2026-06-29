@@ -10,12 +10,35 @@ pub struct FileQuery {
     #[serde(default = "default_page_size", deserialize_with = "de_u64")]
     pub page_size: u64,
     pub original_name: Option<String>,
+    pub folder_id: Option<String>,
 }
 
 impl FileQuery {
     pub fn pagination(&self) -> PageQuery {
         PageQuery::new(self.page, self.page_size)
     }
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct CreateFileFolderReq {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct UpdateFileFolderReq {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct MoveFileReq {
+    pub folder_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct FileFolderView {
+    #[serde(flatten)]
+    pub folder: entity::file_folder::Model,
+    pub file_count: u64,
 }
 
 /// A stored file plus its resolved access URL.
