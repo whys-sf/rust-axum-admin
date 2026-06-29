@@ -5,6 +5,7 @@ use common::AppError;
 use service::dto::CurrentUser;
 use service::permission;
 
+use crate::error::HttpResult;
 use crate::state::AppState;
 
 /// Enforce RBAC-with-domains. Platform admins are short-circuited. Tenant users
@@ -13,7 +14,7 @@ pub async fn guard(
     State(state): State<AppState>,
     req: Request,
     next: Next,
-) -> Result<Response, AppError> {
+) -> HttpResult<Response> {
     let current = req
         .extensions()
         .get::<CurrentUser>()
@@ -43,7 +44,7 @@ pub async fn guard(
     .await?;
 
     if !allowed {
-        return Err(AppError::Forbidden);
+        return Err(AppError::Forbidden.into());
     }
 
     Ok(next.run(req).await)

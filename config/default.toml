@@ -1,5 +1,9 @@
 [server]
 addr = "0.0.0.0:8080"
+# Development-friendly defaults. Disable these in production or multi-instance
+# deployments unless a single designated instance owns startup jobs.
+auto_migrate = true
+enable_scheduler = true
 
 [database]
 # overridden by DATABASE_URL env var
@@ -12,7 +16,8 @@ url = "redis://127.0.0.1:6379"
 
 [jwt]
 secret = "change_me_to_a_long_random_secret_string_at_least_32_chars"
-access_ttl = 900
+# seconds
+access_ttl = 86400
 refresh_ttl = 604800
 
 [snowflake]
@@ -21,3 +26,23 @@ datacenter_id = 1
 
 [casbin]
 model_path = "rbac_model.conf"
+
+[tenant]
+# Default product mode is single-tenant delivery: the login page does not ask
+# for a tenant code, while the backend still scopes data to this tenant.
+mode = "single"
+default_tenant_id = 1000
+default_tenant_code = "demo"
+show_tenant_login = false
+enable_platform_console = false
+
+[storage]
+# S3-compatible object storage (MinIO by default) for file attachments.
+# Override via STORAGE__ENDPOINT / STORAGE__BUCKET / STORAGE__ACCESS_KEY /
+# STORAGE__SECRET_KEY. The bucket is auto-created on startup if missing.
+endpoint = "http://localhost:9000"
+region = "us-east-1"
+bucket = "admin"
+access_key = "minioadmin"
+secret_key = "minioadmin"
+path_style = true

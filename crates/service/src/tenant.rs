@@ -11,6 +11,23 @@ use crate::dto::{CreateTenantReq, PageQuery, UpdateTenantReq};
 use crate::{permission, Services, PLATFORM_TENANT_ID};
 
 impl Services {
+    async fn active_package(
+        &self,
+        package_id: Option<i64>,
+    ) -> AppResult<Option<entity::package::Model>> {
+        let Some(package_id) = package_id else {
+            return Ok(None);
+        };
+        let package = Package::find_by_id(package_id)
+            .one(&self.db)
+            .await?
+            .ok_or_else(|| AppError::not_found("套餐不存在"))?;
+        if package.status != 1 {
+            return Err(AppError::bad_request("套餐已停用"));
+        }
+        Ok(Some(package))
+    }
+
     pub async fn list_tenants(
         &self,
         page: PageQuery,
@@ -51,9 +68,16 @@ impl Services {
         }
 
         let now = Utc::now();
+        let package = self.active_package(req.package_id).await?;
+        let package_id = package.as_ref().map(|p| p.id);
+        let user_limit = req
+            .user_limit
+            .or_else(|| package.as_ref().map(|p| p.default_user_limit))
+            .unwrap_or(0);
         let tenant_id = self.next_id();
         let role_id = self.next_id();
         let user_id = self.next_id();
+        let dept_id = self.next_id();
         let hashed = password::hash(&req.admin_password).map_err(AppError::Other)?;
 
         // platform menus this tenant's admin will inherit
@@ -70,12 +94,29 @@ impl Services {
             code: Set(req.code),
             contact_name: Set(req.contact_name),
             contact_phone: Set(req.contact_phone),
-            domain: Set(None),
-            package_id: Set(None),
-            user_limit: Set(req.user_limit.unwrap_or(0)),
+            domain: Set(req.domain),
+            package_id: Set(package_id),
+            user_limit: Set(user_limit),
             status: Set(1),
             expire_at: Set(req.expire_at),
             remark: Set(None),
+            created_at: Set(now),
+            updated_at: Set(now),
+        }
+        .insert(&txn)
+        .await?;
+
+        entity::dept::ActiveModel {
+            id: Set(dept_id),
+            tenant_id: Set(tenant_id),
+            parent_id: Set(0),
+            ancestors: Set("0".to_string()),
+            name: Set(tenant.name.clone()),
+            sort: Set(0),
+            leader: Set(None),
+            phone: Set(None),
+            email: Set(None),
+            status: Set(1),
             created_at: Set(now),
             updated_at: Set(now),
         }
@@ -108,7 +149,7 @@ impl Services {
             avatar: Set(None),
             gender: Set(0),
             status: Set(1),
-            dept_id: Set(None),
+            dept_id: Set(Some(dept_id)),
             remark: Set(None),
             last_login_at: Set(None),
             last_login_ip: Set(None),
@@ -176,6 +217,13 @@ impl Services {
         if req.contact_phone.is_some() {
             active.contact_phone = Set(req.contact_phone);
         }
+        if req.domain.is_some() {
+            active.domain = Set(req.domain);
+        }
+        if let Some(package_id) = req.package_id {
+            self.active_package(package_id).await?;
+            active.package_id = Set(package_id);
+        }
         if let Some(v) = req.user_limit {
             active.user_limit = Set(v);
         }
@@ -212,6 +260,10 @@ impl Services {
             .filter(entity::role_menu::Column::TenantId.eq(id))
             .exec(&txn)
             .await?;
+        RoleDept::delete_many()
+            .filter(entity::role_dept::Column::TenantId.eq(id))
+            .exec(&txn)
+            .await?;
         UserRole::delete_many()
             .filter(entity::user_role::Column::TenantId.eq(id))
             .exec(&txn)
@@ -226,6 +278,18 @@ impl Services {
             .await?;
         Menu::delete_many()
             .filter(entity::menu::Column::TenantId.eq(id))
+            .exec(&txn)
+            .await?;
+        Dept::delete_many()
+            .filter(entity::dept::Column::TenantId.eq(id))
+            .exec(&txn)
+            .await?;
+        Config::delete_many()
+            .filter(entity::config::Column::TenantId.eq(id))
+            .exec(&txn)
+            .await?;
+        TenantFeature::delete_many()
+            .filter(entity::tenant_feature::Column::TenantId.eq(id))
             .exec(&txn)
             .await?;
         Tenant::delete_by_id(id).exec(&txn).await?;

@@ -21,6 +21,15 @@ impl Services {
             select =
                 select.filter(entity::operation_log::Column::TenantId.eq(current.acting_tenant()));
         }
+        // row-level data permission: restricted callers only see logs produced
+        // by users within their reachable departments (or themselves).
+        if let Some(user_ids) = self.scoped_user_ids(current).await? {
+            select = if user_ids.is_empty() {
+                select.filter(entity::operation_log::Column::Id.eq(-1))
+            } else {
+                select.filter(entity::operation_log::Column::UserId.is_in(user_ids))
+            };
+        }
         if let Some(username) = username.filter(|s| !s.is_empty()) {
             select = select.filter(entity::operation_log::Column::Username.contains(&username));
         }

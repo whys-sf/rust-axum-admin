@@ -1,12 +1,13 @@
 use chrono::Utc;
 use common::response::PageResult;
-use common::{password, AppError, AppResult};
+use common::{password, redis, AppError, AppResult};
 use entity::prelude::*;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, Set,
-    TransactionTrait,
+    ActiveModelTrait, ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+    Set, TransactionTrait,
 };
 
+use crate::data_scope::DataScope;
 use crate::dto::{
     AssignRolesReq, ChangePasswordReq, CreateUserReq, CurrentUser, ResetPasswordReq, UpdateUserReq,
     UserDetail, UserQuery,
@@ -23,6 +24,30 @@ impl Services {
         let mut select = User::find()
             .filter(entity::user::Column::TenantId.eq(current.acting_tenant()))
             .filter(entity::user::Column::DeletedAt.is_null());
+
+        // row-level data permission derived from the caller's roles
+        if let DataScope::Restricted {
+            dept_ids,
+            self_user,
+        } = self.resolve_data_scope(current).await?
+        {
+            let mut cond = Condition::any();
+            let mut matched_any = false;
+            if !dept_ids.is_empty() {
+                cond = cond.add(entity::user::Column::DeptId.is_in(dept_ids));
+                matched_any = true;
+            }
+            if let Some(uid) = self_user {
+                cond = cond.add(entity::user::Column::CreatedBy.eq(uid));
+                matched_any = true;
+            }
+            // no reachable scope -> see nothing
+            if !matched_any {
+                cond = cond.add(entity::user::Column::Id.eq(-1));
+            }
+            select = select.filter(cond);
+        }
+
         if let Some(username) = query.username.filter(|s| !s.is_empty()) {
             select = select.filter(entity::user::Column::Username.contains(&username));
         }
@@ -85,6 +110,7 @@ impl Services {
 
         self.check_user_quota(tenant_id).await?;
         self.validate_role_ids(tenant_id, &req.role_ids).await?;
+        self.validate_dept_id(tenant_id, req.dept_id).await?;
 
         let hashed = password::hash(&req.password).map_err(AppError::Other)?;
         let now = Utc::now();
@@ -128,7 +154,8 @@ impl Services {
         }
         txn.commit().await?;
 
-        self.sync_user_casbin(tenant_id, user_id, &req.role_ids).await?;
+        self.sync_user_casbin(tenant_id, user_id, &req.role_ids)
+            .await?;
         Ok(user)
     }
 
@@ -139,6 +166,9 @@ impl Services {
         req: UpdateUserReq,
     ) -> AppResult<entity::user::Model> {
         let user = self.find_user_scoped(current, id).await?;
+        if req.dept_id.is_some() {
+            self.validate_dept_id(user.tenant_id, req.dept_id).await?;
+        }
         let mut active: entity::user::ActiveModel = user.into();
         if req.nickname.is_some() {
             active.nickname = Set(req.nickname);
@@ -208,6 +238,7 @@ impl Services {
         active.password = Set(hashed);
         active.updated_at = Set(Utc::now());
         active.update(&self.db).await?;
+        self.revoke_user_tokens(id).await;
         Ok(())
     }
 
@@ -225,7 +256,20 @@ impl Services {
         active.password = Set(hashed);
         active.updated_at = Set(Utc::now());
         active.update(&self.db).await?;
+        self.revoke_user_tokens(current.id).await;
         Ok(())
+    }
+
+    /// Invalidate every access/refresh token issued before now for a user, so a
+    /// password change forces re-login everywhere. Best-effort (redis).
+    async fn revoke_user_tokens(&self, user_id: i64) {
+        let _ = redis::set_password_epoch(
+            &self.redis,
+            user_id,
+            Utc::now().timestamp(),
+            self.settings.jwt.refresh_ttl,
+        )
+        .await;
     }
 
     pub async fn assign_user_roles(
@@ -275,6 +319,23 @@ impl Services {
             if count as i32 >= tenant.user_limit {
                 return Err(AppError::bad_request("已达到租户用户数量上限"));
             }
+        }
+        Ok(())
+    }
+
+    /// Ensure a `dept_id` (when given) belongs to the acting tenant, so users
+    /// can't be pinned to another tenant's department.
+    async fn validate_dept_id(&self, tenant_id: i64, dept_id: Option<i64>) -> AppResult<()> {
+        let Some(dept_id) = dept_id else {
+            return Ok(());
+        };
+        let exists = Dept::find_by_id(dept_id)
+            .filter(entity::dept::Column::TenantId.eq(tenant_id))
+            .one(&self.db)
+            .await?
+            .is_some();
+        if !exists {
+            return Err(AppError::bad_request("无效的部门 id"));
         }
         Ok(())
     }

@@ -5,6 +5,7 @@ use common::AppError;
 use service::dto::CurrentUser;
 use service::PLATFORM_TENANT_ID;
 
+use crate::error::HttpResult;
 use crate::state::AppState;
 
 const TENANT_HEADER: &str = "x-tenant-id";
@@ -16,16 +17,22 @@ pub async fn resolve(
     State(state): State<AppState>,
     mut req: Request,
     next: Next,
-) -> Result<Response, AppError> {
+) -> HttpResult<Response> {
     let mut current = req
         .extensions()
         .get::<CurrentUser>()
         .cloned()
         .ok_or(AppError::Unauthorized)?;
 
-    // platform admin acting on behalf of another tenant
-    if current.is_platform {
-        if let Some(raw) = req.headers().get(TENANT_HEADER).and_then(|v| v.to_str().ok()) {
+    if state.services.settings.tenant.is_single() && !current.is_platform {
+        current.tenant_id = state.services.settings.tenant.default_tenant_id;
+    } else if current.is_platform {
+        // platform admin acting on behalf of another tenant
+        if let Some(raw) = req
+            .headers()
+            .get(TENANT_HEADER)
+            .and_then(|v| v.to_str().ok())
+        {
             if let Ok(tid) = raw.trim().parse::<i64>() {
                 current.tenant_id = tid;
             }
@@ -38,11 +45,11 @@ pub async fn resolve(
     if acting != PLATFORM_TENANT_ID {
         let tenant = state.services.get_tenant(acting).await?;
         if tenant.status != 1 {
-            return Err(AppError::Forbidden);
+            return Err(AppError::TenantDisabled.into());
         }
         if let Some(expire) = tenant.expire_at {
             if expire < chrono::Utc::now() {
-                return Err(AppError::Forbidden);
+                return Err(AppError::TenantExpired.into());
             }
         }
     }

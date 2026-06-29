@@ -138,7 +138,10 @@ impl MigrationTrait for Migration {
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.get_connection().execute_unprepared(DOWN_SQL).await?;
+        manager
+            .get_connection()
+            .execute_unprepared(DOWN_SQL)
+            .await?;
         Ok(())
     }
 }
